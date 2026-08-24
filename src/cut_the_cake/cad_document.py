@@ -7,6 +7,7 @@ threat placement, and player parameters. Completely separated from calculated me
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 import json
+import math
 import os
 from enum import Enum
 from typing import Dict, Any, List, Optional, Tuple
@@ -24,6 +25,10 @@ from .vizdoom_engine import TicCombatParameters
 
 def _round_coords(coords: List[List[float]]) -> List[List[float]]:
     return [[round(float(x), 4), round(float(y), 4)] for x, y in coords]
+
+
+def _round_waypoints(coords: List[Any]) -> List[List[float]]:
+    return [[round(float(c), 4) for c in pt] for pt in coords]
 
 
 class ElevationMode(str, Enum):
@@ -77,7 +82,7 @@ class CADObstacle:
 
 @dataclass
 class CADRoute:
-    """Authored traversal polyline through level geometry."""
+    """Authored traversal polyline through level geometry with 2D or 3D waypoints."""
     id: str
     name: str
     waypoints: List[List[float]]
@@ -87,7 +92,7 @@ class CADRoute:
         return {
             "id": self.id,
             "name": self.name,
-            "waypoints": _round_coords(self.waypoints),
+            "waypoints": _round_waypoints(self.waypoints),
             "v_move_mps": float(self.v_move_mps)
         }
 
@@ -96,7 +101,7 @@ class CADRoute:
         return cls(
             id=str(d["id"]),
             name=str(d.get("name", d["id"])),
-            waypoints=_round_coords(d["waypoints"]),
+            waypoints=_round_waypoints(d["waypoints"]),
             v_move_mps=float(d.get("v_move_mps", 4.5))
         )
 
@@ -324,6 +329,9 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors.append("player_model.initial_reticle_elevation_deg must be a finite number between -90.0 and 90.0.")
     if not math.isfinite(eye_h) or eye_h <= 0:
         errors.append("player_model.eye_height_m must be a positive finite number.")
+    elev_mode = pm.get("elevation_mode")
+    if elev_mode is not None and elev_mode not in ("GEOMETRIC", "AUTHORED"):
+        errors.append(f"player_model.elevation_mode must be 'GEOMETRIC' or 'AUTHORED', got '{elev_mode}'.")
 
     geo = data.get("geometry", {})
     b_coords = geo.get("boundary", [])
@@ -578,19 +586,31 @@ class CADDocument:
         b_coords = _round_coords(list(geo_mod.boundary.exterior.coords))
         
         cad_obs = []
-        for idx, obs in enumerate(geo_mod.obstacles):
-            cad_obs.append(CADObstacle(
-                id=f"obs_{idx}",
-                name=f"Obstacle #{idx}",
-                vertices=_round_coords(list(obs.exterior.coords))
-            ))
+        if geo_mod.obstacles_25d and len(geo_mod.obstacles_25d) == len(geo_mod.obstacles):
+            for idx, obs_25d in enumerate(geo_mod.obstacles_25d):
+                z_min = obs_25d.z_min_m if not math.isinf(obs_25d.z_min_m) and obs_25d.z_min_m != 0.0 else None
+                z_max = obs_25d.z_max_m if not math.isinf(obs_25d.z_max_m) else None
+                cad_obs.append(CADObstacle(
+                    id=obs_25d.id or f"obs_{idx}",
+                    name=f"Obstacle #{idx}",
+                    vertices=_round_coords(list(obs_25d.polygon.exterior.coords)),
+                    z_min_m=z_min,
+                    z_max_m=z_max
+                ))
+        else:
+            for idx, obs in enumerate(geo_mod.obstacles):
+                cad_obs.append(CADObstacle(
+                    id=f"obs_{idx}",
+                    name=f"Obstacle #{idx}",
+                    vertices=_round_coords(list(obs.exterior.coords))
+                ))
 
         cad_routes = []
         for idx, r in enumerate(geo_mod.routes):
             cad_routes.append(CADRoute(
                 id=r.route_id,
                 name=f"Route {r.route_id}",
-                waypoints=_round_coords(list(r.waypoints)),
+                waypoints=_round_waypoints(list(r.waypoints)),
                 v_move_mps=r.v_move_mps
             ))
 
@@ -602,7 +622,9 @@ class CADDocument:
                 polygon=_round_coords(list(t.polygon.exterior.coords)),
                 anchor=[float(t.threat_anchor[0]), float(t.threat_anchor[1])],
                 due_window_s=t.authored_due_window_s,
-                service_duration_s=t.service_duration_s
+                service_duration_s=t.service_duration_s,
+                elevation_deg=float(t.elevation_deg),
+                z_m=t.z_m
             ))
 
         cad_ports = []

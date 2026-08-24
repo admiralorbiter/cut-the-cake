@@ -134,8 +134,28 @@ def ray_intersects_prism_25d(
     z_min: float = 0.0,
     z_max: float = float("inf")
 ) -> bool:
-    """Check if 3D segment [p1, p2] intersects an extruded 2.5D prism (faces or top/bottom caps)."""
-    # 1. Test vertical faces
+    """Check if 3D segment [p1, p2] intersects an extruded 2.5D closed prism volume."""
+    x1, y1, z1 = p1
+    x2, y2, z2 = p2
+
+    pt1_2d = Point(x1, y1)
+    pt2_2d = Point(x2, y2)
+
+    # 1. Endpoint Volumetric Containment
+    if (z_min - 1e-6) <= z1 <= (z_max + 1e-6) and (polygon.contains(pt1_2d) or polygon.touches(pt1_2d)):
+        return True
+    if (z_min - 1e-6) <= z2 <= (z_max + 1e-6) and (polygon.contains(pt2_2d) or polygon.touches(pt2_2d)):
+        return True
+
+    # 2. Horizontal ray within vertical height interval
+    if abs(z2 - z1) < 1e-6:
+        if (z_min - 1e-6) <= z1 <= (z_max + 1e-6):
+            seg_2d = LineString([(x1, y1), (x2, y2)])
+            if polygon.intersects(seg_2d):
+                return True
+        return False
+
+    # 3. Test vertical wall faces
     coords = list(polygon.exterior.coords)
     for i in range(len(coords) - 1):
         if segment_crosses_prism_face_25d(p1, p2, coords[i], coords[i + 1], z_min, z_max):
@@ -146,18 +166,16 @@ def ray_intersects_prism_25d(
             if segment_crosses_prism_face_25d(p1, p2, icoords[i], icoords[i + 1], z_min, z_max):
                 return True
 
-    # 2. Test top cap plane if finite
-    x1, y1, z1 = p1
-    x2, y2, z2 = p2
-    if not math.isinf(z_max) and abs(z2 - z1) > 1e-6:
+    # 4. Test top cap plane if finite
+    if not math.isinf(z_max):
         t_top = (z_max - z1) / (z2 - z1)
         if 0.0 <= t_top <= 1.0:
             pt_top = Point(x1 + t_top * (x2 - x1), y1 + t_top * (y2 - y1))
             if polygon.contains(pt_top) or polygon.touches(pt_top):
                 return True
 
-    # 3. Test bottom cap plane if finite and non-ground
-    if not math.isinf(z_min) and abs(z2 - z1) > 1e-6:
+    # 5. Test bottom cap plane if finite and non-ground
+    if not math.isinf(z_min):
         t_bot = (z_min - z1) / (z2 - z1)
         if 0.0 <= t_bot <= 1.0:
             pt_bot = Point(x1 + t_bot * (x2 - x1), y1 + t_bot * (y2 - y1))

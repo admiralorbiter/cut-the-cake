@@ -69,7 +69,11 @@
         "service_duration_s": { "type": "number", "minimum": 0 },
         "initial_reticle_deg": { "type": "number" },
         "initial_reticle_elevation_deg": { "type": "number", "minimum": -90, "maximum": 90 },
-        "eye_height_m": { "type": "number", "exclusiveMinimum": 0 }
+        "eye_height_m": { "type": "number", "exclusiveMinimum": 0 },
+        "elevation_mode": {
+          "type": "string",
+          "enum": ["GEOMETRIC", "AUTHORED"]
+        }
       }
     },
     "geometry": {

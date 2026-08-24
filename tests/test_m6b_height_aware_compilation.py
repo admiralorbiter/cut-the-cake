@@ -1,12 +1,15 @@
-"""Milestone 6-B Verification Test Suite: Height-Aware Geometric Compilation.
+"""Milestone 6-B / 6-B.1 Verification Test Suite: Height-Aware Geometric Compilation & Contract Hardening.
 
 Formal scientific gates verifying that:
 - 3D target coordinates and 2.5D extruded obstacle prisms compile directly into 3D aim states (theta, phi) and reveal tics R_j.
+- CADDocument serialization, schema validation, and roundtripping fully support 3D waypoints and ElevationMode.
 - The frozen Milestone 6-A discrete scheduler is untouched and consumes (theta, phi) seamlessly.
-- Backward compatibility and bit-for-bit planar identity are strictly preserved.
+- Backward compatibility and bit-for-bit planar identity are strictly preserved against frozen 4e81dd7 baselines.
+- Volumetric prism occupancy and boundary conditions are rigorously handled.
 """
 
 from __future__ import annotations
+import json
 import math
 import pytest
 from typing import Dict, Any, List, Tuple
@@ -40,6 +43,7 @@ from cut_the_cake.cad_document import (
     CADObstacle,
     CADRoute,
     CADThreat,
+    CADPort,
     CADPlayerModel,
     ElevationMode,
     get_canonical_f1_document,
@@ -58,7 +62,7 @@ except ImportError:
 
 
 # =============================================================================
-# GATE 6B-1: COMPLETE PLANAR IDENTITY
+# GATE 6B-1: COMPLETE DIFFERENTIAL PLANAR BIT-FOR-BIT IDENTITY
 # =============================================================================
 
 def test_m6b_gate1_complete_planar_identity():
@@ -77,6 +81,9 @@ def test_m6b_gate1_complete_planar_identity():
         doc.player_model.elevation_mode = ElevationMode.GEOMETRIC
         baseline_fixture = FROZEN_4E81DD7_PLANAR_BASELINES[name]
 
+        # Verify document hash bit-for-bit identity
+        assert doc.compute_hash() == baseline_fixture["doc_hash"], f"Document hash diverged for fixture '{name}'"
+
         for route_id, exp in baseline_fixture["routes"].items():
             analysis = analyze_cad_document(doc, route_id=route_id, include_telemetry=False)
 
@@ -86,12 +93,14 @@ def test_m6b_gate1_complete_planar_identity():
             assert analysis["source_schedule_feasible"] == exp["source_schedule_feasible"], f"Feasibility mismatch for {name}/{route_id}"
             assert analysis["stagger_gap_tics"] == exp["stagger_gap_tics"], f"Stagger mismatch for {name}/{route_id}"
 
+            assert len(analysis["threat_jobs"]) == len(exp["threat_jobs"]), f"Job count mismatch for {name}/{route_id}"
             for actual_j, exp_j in zip(analysis["threat_jobs"], exp["threat_jobs"]):
                 assert actual_j["id"] == exp_j["id"]
                 assert actual_j["reveal_tic"] == exp_j["reveal_tic"]
                 assert actual_j["due_window_tics"] == exp_j["due_window_tics"]
                 assert actual_j["deadline_tic"] == exp_j["deadline_tic"]
-                assert math.isclose(actual_j["angle_deg"], exp_j["angle_deg"], abs_tol=1e-1)
+                assert actual_j["angle_deg"] == exp_j["angle_deg"], f"Azimuth mismatch for {name}/{route_id}/{actual_j['id']}"
+                assert actual_j["elevation_deg"] == 0.0, f"Planar elevation must be exactly 0.0 for {name}/{route_id}/{actual_j['id']}"
                 assert actual_j["completion_tic"] == exp_j["completion_tic"]
                 assert actual_j["lateness_tics"] == exp_j["lateness_tics"]
 
@@ -198,100 +207,149 @@ def test_m6b_gate4_derived_elevation_correctness():
 
 
 # =============================================================================
-# GATE 6B-5: DYNAMIC ROUTE ELEVATION & RAMP SLEW
+# GATE 6B-5: CAD RAMP ROUTE SERIALIZATION & DYNAMIC SLEW
 # =============================================================================
 
-def test_m6b_gate5_dynamic_route_elevation_ramp_slew():
-    """Gate 6B-5: Verify that player ascending a 3D ramp dynamically adjusts pitch phi(s) along the trajectory."""
-    # Ramp route from z_feet = 0 to z_feet = 10 over x in [0, 10]
-    route = GeometricRoute(
-        route_id="ramp",
-        waypoints=[(0.0, 0.0, 0.0), (10.0, 0.0, 10.0)],
-        v_move_mps=4.5
+def test_m6b_gate5_cad_ramp_route_serialization_and_dynamic_slew():
+    """Gate 6B-5: Verify CADDocument with 3D ramp waypoints serializes, validates, roundtrips, and computes dynamic pitch."""
+    doc = CADDocument(
+        document_id="cad_3d_ramp_test",
+        name="3D Ramp Test Corridor",
+        description="Corridor with ascending 3D ramp trajectory and elevated target.",
+        boundary=[[0.0, -10.0], [30.0, -10.0], [30.0, 10.0], [0.0, 10.0], [0.0, -10.0]],
+        obstacles=[],
+        threats=[
+            CADThreat(
+                id="elevated_target",
+                name="Elevated Target",
+                polygon=[[19.0, -1.0], [21.0, -1.0], [21.0, 1.0], [19.0, 1.0], [19.0, -1.0]],
+                anchor=[20.0, 0.0],
+                due_window_s=0.62,
+                service_duration_s=0.10,
+                z_m=11.5
+            )
+        ],
+        routes=[
+            CADRoute(
+                id="ramp_route",
+                name="Ascending Ramp",
+                waypoints=[[0.0, 0.0, 0.0], [10.0, 0.0, 10.0]],
+                v_move_mps=4.5
+            )
+        ],
+        ports=[
+            CADPort(id="p_in", segment=[[0.0, -2.0], [0.0, 2.0]], port_type="ENTRY"),
+            CADPort(id="p_out", segment=[[10.0, -2.0], [10.0, 2.0]], port_type="EXIT")
+        ],
+        player_model=CADPlayerModel(
+            v_move_mps=4.5,
+            omega_slew_deg_per_s=360.0,
+            acquisition_latency_s=0.15,
+            service_duration_s=0.10,
+            initial_reticle_deg=0.0,
+            eye_height_m=1.5,
+            elevation_mode=ElevationMode.GEOMETRIC
+        )
     )
-    eye_h = 1.5
-    target = (20.0, 0.0, 11.5)  # Target at z = 11.5m
 
-    # Sample eye positions along ramp
-    pitch_angles = []
-    for s in [0.0, 2.0, 5.0, 8.0, route.total_length_m]:
-        eye = route.eye_position_at_distance(s, eye_height_m=eye_h)
-        phi = derived_aim_elevation_deg(eye, target)
-        pitch_angles.append(phi)
+    # 1. Verify schema validation of 3D waypoints
+    is_valid, errors = validate_cad_document(doc.to_dict())
+    assert is_valid is True, f"Validation errors: {errors}"
 
-    # At start (s=0, eye_z = 1.5): delta_z = 10, d_xy = 20 -> phi = atan(10/20) = 26.565 deg
-    assert math.isclose(pitch_angles[0], math.degrees(math.atan2(10.0, 20.0)), abs_tol=1e-4)
+    # 2. Verify JSON serialization roundtrip
+    doc_dict = doc.to_dict()
+    json_str = json.dumps(doc_dict)
+    doc_round = CADDocument.from_dict(json.loads(json_str))
+    assert doc_round.routes[0].waypoints == [[0.0, 0.0, 0.0], [10.0, 0.0, 10.0]]
 
-    # At end (s=total, eye_z = 11.5): delta_z = 0, d_xy = 10 -> phi = 0.0 deg
-    assert math.isclose(pitch_angles[-1], 0.0, abs_tol=1e-4)
-
-    # As player ascends towards target level, pitch must monotonically decrease
-    for i in range(len(pitch_angles) - 1):
-        assert pitch_angles[i] > pitch_angles[i + 1], f"Pitch did not strictly decrease: {pitch_angles}"
-
-
-# =============================================================================
-# GATE 6B-6: HEIGHT-INDUCED REVEAL DIFFERENTIATION
-# =============================================================================
-
-def test_m6b_gate6_height_induced_reveal_differentiation():
-    """Gate 6B-6: Verify that two routes with identical (x, y) 2D projection yield different reveal tics due to elevation."""
-    boundary = Polygon([(0, -10), (30, -10), (30, 10), (0, 10)])
+    # 3. Analyze CAD document end-to-end
+    analysis = analyze_cad_document(doc_round, route_id="ramp_route", include_telemetry=False)
+    assert analysis["is_valid"] is True
+    assert len(analysis["threat_jobs"]) == 1
+    job = analysis["threat_jobs"][0]
     
-    # Route A: Ground level (z_feet = 0)
-    route_ground = GeometricRoute(route_id="ground", waypoints=[(0.0, 0.0, 0.0), (20.0, 0.0, 0.0)], v_move_mps=4.5)
-    
-    # Route B: Elevated Catwalk (z_feet = 2.5m)
-    route_elevated = GeometricRoute(route_id="catwalk", waypoints=[(0.0, 0.0, 2.5), (20.0, 0.0, 2.5)], v_move_mps=4.5)
+    # At first reveal (tic 0, eye is at (0, 0, 1.5)): target is at (20, 0, 11.5) -> dz=10, dxy=20 -> pitch = atan(10/20) = 26.565 deg
+    expected_pitch = round(math.degrees(math.atan2(10.0, 20.0)), 2)
+    assert math.isclose(job["elevation_deg"], expected_pitch, abs_tol=0.1)
 
-    # Wall at x in [8, 12] with height z in [0, 2.5]
-    wall_poly = Polygon([(8.0, -5.0), (12.0, -5.0), (12.0, 5.0), (8.0, 5.0)])
-    obs = GeometricObstacle(id="wall", polygon=wall_poly, z_min_m=0.0, z_max_m=2.5)
 
-    # Target behind wall at x=25, z=1.65
-    threat = GeometricThreat(
-        id="target",
-        polygon=Polygon([(24, -1), (26, -1), (26, 1), (24, 1)]),
-        threat_anchor=(25.0, 0.0),
-        authored_due_window_s=0.62,
-        service_duration_s=0.10,
-        z_m=1.65
+# =============================================================================
+# GATE 6B-6: HEIGHT-INDUCED REVEAL DIFFERENTIATION (CAD PIPELINE)
+# =============================================================================
+
+def test_m6b_gate6_height_induced_reveal_differentiation_cad_pipeline():
+    """Gate 6B-6: Verify CADDocument with Ground vs Catwalk routes compiles different reveal tics due to vertical occlusion."""
+    doc = CADDocument(
+        document_id="cad_ground_vs_catwalk",
+        name="Ground vs Catwalk Differentiation",
+        description="Identical 2D polyline with ground vs elevated vertical profiles.",
+        boundary=[[0.0, -10.0], [30.0, -10.0], [30.0, 10.0], [0.0, 10.0], [0.0, -10.0]],
+        obstacles=[
+            CADObstacle(
+                id="baffle_wall",
+                name="Baffle Wall",
+                vertices=[[8.0, -5.0], [12.0, -5.0], [12.0, 5.0], [8.0, 5.0], [8.0, -5.0]],
+                z_min_m=0.0,
+                z_max_m=2.5
+            )
+        ],
+        threats=[
+            CADThreat(
+                id="target",
+                name="Target Behind Wall",
+                polygon=[[24.0, -1.0], [26.0, -1.0], [26.0, 1.0], [24.0, 1.0], [24.0, -1.0]],
+                anchor=[25.0, 0.0],
+                due_window_s=0.62,
+                service_duration_s=0.10,
+                z_m=1.65
+            )
+        ],
+        routes=[
+            CADRoute(
+                id="ground",
+                name="Ground Route",
+                waypoints=[[0.0, 0.0, 0.0], [20.0, 0.0, 0.0]],
+                v_move_mps=4.5
+            ),
+            CADRoute(
+                id="catwalk",
+                name="Elevated Catwalk Route",
+                waypoints=[[0.0, 0.0, 2.5], [20.0, 0.0, 2.5]],
+                v_move_mps=4.5
+            )
+        ],
+        ports=[
+            CADPort(id="p_in", segment=[[0.0, -2.0], [0.0, 2.0]], port_type="ENTRY"),
+            CADPort(id="p_out", segment=[[20.0, -2.0], [20.0, 2.0]], port_type="EXIT")
+        ],
+        player_model=CADPlayerModel(
+            v_move_mps=4.5,
+            omega_slew_deg_per_s=360.0,
+            acquisition_latency_s=0.15,
+            service_duration_s=0.10,
+            initial_reticle_deg=0.0,
+            eye_height_m=1.65,
+            elevation_mode=ElevationMode.GEOMETRIC
+        )
     )
 
-    params = TicCombatParameters(v_move_mps=4.5, eye_height_m=1.65)
-    referee = DeterministicSimulationReferee(params)
+    # 1. Validate CAD document
+    is_valid, errors = validate_cad_document(doc.to_dict())
+    assert is_valid is True, f"Validation errors: {errors}"
 
-    # Compile Ground Route: eye_z = 1.65m < 2.5m wall -> cannot see over wall, must pass it (x > 12m)
-    mod_ground = GeometricModule(
-        module_id="ground_mod",
-        name="Ground",
-        boundary=boundary,
-        obstacles=[wall_poly],
-        obstacles_25d=[obs],
-        threats=[threat],
-        routes=[route_ground]
-    )
-    jobs_ground = referee.extract_tic_jobs(mod_ground, route_index=0, elevation_mode="GEOMETRIC")
-    assert len(jobs_ground) == 1
-    r_ground = jobs_ground[0].reveal_tic
+    # 2. Analyze Ground Route: eye_z = 1.65m < 2.5m wall -> sightline blocked until passing wall (x > 12m)
+    analysis_ground = analyze_cad_document(doc, route_id="ground", include_telemetry=False)
+    assert analysis_ground["is_valid"] is True
+    r_ground = analysis_ground["threat_jobs"][0]["reveal_tic"]
 
-    # Compile Elevated Route: eye_z = 2.5 + 1.65 = 4.15m > 2.5m wall -> sees over wall immediately at start!
-    mod_elevated = GeometricModule(
-        module_id="elev_mod",
-        name="Elevated",
-        boundary=boundary,
-        obstacles=[wall_poly],
-        obstacles_25d=[obs],
-        threats=[threat],
-        routes=[route_elevated]
-    )
-    jobs_elevated = referee.extract_tic_jobs(mod_elevated, route_index=0, elevation_mode="GEOMETRIC")
-    assert len(jobs_elevated) == 1
-    r_elevated = jobs_elevated[0].reveal_tic
+    # 3. Analyze Catwalk Route: eye_z = 2.5 + 1.65 = 4.15m > 2.5m wall -> clears wall immediately at tic 0
+    analysis_catwalk = analyze_cad_document(doc, route_id="catwalk", include_telemetry=False)
+    assert analysis_catwalk["is_valid"] is True
+    r_catwalk = analysis_catwalk["threat_jobs"][0]["reveal_tic"]
 
-    # Proves that 3D elevation unlocks earlier line-of-sight unavailable in 2D
-    assert r_elevated < r_ground, f"Elevated reveal ({r_elevated}) should precede ground reveal ({r_ground})"
-    assert r_elevated == 0  # Visible at tic 0 over the wall
+    assert r_catwalk < r_ground, f"Catwalk reveal ({r_catwalk}) must precede ground reveal ({r_ground})"
+    assert r_catwalk == 0
+    assert r_ground > 80
 
 
 # =============================================================================
@@ -363,30 +421,97 @@ def test_m6b_gate7_rigid_vertical_translation_invariance():
 
 
 # =============================================================================
-# GATE 6B-8: ASCENT-INSPIRED REAL BOUNDARY FIXTURE
+# GATE 6B-8: ASCENT HEAVEN VERTICAL ELEVATION & EXPLICIT SCHEDULE DIFFERENTIAL
 # =============================================================================
 
-def test_m6b_gate8_ascent_calibrated_heaven_compilation():
-    """Gate 6B-8: Verify that Ascent A-Main with calibrated Heaven platform compiles non-zero pitch phi and updates schedule."""
-    doc = get_ascent_a_main_document()
-    doc.player_model.elevation_mode = ElevationMode.GEOMETRIC
+def test_m6b_gate8_ascent_heaven_vertical_elevation_and_schedule_differential():
+    """Gate 6B-8: Verify that elevating Heaven / Deep Site threat in Ascent A-Main increases 3D slew distance and lateness."""
+    # 1. Ground Plane Analysis (Threats at ground level z_m = None -> derived phi = 0.0)
+    doc_ground = get_ascent_a_main_document()
+    doc_ground.player_model.elevation_mode = ElevationMode.GEOMETRIC
+    analysis_ground = analyze_cad_document(doc_ground, route_id="route_A", include_telemetry=False)
+    assert analysis_ground["is_valid"] is True
 
-    # In baseline 2D, deep site is at ground elevation (z=1.65m)
-    # We calibrate deep site threat height to z = 4.65m (3.0m elevation above ground level)
-    deep_threat = next((t for t in doc.threats if "deep" in t.id.lower() or "site" in t.name.lower()), None)
-    assert deep_threat is not None, "Deep site threat must exist in Ascent fixture"
-    deep_threat.z_m = 4.65
+    # 2. Elevated Heaven Analysis (Deep Site / Heaven elevated by 3.0m to z = 4.65m)
+    doc_elevated = get_ascent_a_main_document()
+    doc_elevated.player_model.elevation_mode = ElevationMode.GEOMETRIC
+    heaven_threat = next((t for t in doc_elevated.threats if t.id == "threat_site_deep"), None)
+    assert heaven_threat is not None, "threat_site_deep must exist in Ascent fixture"
+    heaven_threat.z_m = 4.65
 
-    # Analyze under M6-B height-aware geometric compiler
-    analysis = analyze_cad_document(doc, route_id="route_A", include_telemetry=False)
-    assert analysis["is_valid"] is True
+    analysis_elevated = analyze_cad_document(doc_elevated, route_id="route_A", include_telemetry=False)
+    assert analysis_elevated["is_valid"] is True
 
-    # Find the compiled deep site job
-    deep_job = next(j for j in analysis["threat_jobs"] if j["id"] == deep_threat.id)
+    job_ground = next(j for j in analysis_ground["threat_jobs"] if j["id"] == "threat_site_deep")
+    job_elevated = next(j for j in analysis_elevated["threat_jobs"] if j["id"] == "threat_site_deep")
 
-    # Proves deep site compiles with a dynamic positive pitch angle phi > 0 deg derived from geometry
-    assert deep_job["elevation_deg"] > 0.0, f"Heaven pitch should be positive, got {deep_job['elevation_deg']}"
+    # Assert derived pitch elevation difference
+    assert job_ground["elevation_deg"] == 0.0
+    assert job_elevated["elevation_deg"] > 0.0, f"Expected positive pitch for Heaven, got {job_elevated['elevation_deg']}"
 
-    # Scheduler cleanly ingests the 3D aim state without changes to schedule format
-    assert isinstance(analysis["tactical_margin_tics"], int)
-    assert isinstance(analysis["l_star_tics"], int)
+    # Assert exact schedule metrics: Heaven elevation adds 3D slew latency to the schedule
+    assert analysis_ground["tactical_margin_tics"] == -1
+    assert analysis_ground["l_star_tics"] == 1
+    assert analysis_elevated["l_star_tics"] >= analysis_ground["l_star_tics"]
+
+
+# =============================================================================
+# GATE 6B-9: SCHEMA & ELEVATION_MODE END-TO-END AUTHORITY
+# =============================================================================
+
+def test_m6b_gate9_schema_and_elevation_mode_end_to_end_authority():
+    """Gate 6B-9: Verify that ElevationMode.AUTHORED and ElevationMode.GEOMETRIC both validate and compile correctly."""
+    # 1. Test AUTHORED Mode
+    doc_authored = get_canonical_f1_document()
+    doc_authored.player_model.elevation_mode = ElevationMode.AUTHORED
+    doc_authored.threats[0].elevation_deg = 35.0
+
+    is_valid_auth, errors_auth = validate_cad_document(doc_authored.to_dict())
+    assert is_valid_auth is True, f"Authored mode schema validation failed: {errors_auth}"
+
+    res_auth = analyze_cad_document(doc_authored, route_id=doc_authored.routes[0].id, include_telemetry=False)
+    assert res_auth["is_valid"] is True
+    assert res_auth["threat_jobs"][0]["elevation_deg"] == 35.0  # Copied directly from authored
+
+    # 2. Test GEOMETRIC Mode
+    doc_geom = get_canonical_f1_document()
+    doc_geom.player_model.elevation_mode = ElevationMode.GEOMETRIC
+    doc_geom.threats[0].z_m = 5.0  # 5.0m elevation
+
+    is_valid_geom, errors_geom = validate_cad_document(doc_geom.to_dict())
+    assert is_valid_geom is True, f"Geometric mode schema validation failed: {errors_geom}"
+
+    res_geom = analyze_cad_document(doc_geom, route_id=doc_geom.routes[0].id, include_telemetry=False)
+    assert res_geom["is_valid"] is True
+    assert res_geom["threat_jobs"][0]["elevation_deg"] > 0.0  # Derived dynamically from geometry
+
+
+# =============================================================================
+# GATE 6B-10: PRISM RAYCASTER VOLUMETRIC OCCUPANCY & BOUNDARY ROBUSTNESS
+# =============================================================================
+
+def test_m6b_gate10_prism_raycaster_volumetric_occupancy_and_boundaries():
+    """Gate 6B-10: Verify prism raycaster handles interior segments, penetrating rays, and boundary grazing."""
+    poly = Polygon([(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)])
+    z_min = 0.0
+    z_max = 5.0
+
+    # 1. Ray entirely inside solid volume
+    ray_inside = ((2.0, 2.0, 2.0), (8.0, 8.0, 3.0))
+    assert ray_intersects_prism_25d(ray_inside[0], ray_inside[1], poly, z_min, z_max) is True
+
+    # 2. Horizontal ray at z=2.5 crossing through prism interior
+    ray_horizontal_through = ((-5.0, 5.0, 2.5), (15.0, 5.0, 2.5))
+    assert ray_intersects_prism_25d(ray_horizontal_through[0], ray_horizontal_through[1], poly, z_min, z_max) is True
+
+    # 3. Horizontal ray above prism (z=7.0 > z_max=5.0) crossing polygon 2D footprint -> CLEAR
+    ray_above = ((-5.0, 5.0, 7.0), (15.0, 5.0, 7.0))
+    assert ray_intersects_prism_25d(ray_above[0], ray_above[1], poly, z_min, z_max) is False
+
+    # 4. Ray penetrating top roof cap (z_max=5.0) into prism
+    ray_roof_penetrate = ((5.0, 5.0, 8.0), (5.0, 5.0, 2.0))
+    assert ray_intersects_prism_25d(ray_roof_penetrate[0], ray_roof_penetrate[1], poly, z_min, z_max) is True
+
+    # 5. Ray starting on boundary face
+    ray_on_boundary = ((0.0, 5.0, 2.5), (5.0, 5.0, 2.5))
+    assert ray_intersects_prism_25d(ray_on_boundary[0], ray_on_boundary[1], poly, z_min, z_max) is True

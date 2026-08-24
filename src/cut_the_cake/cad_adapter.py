@@ -2082,7 +2082,8 @@ def compute_cad_route_spatial_heatmap(
     total_tics = max(1, int(math.ceil(total_length_m / params.move_m_per_tic)))
  
     referee = DeterministicSimulationReferee(params)
-    full_jobs = referee.extract_tic_jobs(geo_module, route_index=route_idx)
+    elev_mode_val = getattr(doc.player_model.elevation_mode, "value", str(doc.player_model.elevation_mode))
+    full_jobs = referee.extract_tic_jobs(geo_module, route_index=route_idx, elevation_mode=elev_mode_val)
     num_full_jobs = len(full_jobs)
     full_job_map = {j.id: j for j in full_jobs}
     if geo_module.obstacles_25d:
@@ -2093,10 +2094,9 @@ def compute_cad_route_spatial_heatmap(
             for i, p in enumerate(geo_module.obstacles)
         ]
 
-    elev_mode_val = getattr(doc.player_model.elevation_mode, "value", str(doc.player_model.elevation_mode))
     is_pure_planar = (
         not getattr(geo_route, "_is_3d", False)
-        and all(t.z_m is None for t in geo_module.threats)
+        and all(t.z_m is None and t.elevation_deg == 0.0 for t in geo_module.threats)
         and all(math.isinf(o.z_max_m) for o in obs_25d)
         and elev_mode_val != "AUTHORED"
     )
