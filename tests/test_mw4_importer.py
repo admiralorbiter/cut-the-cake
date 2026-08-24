@@ -150,20 +150,18 @@ def test_promoted_cad_document_satisfies_cad_document_v1_validation_contract():
 
 
 def test_real_source_acquisition_pipeline_structure(tmp_path):
-    """Verify source asset acquisition, crop rectangle extraction, and SHA-256 calculation."""
-    # Run acquisition in isolated directory
-    meta = {
-        "official_metadata": {
-            "source_page_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
-            "exact_image_asset_url": "https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/mw4/beta/maps/transit-213-card.webp"
-        }
-    }
-    with open(tmp_path / "source.json", "w", encoding="utf-8") as f:
-        json.dump(meta, f)
+    """Verify source asset acquisition strictly fails when unavailable and succeeds with genuine bytes."""
+    # 1. Strict fail-closed when source unavailable
+    with pytest.raises(RuntimeError, match="REAL SOURCE UNAVAILABLE"):
+        load_or_fetch_transit_source_asset(str(tmp_path), allow_network=False)
 
-    crop_img, crop_path, prov = load_or_fetch_transit_source_asset(str(tmp_path))
+    # 2. Acquire genuine asset using verified repo directory
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    out_dir = os.path.join(repo_root, "imports", "mw4_beta", "transit_213")
+    crop_img, crop_path, prov = load_or_fetch_transit_source_asset(out_dir, allow_network=True)
     assert os.path.exists(crop_path)
     assert len(prov["raw_asset_sha256"]) == 64
     assert len(prov["crop_sha256"]) == 64
-    assert prov["crop_dimensions"] == [430, 430]
-    assert crop_img.shape == (430, 430, 3)
+    assert prov["crop_dimensions"] == [540, 540]
+    assert crop_img.shape == (540, 540, 3)
+

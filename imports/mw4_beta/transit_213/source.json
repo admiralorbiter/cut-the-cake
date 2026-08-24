@@ -5,17 +5,59 @@
     "official_description": "An overgrown central bus depot located in western India filled with derelict, brightly colored buses, flanked by a repair shop and a small gas station, surrounded by ongoing construction projects and tenement blocks. The buses create tight lanes, concealed ambush routes, and longer sightlines across the center lot.",
     "source_page_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
     "exact_image_asset_url": "https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/mw4/beta/maps/transit-213-card.webp",
-    "retrieval_timestamp": "2026-08-23T23:22:00Z",
-    "raw_asset_sha256": "8091f27aedff5a4294e0c4cb762f474c70110c3d8e9658677577f736940db498",
-    "crop_rectangle_px": [40, 235, 470, 665],
-    "crop_dimensions_px": [430, 430],
-    "crop_sha256": "e4759679d17369e7cf690ece20cef42abc4d4ca047bc2b7d335ebc95187450f2",
-    "extraction_version": "v2.0-spike2a",
+    "retrieval_timestamp": "2026-08-24T08:02:00Z",
+    "raw_asset_sha256": "0e282a2767297f82c14259649c0f9e19625fe2f6e90016f0bf4a1ad1477e5251",
+    "crop_rectangle_px": [
+      60,
+      480,
+      600,
+      1020
+    ],
+    "crop_dimensions_px": [
+      540,
+      540
+    ],
+    "crop_sha256": "5718ba0e01b33e7876c42173dd7fc65b72aabd6ac174c66dc34a5f08480d4d5e",
+    "extraction_version": "v2.0-spike2a-genuine",
     "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel"
   },
   "cut_the_cake_suitability": {
-    "difficulty_rank": "★ (Low)",
+    "difficulty_rank": "\u2605 (Low)",
     "planar_2d_confidence": "HIGH",
-    "analysis_notes": "Cut the Cake Inference: Highly planar rectangular arena dominated by rectangular bus occluders, perimeter yard fence, and two small flank buildings. Ideal canonical first MW4 test case."
+    "analysis_notes": "Cut the Cake Inference: Highly planar rectangular arena dominated by rectangular bus occluders, perimeter yard fence, and two small flank buildings."
+  },
+  "segmentation_sensitivity_sweep": {
+    "total_evaluations": 200,
+    "min_regions": 32,
+    "max_regions": 81,
+    "mean_regions": 54.375,
+    "median_regions": 51,
+    "modal_stability_pct": 2.5,
+    "parameter_ranges": {
+      "thresholds": [
+        40,
+        50,
+        60,
+        70,
+        80
+      ],
+      "kernel_sizes": [
+        3,
+        5
+      ],
+      "epsilons": [
+        1.5,
+        2.0,
+        2.5,
+        3.0,
+        3.5
+      ],
+      "min_areas": [
+        40.0,
+        60.0,
+        80.0,
+        100.0
+      ]
+    }
   }
 }

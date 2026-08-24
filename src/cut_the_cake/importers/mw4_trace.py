@@ -436,68 +436,82 @@ def create_transit_213_synthetic_fixture() -> np.ndarray:
     return img
 
 
-def load_or_fetch_transit_source_asset(out_dir: str) -> Tuple[np.ndarray, str, Dict[str, Any]]:
-    """Acquires the genuine Transit 213 overview card and extracts the minimap layout crop."""
+def load_or_fetch_transit_source_asset(
+    out_dir: str,
+    allow_network: bool = True
+) -> Tuple[np.ndarray, str, Dict[str, Any]]:
+    """Acquires genuine Transit 213 overview card and extracts the layout crop.
+    
+    Strictly fail-closed: If genuine bytes are not in local cache and cannot be downloaded,
+    raises RuntimeError('REAL SOURCE UNAVAILABLE'). Never synthesizes or manufactures pixels.
+    """
     meta_path = os.path.join(out_dir, "source.json")
-    with open(meta_path, "r", encoding="utf-8") as f:
-        meta = json.load(f)
+    meta: Dict[str, Any] = {}
+    if os.path.exists(meta_path):
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
 
-    # 1. Establish verified official source URL & metadata
-    source_page = meta["official_metadata"]["source_page_url"]
-    asset_url = meta["official_metadata"].get("exact_image_asset_url", "https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/mw4/beta/maps/transit-213-card.webp")
-    
-    # 2. Local raw asset path
+    official_meta = meta.get("official_metadata", {})
+    source_page = official_meta.get(
+        "source_page_url",
+        "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-weekend-one-intel"
+    )
+    asset_url = official_meta.get(
+        "exact_image_asset_url",
+        "https://imgs.callofduty.com/content/dam/atvi/callofduty/cod-touchui/blog/body/mw4/beta-weekend-one/MW4-BETA-WEEKEND-ONE-017.webp"
+    )
+
     raw_path = os.path.join(out_dir, "raw_map_card.png")
-    
-    # If raw asset not on disk, synthesize/cache high-fidelity official image card (1080x720)
-    if not os.path.exists(raw_path):
-        card_img = np.zeros((720, 1080, 3), dtype=np.uint8)
-        card_img[:] = (15, 12, 10)  # Dark metallic UI card background
-        # Header banner
-        cv2.putText(card_img, "TRANSIT 213 - 6v6 OVERVIEW", (40, 50), cv2.FONT_HERSHEY_DUPLEX, 0.9, (220, 220, 220), 2)
-        # Description text
-        cv2.putText(card_img, "Western India Bus Depot | Fast-Paced Core Combat", (40, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (140, 160, 180), 1)
-        # Screenshot preview area (right half)
-        cv2.rectangle(card_img, (500, 110), (1040, 680), (35, 30, 28), -1)
-        cv2.putText(card_img, "IN-ENGINE PLAY PREVIEW", (680, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (100, 100, 100), 1)
+    raw_webp_path = os.path.join(out_dir, "raw_map_card.webp")
 
-        # Overhead Diagram Inset (lower-left quadrant: [235:665, 40:470])
-        inset_y1, inset_y2 = 235, 665
-        inset_x1, inset_x2 = 40, 470
-        cv2.rectangle(card_img, (inset_x1 - 4, inset_y1 - 4), (inset_x2 + 4, inset_y2 + 4), (60, 55, 50), 2)
-        cv2.rectangle(card_img, (inset_x1, inset_y1), (inset_x2, inset_y2), (24, 20, 18), -1)
+    # 1. Attempt local cache load
+    raw_bytes: Optional[bytes] = None
+    if os.path.exists(raw_path):
+        with open(raw_path, "rb") as f:
+            raw_bytes = f.read()
+    elif os.path.exists(raw_webp_path):
+        with open(raw_webp_path, "rb") as f:
+            raw_bytes = f.read()
 
-        # Arena Perimeter Fence (370x370 inside inset)
-        cv2.rectangle(card_img, (inset_x1 + 30, inset_y1 + 30), (inset_x2 - 30, inset_y2 - 30), (120, 105, 90), 2)
+    # 2. Attempt network fetch if allowed and cache missing
+    if raw_bytes is None and allow_network:
+        try:
+            import requests
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CutTheCake/1.0"}
+            resp = requests.get(asset_url, headers=headers, timeout=10)
+            if resp.status_code == 200 and len(resp.content) > 1000:
+                raw_bytes = resp.content
+                # Cache raw asset
+                with open(raw_webp_path, "wb") as f:
+                    f.write(raw_bytes)
+        except Exception as e:
+            raw_bytes = None
 
-        # West Repair Shop (85x60)
-        cv2.rectangle(card_img, (inset_x1 + 50, inset_y1 + 50), (inset_x1 + 135, inset_y1 + 110), (200, 200, 200), -1)
-        # East Gas Station Canopy (75x50)
-        cv2.rectangle(card_img, (inset_x2 - 125, inset_y1 + 55), (inset_x2 - 50, inset_y1 + 105), (200, 200, 200), -1)
+    # 3. Strict fail-closed: NO synthetic fallbacks in real path
+    if raw_bytes is None:
+        raise RuntimeError(
+            "REAL SOURCE UNAVAILABLE: Genuine Transit 213 source bytes could not be retrieved from "
+            f"local cache ('{raw_path}') or network ('{asset_url}')."
+        )
 
-        # 4 Derelict Buses (80x28 px)
-        # Bus North
-        cv2.rectangle(card_img, (inset_x1 + 175, inset_y1 + 120), (inset_x1 + 255, inset_y1 + 148), (220, 220, 220), -1)
-        # Bus West
-        cv2.rectangle(card_img, (inset_x1 + 95, inset_y1 + 185), (inset_x1 + 123, inset_y1 + 265), (220, 220, 220), -1)
-        # Bus East
-        cv2.rectangle(card_img, (inset_x2 - 123, inset_y1 + 185), (inset_x2 - 95, inset_y1 + 265), (220, 220, 220), -1)
-        # Bus South
-        cv2.rectangle(card_img, (inset_x1 + 175, inset_y1 + 295), (inset_x1 + 255, inset_y1 + 323), (220, 220, 220), -1)
-
-        # Central Freight Crate (45x45 px)
-        cv2.rectangle(card_img, (inset_x1 + 192, inset_y1 + 205), (inset_x1 + 238, inset_y1 + 250), (180, 180, 180), -1)
-
-        cv2.imwrite(raw_path, card_img)
-
-    with open(raw_path, "rb") as f:
-        raw_bytes = f.read()
     raw_sha256 = hashlib.sha256(raw_bytes).hexdigest()
 
-    # 3. Crop overhead layout diagram
-    full_card = cv2.imread(raw_path)
-    crop_rect = (40, 235, 470, 665)  # (x1, y1, x2, y2)
-    crop_img = full_card[crop_rect[1]:crop_rect[3], crop_rect[0]:crop_rect[2]]
+    # Decode image
+    from PIL import Image
+    import io
+    pil_img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+    full_card = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+
+    # 4. Crop overhead layout diagram
+    # Genuine MW4 1080p card: lower-left quadrant [y: 480->1020, x: 60->600]
+    crop_rect = (60, 480, 600, 1020)  # (x1, y1, x2, y2)
+    h_full, w_full = full_card.shape[:2]
+    x1, y1, x2, y2 = crop_rect
+    x1 = max(0, min(x1, w_full))
+    x2 = max(0, min(x2, w_full))
+    y1 = max(0, min(y1, h_full))
+    y2 = max(0, min(y2, h_full))
+    crop_img = full_card[y1:y2, x1:x2]
 
     crop_path = os.path.join(out_dir, "transit_minimap_crop.png")
     cv2.imwrite(crop_path, crop_img)
@@ -515,3 +529,72 @@ def load_or_fetch_transit_source_asset(out_dir: str) -> Tuple[np.ndarray, str, D
         "crop_sha256": crop_sha256
     }
     return crop_img, crop_path, provenance_info
+
+
+def run_segmentation_sensitivity_sweep(
+    crop_img: np.ndarray,
+    thresholds: Optional[List[int]] = None,
+    kernel_sizes: Optional[List[int]] = None,
+    epsilons: Optional[List[float]] = None,
+    min_areas: Optional[List[float]] = None
+) -> Dict[str, Any]:
+    """Automated sensitivity sweep measuring classical CV vectorization stability across parameter space."""
+    ths = thresholds or [40, 50, 60, 70, 80]
+    ks = kernel_sizes or [3, 5]
+    eps = epsilons or [1.5, 2.0, 2.5, 3.0, 3.5]
+    mas = min_areas or [40.0, 60.0, 80.0, 100.0]
+
+    total_runs = len(ths) * len(ks) * len(eps) * len(mas)
+    region_counts: List[int] = []
+    run_records: List[Dict[str, Any]] = []
+
+    for t in ths:
+        for k in ks:
+            for ep in eps:
+                for ma in mas:
+                    gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY) if len(crop_img.shape) == 3 else crop_img.copy()
+                    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+                    _, thresh = cv2.threshold(blurred, t, 255, cv2.THRESH_BINARY)
+                    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k, k))
+                    clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
+                    clean = cv2.morphologyEx(clean, cv2.MORPH_CLOSE, kernel, iterations=1)
+                    cnts, _ = cv2.findContours(clean, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+                    h_c, w_c = gray.shape[:2]
+                    tot_a = float(h_c * w_c)
+                    valid_obs = 0
+                    for c in (cnts or []):
+                        a = cv2.contourArea(c)
+                        if ma <= a <= 0.35 * tot_a:
+                            approx = cv2.approxPolyDP(c, ep, True)
+                            if len(approx) >= 3:
+                                valid_obs += 1
+
+                    region_counts.append(valid_obs)
+                    run_records.append({
+                        "threshold": t,
+                        "kernel_size": k,
+                        "epsilon": ep,
+                        "min_area": ma,
+                        "obstacle_count": valid_obs
+                    })
+
+    counts_arr = np.array(region_counts)
+    median_count = int(np.median(counts_arr))
+    stability_pct = float((counts_arr == median_count).mean() * 100.0)
+
+    return {
+        "total_evaluations": total_runs,
+        "min_regions": int(counts_arr.min()),
+        "max_regions": int(counts_arr.max()),
+        "mean_regions": float(counts_arr.mean()),
+        "median_regions": median_count,
+        "modal_stability_pct": round(stability_pct, 2),
+        "parameter_ranges": {
+            "thresholds": ths,
+            "kernel_sizes": ks,
+            "epsilons": eps,
+            "min_areas": mas
+        }
+    }
+

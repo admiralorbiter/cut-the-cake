@@ -31,7 +31,20 @@ from .cad_adapter import (
     resize_rectangle_obstacle,
     rotate_obstacle_in_document,
     delete_obstacle_in_document,
-    analyze_candidate_geometry
+    analyze_candidate_geometry,
+    create_route_in_document,
+    update_route_waypoint,
+    add_route_waypoint,
+    delete_route_waypoint,
+    delete_route_in_document,
+    update_route_speed,
+    create_threat_in_document,
+    translate_threat_in_document,
+    update_threat_geometry,
+    update_threat_due_window,
+    update_threat_service_duration,
+    delete_threat_in_document,
+    update_player_model
 )
 from .cad_export import export_scene_manifest
 
@@ -57,13 +70,43 @@ def create_cad_app() -> Flask:
                     pass
         return max_seq + 1
 
+    def compute_initial_route_sequence(doc: CADDocument) -> int:
+        max_seq = 0
+        for r in doc.routes:
+            if r.id.startswith("route_"):
+                try:
+                    seq = int(r.id.split("_")[1])
+                    max_seq = max(max_seq, seq)
+                except (ValueError, IndexError):
+                    pass
+        return max_seq + 1
+
+    def compute_initial_threat_sequence(doc: CADDocument) -> int:
+        max_seq = 0
+        for t in doc.threats:
+            if t.id.startswith("T"):
+                try:
+                    seq = int(t.id[1:])
+                    max_seq = max(max_seq, seq)
+                except (ValueError, IndexError):
+                    pass
+            elif t.id.startswith("threat_"):
+                try:
+                    seq = int(t.id.split("_")[1])
+                    max_seq = max(max_seq, seq)
+                except (ValueError, IndexError):
+                    pass
+        return max_seq + 1
+
     active_state = {
         "working_document": get_canonical_f1_document(),
         "baseline_document": get_canonical_f1_document(),
         "document_type": "canonical_f1",
         "undo_stack": [],
         "redo_stack": [],
-        "next_wall_sequence": compute_initial_wall_sequence(get_canonical_f1_document())
+        "next_wall_sequence": compute_initial_wall_sequence(get_canonical_f1_document()),
+        "next_route_sequence": compute_initial_route_sequence(get_canonical_f1_document()),
+        "next_threat_sequence": compute_initial_threat_sequence(get_canonical_f1_document())
     }
 
     def push_undo_state():
@@ -97,11 +140,11 @@ def create_cad_app() -> Flask:
         return jsonify({
             "status": "ok",
             "service": "Cut the Cake Tactical CAD Server",
-            "version": "2.0-M2C"
+            "version": "2.0-M2D"
         })
 
     # =========================================================================
-    # DOCUMENT SESSION & MUTATION ENDPOINTS (M2C)
+    # DOCUMENT SESSION & MUTATION ENDPOINTS (M2C / M2D)
     # =========================================================================
 
     @app.route("/api/document", methods=["GET"])
@@ -118,7 +161,7 @@ def create_cad_app() -> Flask:
         req_data = request.get_json(force=True, silent=True) or {}
         name = req_data.get("name", "").lower()
         
-        if name in ("canonical_f1", "f1", "repairpop_f1_staggerdeficit_00"):
+        if name in ("canonical_f1", "f1", "canonical"):
             doc = get_canonical_f1_document()
             active_state["document_type"] = "canonical_f1"
         elif name in ("custom_corridor", "custom", "custom_asymmetric_corridor"):
@@ -142,6 +185,8 @@ def create_cad_app() -> Flask:
         active_state["undo_stack"].clear()
         active_state["redo_stack"].clear()
         active_state["next_wall_sequence"] = compute_initial_wall_sequence(doc)
+        active_state["next_route_sequence"] = compute_initial_route_sequence(doc)
+        active_state["next_threat_sequence"] = compute_initial_threat_sequence(doc)
 
         return jsonify({
             "status": "loaded",
@@ -411,6 +456,497 @@ def create_cad_app() -> Flask:
         )
         res["deleted_obstacle_id"] = obstacle_id
         res["is_committed"] = True
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    # =========================================================================
+    # M2D ROUTE MUTATION ENDPOINTS
+    # =========================================================================
+
+    @app.route("/api/document/create_route", methods=["POST"])
+    def create_route():
+        """Create a new authored route in the working document."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        waypoints = req_data.get("waypoints", [])
+        name = req_data.get("name")
+        route_id = req_data.get("route_id")
+        v_move_mps = float(req_data.get("v_move_mps", 4.5))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+
+        working_doc = active_state["working_document"]
+        cand_doc, cand_id, is_valid, error_reason = create_route_in_document(
+            doc=working_doc,
+            route_id=route_id,
+            name=name,
+            waypoints=waypoints,
+            v_move_mps=v_move_mps,
+            session_sequence=active_state["next_route_sequence"]
+        )
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+            if route_id is None:
+                active_state["next_route_sequence"] += 1
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=cand_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["created_route_id"] = cand_id
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/update_route_waypoint", methods=["POST"])
+    def update_route_wpt():
+        """Update an individual waypoint position on a route."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        route_id = req_data.get("route_id")
+        waypoint_idx = int(req_data.get("waypoint_idx", -1))
+        x = float(req_data.get("x", 0.0))
+        y = float(req_data.get("y", 0.0))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = update_route_waypoint(working_doc, route_id, waypoint_idx, x, y)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["route_id"] = route_id
+        res["waypoint_idx"] = waypoint_idx
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/add_route_waypoint", methods=["POST"])
+    def add_route_wpt():
+        """Add a new waypoint to a route."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        route_id = req_data.get("route_id")
+        x = float(req_data.get("x", 0.0))
+        y = float(req_data.get("y", 0.0))
+        insert_idx = req_data.get("insert_idx")
+        if insert_idx is not None:
+            insert_idx = int(insert_idx)
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = add_route_waypoint(working_doc, route_id, x, y, insert_idx)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["route_id"] = route_id
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/delete_route_waypoint", methods=["POST"])
+    def delete_route_wpt():
+        """Delete a waypoint from a route."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        route_id = req_data.get("route_id")
+        waypoint_idx = int(req_data.get("waypoint_idx", -1))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = delete_route_waypoint(working_doc, route_id, waypoint_idx)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        push_undo_state()
+        active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["route_id"] = route_id
+        res["is_committed"] = True
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/delete_route", methods=["POST"])
+    def delete_route():
+        """Delete an authored route."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        route_id = req_data.get("route_id")
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = delete_route_in_document(working_doc, route_id)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        push_undo_state()
+        active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=None,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["deleted_route_id"] = route_id
+        res["is_committed"] = True
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/update_route_speed", methods=["POST"])
+    def update_route_spd():
+        """Update traversal speed of a route."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        route_id = req_data.get("route_id")
+        v_move_mps = float(req_data.get("v_move_mps", 4.5))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = update_route_speed(working_doc, route_id, v_move_mps)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["route_id"] = route_id
+        res["v_move_mps"] = v_move_mps
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    # =========================================================================
+    # M2D THREAT MUTATION ENDPOINTS
+    # =========================================================================
+
+    @app.route("/api/document/create_threat", methods=["POST"])
+    def create_threat():
+        """Create a new threat with anchor and authored region."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        anchor = req_data.get("anchor")
+        polygon = req_data.get("polygon")
+        name = req_data.get("name")
+        threat_id = req_data.get("threat_id")
+        due_window_s = float(req_data.get("due_window_s", 0.62))
+        service_duration_s = float(req_data.get("service_duration_s", 0.1143))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+        route_id = req_data.get("route_id")
+
+        working_doc = active_state["working_document"]
+        cand_doc, cand_id, is_valid, error_reason = create_threat_in_document(
+            doc=working_doc,
+            threat_id=threat_id,
+            name=name,
+            anchor=anchor,
+            polygon=polygon,
+            due_window_s=due_window_s,
+            service_duration_s=service_duration_s,
+            session_sequence=active_state["next_threat_sequence"]
+        )
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+            if threat_id is None:
+                active_state["next_threat_sequence"] += 1
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["created_threat_id"] = cand_id
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/translate_threat", methods=["POST"])
+    def translate_threat():
+        """Translate a threat anchor and region in 2D."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        threat_id = req_data.get("threat_id")
+        dx = float(req_data.get("dx", 0.0))
+        dy = float(req_data.get("dy", 0.0))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+        route_id = req_data.get("route_id")
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = translate_threat_in_document(working_doc, threat_id, dx, dy)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["threat_id"] = threat_id
+        res["dx"] = dx
+        res["dy"] = dy
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/update_threat_due_window", methods=["POST"])
+    def update_threat_dw():
+        """Update due window (Delta Dj) of a threat."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        threat_id = req_data.get("threat_id")
+        due_window_s = float(req_data.get("due_window_s", 0.62))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+        route_id = req_data.get("route_id")
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = update_threat_due_window(working_doc, threat_id, due_window_s)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["threat_id"] = threat_id
+        res["due_window_s"] = due_window_s
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/update_threat_service_duration", methods=["POST"])
+    def update_threat_sd():
+        """Update service duration (sj) of a threat."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        threat_id = req_data.get("threat_id")
+        service_duration_s = float(req_data.get("service_duration_s", 0.1143))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+        route_id = req_data.get("route_id")
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = update_threat_service_duration(working_doc, threat_id, service_duration_s)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["threat_id"] = threat_id
+        res["service_duration_s"] = service_duration_s
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/delete_threat", methods=["POST"])
+    def delete_threat():
+        """Delete a threat from the active working document."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        threat_id = req_data.get("threat_id")
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        route_id = req_data.get("route_id")
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = delete_threat_in_document(working_doc, threat_id)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        push_undo_state()
+        active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["deleted_threat_id"] = threat_id
+        res["is_committed"] = True
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    # =========================================================================
+    # SCENARIO / PLAYER MODEL ENDPOINT
+    # =========================================================================
+
+    @app.route("/api/document/update_player_model", methods=["POST"])
+    def update_pm():
+        """Update player movement, slewing, and initial reticle heading."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        initial_reticle_deg = req_data.get("initial_reticle_deg")
+        v_move_mps = req_data.get("v_move_mps")
+        omega_slew_deg_per_s = req_data.get("omega_slew_deg_per_s")
+        acquisition_latency_s = req_data.get("acquisition_latency_s")
+        service_duration_s = req_data.get("service_duration_s")
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+        route_id = req_data.get("route_id")
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = update_player_model(
+            doc=working_doc,
+            initial_reticle_deg=float(initial_reticle_deg) if initial_reticle_deg is not None else None,
+            v_move_mps=float(v_move_mps) if v_move_mps is not None else None,
+            omega_slew_deg_per_s=float(omega_slew_deg_per_s) if omega_slew_deg_per_s is not None else None,
+            acquisition_latency_s=float(acquisition_latency_s) if acquisition_latency_s is not None else None,
+            service_duration_s=float(service_duration_s) if service_duration_s is not None else None
+        )
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["player_model"] = cand_doc.player_model.to_dict()
+        res["is_committed"] = commit
         res["can_undo"] = len(active_state["undo_stack"]) > 0
         res["can_redo"] = len(active_state["redo_stack"]) > 0
         return jsonify(res), 200

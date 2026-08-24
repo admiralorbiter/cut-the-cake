@@ -61,6 +61,8 @@ const btnExportDoc = document.getElementById('btnExportDoc');
 // CAD Authoring Toolbar Elements
 const toolSelect = document.getElementById('toolSelect');
 const toolWall = document.getElementById('toolWall');
+const toolRoute = document.getElementById('toolRoute');
+const toolThreat = document.getElementById('toolThreat');
 const btnUndo = document.getElementById('btnUndo');
 const btnRedo = document.getElementById('btnRedo');
 const btnDelete = document.getElementById('btnDelete');
@@ -77,12 +79,23 @@ const valFeasibility = document.getElementById('valFeasibility');
 const valStaggerGap = document.getElementById('valStaggerGap');
 const valEngineStatus = document.getElementById('valEngineStatus');
 
-// Obstacle Inspector Card
+// Inspector Cards
 const obstacleCard = document.getElementById('obstacleCard');
 const valObsIdName = document.getElementById('valObsIdName');
 const valObsCenter = document.getElementById('valObsCenter');
 const valObsDimensions = document.getElementById('valObsDimensions');
 const valObsRotation = document.getElementById('valObsRotation');
+
+const routeCard = document.getElementById('routeCard');
+const valRouteIdName = document.getElementById('valRouteIdName');
+const inputRouteSpeed = document.getElementById('inputRouteSpeed');
+const valRouteWptCount = document.getElementById('valRouteWptCount');
+
+const threatCard = document.getElementById('threatCard');
+const valThreatIdName = document.getElementById('valThreatIdName');
+const valThreatAnchor = document.getElementById('valThreatAnchor');
+const inputThreatDueWindow = document.getElementById('inputThreatDueWindow');
+const inputThreatServiceDuration = document.getElementById('inputThreatServiceDuration');
 
 const threatCountBadge = document.getElementById('threatCountBadge');
 const threatListContainer = document.getElementById('threatListContainer');
@@ -142,13 +155,21 @@ function setTool(tool) {
   currentTool = tool;
   if (toolSelect) toolSelect.classList.toggle('active', tool === 'select');
   if (toolWall) toolWall.classList.toggle('active', tool === 'rectangle');
+  if (toolRoute) toolRoute.classList.toggle('active', tool === 'route');
+  if (toolThreat) toolThreat.classList.toggle('active', tool === 'threat');
 
   if (tool === 'rectangle') {
     canvas.style.cursor = 'crosshair';
-    dragHintText.innerHTML = '📐 <strong>Rectangle Wall:</strong> Click and drag to draw a new wall obstacle';
+    dragHintText.innerHTML = '📐 <strong>Wall Tool [W]:</strong> Click and drag on arena canvas to create a new rectangular wall';
+  } else if (tool === 'route') {
+    canvas.style.cursor = 'crosshair';
+    dragHintText.innerHTML = '⮑ <strong>Route Tool [R]:</strong> Click points to draw polyline route';
+  } else if (tool === 'threat') {
+    canvas.style.cursor = 'crosshair';
+    dragHintText.innerHTML = '🎯 <strong>Threat Tool [T]:</strong> Click anywhere inside boundary to place a new hostile threat';
   } else {
     canvas.style.cursor = 'default';
-    dragHintText.innerHTML = '🖱️ <strong>Interactive 2D CAD:</strong> [V] Select & Transform | [R] Create Wall | [Del] Delete | [Ctrl+Z] Undo';
+    dragHintText.innerHTML = '🖱️ <strong>Interactive 2D CAD:</strong> [V] Select | [W] Wall | [R] Route | [T] Threat | [Del] Delete | [Ctrl+Z] Undo';
   }
   drawMap();
 }
@@ -170,6 +191,84 @@ function setupUI() {
   // Tool Selection
   if (toolSelect) toolSelect.addEventListener('click', () => setTool('select'));
   if (toolWall) toolWall.addEventListener('click', () => setTool('rectangle'));
+  if (toolRoute) toolRoute.addEventListener('click', () => setTool('route'));
+  if (toolThreat) toolThreat.addEventListener('click', () => setTool('threat'));
+
+  // Route & Threat Parameter Inputs
+  if (inputRouteSpeed) {
+    inputRouteSpeed.addEventListener('change', async () => {
+      const spd = parseFloat(inputRouteSpeed.value);
+      if (spd > 0 && activeDoc && activeDoc.geometry && activeDoc.geometry.routes && activeDoc.geometry.routes.length > 0) {
+        const rId = activeDoc.geometry.routes[0].id;
+        try {
+          const resp = await fetch('/api/document/update_route_speed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ route_id: rId, v_move_mps: spd, commit: true })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            activeDoc = data.candidate_document;
+            applyAuthoritativeAnalysis(data);
+            updateUndoRedoButtons(data.can_undo, data.can_redo);
+            drawMap();
+          }
+        } catch (err) {
+          console.warn('Update route speed error:', err);
+        }
+      }
+    });
+  }
+
+  if (inputThreatDueWindow) {
+    inputThreatDueWindow.addEventListener('change', async () => {
+      const dw = parseFloat(inputThreatDueWindow.value);
+      if (dw > 0 && activeDoc && activeDoc.geometry && activeDoc.geometry.threats && activeDoc.geometry.threats.length > 0) {
+        const tId = activeDoc.geometry.threats[0].id;
+        try {
+          const resp = await fetch('/api/document/update_threat_due_window', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ threat_id: tId, due_window_s: dw, commit: true })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            activeDoc = data.candidate_document;
+            applyAuthoritativeAnalysis(data);
+            updateUndoRedoButtons(data.can_undo, data.can_redo);
+            drawMap();
+          }
+        } catch (err) {
+          console.warn('Update due window error:', err);
+        }
+      }
+    });
+  }
+
+  if (inputThreatServiceDuration) {
+    inputThreatServiceDuration.addEventListener('change', async () => {
+      const sd = parseFloat(inputThreatServiceDuration.value);
+      if (sd > 0 && activeDoc && activeDoc.geometry && activeDoc.geometry.threats && activeDoc.geometry.threats.length > 0) {
+        const tId = activeDoc.geometry.threats[0].id;
+        try {
+          const resp = await fetch('/api/document/update_threat_service_duration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ threat_id: tId, service_duration_s: sd, commit: true })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            activeDoc = data.candidate_document;
+            applyAuthoritativeAnalysis(data);
+            updateUndoRedoButtons(data.can_undo, data.can_redo);
+            drawMap();
+          }
+        } catch (err) {
+          console.warn('Update service duration error:', err);
+        }
+      }
+    });
+  }
 
   // Undo / Redo
   if (btnUndo) btnUndo.addEventListener('click', handleUndo);
@@ -237,8 +336,12 @@ function setupKeyboardShortcuts() {
 
     if (e.key === 'v' || e.key === 'V' || e.key === 'Escape') {
       setTool('select');
-    } else if (e.key === 'r' || e.key === 'R') {
+    } else if (e.key === 'w' || e.key === 'W') {
       setTool('rectangle');
+    } else if (e.key === 'r' || e.key === 'R') {
+      setTool('route');
+    } else if (e.key === 't' || e.key === 'T') {
+      setTool('threat');
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
       if (selectedObstacleId) {
         e.preventDefault();
@@ -865,6 +968,9 @@ function applyAnalysisResponse(data, committed) {
     previewDx = 0.00;
     previewDy = 0.00;
     previewAngleDeg = 0.00;
+  }
+  if (data.can_undo !== undefined || data.can_redo !== undefined) {
+    updateUndoRedoButtons(data.can_undo, data.can_redo);
   }
 
   latencyBadge.textContent = `⚡ Analysis: ${data.runtime_ms} ms`;

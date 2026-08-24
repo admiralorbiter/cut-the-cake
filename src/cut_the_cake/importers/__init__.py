@@ -11,7 +11,8 @@ from .mw4_trace import (
     project_trace_draft_to_cad_document,
     create_synthetic_test_card,
     create_transit_213_synthetic_fixture,
-    load_or_fetch_transit_source_asset
+    load_or_fetch_transit_source_asset,
+    run_segmentation_sensitivity_sweep
 )
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     "project_trace_draft_to_cad_document",
     "create_synthetic_test_card",
     "create_transit_213_synthetic_fixture",
-    "load_or_fetch_transit_source_asset"
+    "load_or_fetch_transit_source_asset",
+    "run_segmentation_sensitivity_sweep"
 ]

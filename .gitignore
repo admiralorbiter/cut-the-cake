@@ -30,6 +30,8 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
+.hypothesis/
+scratch/
 
 # ViZDoom and WAD artifacts
 *.wad

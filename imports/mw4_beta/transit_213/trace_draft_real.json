@@ -4,12 +4,12 @@
     "map_name": "Transit 213",
     "source_type": "official_overview_diagram",
     "source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
-    "provenance": "Activision / Infinity Ward MW4 Beta Official Intel (SHA256: e4759679d173)",
+    "provenance": "Activision MW4 Beta Weekend One Intel (SHA-256: 0e282a2767297f82)",
     "confidence": "reference_reconstruction"
   },
   "image_transform": {
-    "width_px": 430,
-    "height_px": 430,
+    "width_px": 540,
+    "height_px": 540,
     "crop_origin": "lower_left_diagram_inset",
     "rotation_deg": 0.0
   },
@@ -21,24 +21,24 @@
   },
   "boundary_px": [
     [
-      30.0,
-      29.0
+      0.0,
+      0.0
     ],
     [
-      29.0,
-      400.0
+      540.0,
+      0.0
     ],
     [
-      400.0,
-      401.0
+      540.0,
+      540.0
     ],
     [
-      401.0,
-      30.0
+      0.0,
+      540.0
     ],
     [
-      30.0,
-      29.0
+      0.0,
+      0.0
     ]
   ],
   "regions": [
@@ -46,211 +46,4357 @@
       "id": "obs_001",
       "polygon_px": [
         [
-          174.0,
-          295.0
+          507.0,
+          431.0
         ],
         [
-          175.0,
-          324.0
+          503.0,
+          430.0
         ],
         [
-          256.0,
-          323.0
+          500.0,
+          434.0
         ],
         [
-          255.0,
-          294.0
+          499.0,
+          430.0
         ],
         [
-          174.0,
-          295.0
+          495.0,
+          430.0
+        ],
+        [
+          495.0,
+          433.0
+        ],
+        [
+          486.0,
+          440.0
+        ],
+        [
+          490.0,
+          441.0
+        ],
+        [
+          499.0,
+          433.0
+        ],
+        [
+          498.0,
+          441.0
+        ],
+        [
+          501.0,
+          442.0
+        ],
+        [
+          507.0,
+          431.0
         ]
       ],
       "classification": "solid_structure",
       "confidence": null,
       "review_status": "unreviewed",
       "is_elevated": false,
-      "notes": "Auto-segmented region (area: 2458.0px\u00b2, aspect: 2.68)"
+      "notes": "Auto-segmented region (area: 92.0px\u00b2, aspect: 1.69)"
     },
     {
       "id": "obs_002",
       "polygon_px": [
         [
-          193.0,
-          204.0
+          493.0,
+          415.0
         ],
         [
-          191.0,
-          249.0
+          488.0,
+          414.0
         ],
         [
-          237.0,
-          251.0
+          479.0,
+          419.0
         ],
         [
-          239.0,
-          206.0
+          479.0,
+          422.0
         ],
         [
-          193.0,
-          204.0
+          487.0,
+          423.0
+        ],
+        [
+          483.0,
+          430.0
+        ],
+        [
+          495.0,
+          424.0
+        ],
+        [
+          493.0,
+          415.0
         ]
       ],
       "classification": "solid_structure",
       "confidence": null,
       "review_status": "unreviewed",
       "is_elevated": false,
-      "notes": "Auto-segmented region (area: 2248.0px\u00b2, aspect: 1.02)"
+      "notes": "Auto-segmented region (area: 135.5px\u00b2, aspect: 1.00)"
     },
     {
       "id": "obs_003",
       "polygon_px": [
         [
-          307.0,
-          184.0
+          531.0,
+          401.0
         ],
         [
-          306.0,
-          265.0
+          529.0,
+          427.0
         ],
         [
-          335.0,
-          266.0
+          533.0,
+          440.0
         ],
         [
-          336.0,
-          185.0
+          534.0,
+          407.0
         ],
         [
-          307.0,
-          184.0
+          531.0,
+          401.0
         ]
       ],
       "classification": "solid_structure",
       "confidence": null,
       "review_status": "unreviewed",
       "is_elevated": false,
-      "notes": "Auto-segmented region (area: 2458.0px\u00b2, aspect: 2.68)"
+      "notes": "Auto-segmented region (area: 166.0px\u00b2, aspect: 6.67)"
     },
     {
       "id": "obs_004",
       "polygon_px": [
         [
-          95.0,
-          184.0
+          539.0,
+          367.0
         ],
         [
-          94.0,
-          265.0
+          530.0,
+          368.0
         ],
         [
-          123.0,
-          266.0
+          527.0,
+          373.0
         ],
         [
-          124.0,
-          185.0
+          530.0,
+          378.0
         ],
         [
-          95.0,
-          184.0
+          531.0,
+          395.0
+        ],
+        [
+          532.0,
+          376.0
+        ],
+        [
+          539.0,
+          367.0
         ]
       ],
       "classification": "solid_structure",
       "confidence": null,
       "review_status": "unreviewed",
       "is_elevated": false,
-      "notes": "Auto-segmented region (area: 2458.0px\u00b2, aspect: 2.68)"
+      "notes": "Auto-segmented region (area: 110.5px\u00b2, aspect: 2.23)"
     },
     {
       "id": "obs_005",
       "polygon_px": [
         [
-          174.0,
-          120.0
+          517.0,
+          366.0
         ],
         [
-          175.0,
-          149.0
+          513.0,
+          367.0
         ],
         [
-          256.0,
-          148.0
+          512.0,
+          373.0
         ],
         [
-          255.0,
-          119.0
+          516.0,
+          382.0
         ],
         [
-          174.0,
-          120.0
+          507.0,
+          384.0
+        ],
+        [
+          506.0,
+          387.0
+        ],
+        [
+          517.0,
+          386.0
+        ],
+        [
+          518.0,
+          389.0
+        ],
+        [
+          514.0,
+          391.0
+        ],
+        [
+          513.0,
+          396.0
+        ],
+        [
+          498.0,
+          406.0
+        ],
+        [
+          499.0,
+          413.0
+        ],
+        [
+          507.0,
+          415.0
+        ],
+        [
+          504.0,
+          419.0
+        ],
+        [
+          506.0,
+          423.0
+        ],
+        [
+          514.0,
+          423.0
+        ],
+        [
+          521.0,
+          409.0
+        ],
+        [
+          511.0,
+          408.0
+        ],
+        [
+          513.0,
+          397.0
+        ],
+        [
+          516.0,
+          396.0
+        ],
+        [
+          523.0,
+          402.0
+        ],
+        [
+          520.0,
+          394.0
+        ],
+        [
+          523.0,
+          393.0
+        ],
+        [
+          523.0,
+          378.0
+        ],
+        [
+          517.0,
+          366.0
         ]
       ],
       "classification": "solid_structure",
       "confidence": null,
       "review_status": "unreviewed",
       "is_elevated": false,
-      "notes": "Auto-segmented region (area: 2458.0px\u00b2, aspect: 2.68)"
+      "notes": "Auto-segmented region (area: 561.5px\u00b2, aspect: 2.23)"
     },
     {
       "id": "obs_006",
       "polygon_px": [
         [
-          304.0,
-          56.0
+          0.0,
+          539.0
         ],
         [
-          306.0,
-          106.0
+          71.0,
+          539.0
+        ],
+        [
+          72.0,
+          529.0
+        ],
+        [
+          83.0,
+          532.0
+        ],
+        [
+          80.0,
+          539.0
+        ],
+        [
+          299.0,
+          539.0
+        ],
+        [
+          300.0,
+          535.0
+        ],
+        [
+          327.0,
+          539.0
+        ],
+        [
+          345.0,
+          537.0
+        ],
+        [
+          292.0,
+          531.0
+        ],
+        [
+          291.0,
+          528.0
+        ],
+        [
+          337.0,
+          522.0
+        ],
+        [
+          334.0,
+          514.0
+        ],
+        [
+          327.0,
+          516.0
+        ],
+        [
+          313.0,
+          513.0
+        ],
+        [
+          322.0,
+          485.0
+        ],
+        [
+          330.0,
+          481.0
+        ],
+        [
+          337.0,
+          481.0
+        ],
+        [
+          338.0,
+          492.0
+        ],
+        [
+          343.0,
+          494.0
+        ],
+        [
+          342.0,
+          497.0
+        ],
+        [
+          338.0,
+          497.0
+        ],
+        [
+          338.0,
+          512.0
+        ],
+        [
+          342.0,
+          512.0
+        ],
+        [
+          344.0,
+          516.0
+        ],
+        [
+          373.0,
+          516.0
+        ],
+        [
+          368.0,
+          496.0
+        ],
+        [
+          372.0,
+          499.0
+        ],
+        [
+          398.0,
+          498.0
+        ],
+        [
+          400.0,
+          478.0
+        ],
+        [
+          396.0,
+          474.0
+        ],
+        [
+          400.0,
+          469.0
+        ],
+        [
+          399.0,
+          457.0
+        ],
+        [
+          396.0,
+          466.0
+        ],
+        [
+          383.0,
+          470.0
+        ],
+        [
+          373.0,
+          463.0
+        ],
+        [
+          366.0,
+          463.0
+        ],
+        [
+          368.0,
+          455.0
+        ],
+        [
+          355.0,
+          455.0
+        ],
+        [
+          352.0,
+          459.0
+        ],
+        [
+          351.0,
+          453.0
+        ],
+        [
+          358.0,
+          447.0
+        ],
+        [
+          356.0,
+          434.0
+        ],
+        [
+          365.0,
+          442.0
+        ],
+        [
+          363.0,
+          448.0
+        ],
+        [
+          368.0,
+          449.0
+        ],
+        [
+          376.0,
+          433.0
         ],
         [
           381.0,
-          104.0
+          431.0
         ],
         [
-          379.0,
-          54.0
+          382.0,
+          415.0
         ],
         [
-          304.0,
-          56.0
+          391.0,
+          416.0
+        ],
+        [
+          391.0,
+          436.0
+        ],
+        [
+          398.0,
+          436.0
+        ],
+        [
+          396.0,
+          423.0
+        ],
+        [
+          402.0,
+          422.0
+        ],
+        [
+          399.0,
+          418.0
+        ],
+        [
+          401.0,
+          409.0
+        ],
+        [
+          398.0,
+          403.0
+        ],
+        [
+          403.0,
+          401.0
+        ],
+        [
+          400.0,
+          395.0
+        ],
+        [
+          406.0,
+          364.0
+        ],
+        [
+          399.0,
+          364.0
+        ],
+        [
+          397.0,
+          360.0
+        ],
+        [
+          374.0,
+          364.0
+        ],
+        [
+          358.0,
+          360.0
+        ],
+        [
+          354.0,
+          368.0
+        ],
+        [
+          344.0,
+          369.0
+        ],
+        [
+          343.0,
+          360.0
+        ],
+        [
+          349.0,
+          356.0
+        ],
+        [
+          470.0,
+          331.0
+        ],
+        [
+          477.0,
+          333.0
+        ],
+        [
+          498.0,
+          329.0
+        ],
+        [
+          499.0,
+          336.0
+        ],
+        [
+          439.0,
+          346.0
+        ],
+        [
+          414.0,
+          355.0
+        ],
+        [
+          410.0,
+          361.0
+        ],
+        [
+          483.0,
+          346.0
+        ],
+        [
+          526.0,
+          344.0
+        ],
+        [
+          527.0,
+          311.0
+        ],
+        [
+          3.0,
+          311.0
+        ],
+        [
+          0.0,
+          336.0
+        ],
+        [
+          92.0,
+          365.0
+        ],
+        [
+          94.0,
+          370.0
+        ],
+        [
+          90.0,
+          372.0
+        ],
+        [
+          86.0,
+          368.0
+        ],
+        [
+          82.0,
+          371.0
+        ],
+        [
+          71.0,
+          371.0
+        ],
+        [
+          0.0,
+          348.0
+        ],
+        [
+          0.0,
+          539.0
         ]
       ],
       "classification": "solid_structure",
       "confidence": null,
       "review_status": "unreviewed",
       "is_elevated": false,
-      "notes": "Auto-segmented region (area: 3996.0px\u00b2, aspect: 1.47)"
+      "notes": "Auto-segmented region (area: 89080.5px\u00b2, aspect: 2.31)"
     },
     {
       "id": "obs_007",
       "polygon_px": [
         [
-          49.0,
-          51.0
+          357.0,
+          490.0
         ],
         [
-          51.0,
-          111.0
+          362.0,
+          491.0
         ],
         [
-          136.0,
-          109.0
+          362.0,
+          499.0
         ],
         [
-          134.0,
-          49.0
+          355.0,
+          496.0
         ],
         [
-          49.0,
-          51.0
+          357.0,
+          490.0
         ]
       ],
       "classification": "solid_structure",
       "confidence": null,
       "review_status": "unreviewed",
       "is_elevated": false,
-      "notes": "Auto-segmented region (area: 5386.0px\u00b2, aspect: 1.40)"
+      "notes": "Auto-segmented region (area: 60.0px\u00b2, aspect: 1.11)"
+    },
+    {
+      "id": "obs_008",
+      "polygon_px": [
+        [
+          289.0,
+          471.0
+        ],
+        [
+          292.0,
+          472.0
+        ],
+        [
+          292.0,
+          481.0
+        ],
+        [
+          285.0,
+          482.0
+        ],
+        [
+          284.0,
+          478.0
+        ],
+        [
+          289.0,
+          471.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 64.5px\u00b2, aspect: 1.33)"
+    },
+    {
+      "id": "obs_009",
+      "polygon_px": [
+        [
+          297.0,
+          466.0
+        ],
+        [
+          318.0,
+          465.0
+        ],
+        [
+          319.0,
+          473.0
+        ],
+        [
+          298.0,
+          474.0
+        ],
+        [
+          297.0,
+          466.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 196.0px\u00b2, aspect: 2.30)"
+    },
+    {
+      "id": "obs_010",
+      "polygon_px": [
+        [
+          160.0,
+          465.0
+        ],
+        [
+          170.0,
+          466.0
+        ],
+        [
+          167.0,
+          478.0
+        ],
+        [
+          158.0,
+          472.0
+        ],
+        [
+          160.0,
+          465.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 115.5px\u00b2, aspect: 1.08)"
+    },
+    {
+      "id": "obs_011",
+      "polygon_px": [
+        [
+          217.0,
+          463.0
+        ],
+        [
+          224.0,
+          465.0
+        ],
+        [
+          226.0,
+          458.0
+        ],
+        [
+          237.0,
+          458.0
+        ],
+        [
+          238.0,
+          480.0
+        ],
+        [
+          241.0,
+          481.0
+        ],
+        [
+          243.0,
+          477.0
+        ],
+        [
+          257.0,
+          480.0
+        ],
+        [
+          255.0,
+          517.0
+        ],
+        [
+          246.0,
+          515.0
+        ],
+        [
+          243.0,
+          502.0
+        ],
+        [
+          207.0,
+          503.0
+        ],
+        [
+          203.0,
+          500.0
+        ],
+        [
+          203.0,
+          481.0
+        ],
+        [
+          215.0,
+          479.0
+        ],
+        [
+          217.0,
+          463.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 1822.0px\u00b2, aspect: 1.09)"
+    },
+    {
+      "id": "obs_012",
+      "polygon_px": [
+        [
+          180.0,
+          458.0
+        ],
+        [
+          184.0,
+          459.0
+        ],
+        [
+          183.0,
+          478.0
+        ],
+        [
+          179.0,
+          477.0
+        ],
+        [
+          177.0,
+          468.0
+        ],
+        [
+          180.0,
+          458.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 108.5px\u00b2, aspect: 2.62)"
+    },
+    {
+      "id": "obs_013",
+      "polygon_px": [
+        [
+          147.0,
+          459.0
+        ],
+        [
+          146.0,
+          478.0
+        ],
+        [
+          143.0,
+          478.0
+        ],
+        [
+          142.0,
+          474.0
+        ],
+        [
+          132.0,
+          473.0
+        ],
+        [
+          128.0,
+          478.0
+        ],
+        [
+          121.0,
+          477.0
+        ],
+        [
+          122.0,
+          466.0
+        ],
+        [
+          142.0,
+          465.0
+        ],
+        [
+          143.0,
+          459.0
+        ],
+        [
+          147.0,
+          459.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 311.5px\u00b2, aspect: 1.38)"
+    },
+    {
+      "id": "obs_014",
+      "polygon_px": [
+        [
+          265.0,
+          456.0
+        ],
+        [
+          270.0,
+          460.0
+        ],
+        [
+          269.0,
+          493.0
+        ],
+        [
+          265.0,
+          492.0
+        ],
+        [
+          262.0,
+          468.0
+        ],
+        [
+          265.0,
+          456.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 199.5px\u00b2, aspect: 4.22)"
+    },
+    {
+      "id": "obs_015",
+      "polygon_px": [
+        [
+          271.0,
+          450.0
+        ],
+        [
+          285.0,
+          452.0
+        ],
+        [
+          286.0,
+          455.0
+        ],
+        [
+          274.0,
+          456.0
+        ],
+        [
+          271.0,
+          450.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 66.0px\u00b2, aspect: 2.00)"
+    },
+    {
+      "id": "obs_016",
+      "polygon_px": [
+        [
+          157.0,
+          451.0
+        ],
+        [
+          193.0,
+          449.0
+        ],
+        [
+          194.0,
+          453.0
+        ],
+        [
+          158.0,
+          455.0
+        ],
+        [
+          157.0,
+          451.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 203.0px\u00b2, aspect: 5.43)"
+    },
+    {
+      "id": "obs_017",
+      "polygon_px": [
+        [
+          85.0,
+          450.0
+        ],
+        [
+          105.0,
+          449.0
+        ],
+        [
+          106.0,
+          452.0
+        ],
+        [
+          86.0,
+          453.0
+        ],
+        [
+          85.0,
+          450.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 82.0px\u00b2, aspect: 4.40)"
+    },
+    {
+      "id": "obs_018",
+      "polygon_px": [
+        [
+          288.0,
+          455.0
+        ],
+        [
+          290.0,
+          446.0
+        ],
+        [
+          296.0,
+          452.0
+        ],
+        [
+          305.0,
+          452.0
+        ],
+        [
+          308.0,
+          446.0
+        ],
+        [
+          312.0,
+          446.0
+        ],
+        [
+          314.0,
+          450.0
+        ],
+        [
+          319.0,
+          446.0
+        ],
+        [
+          338.0,
+          447.0
+        ],
+        [
+          339.0,
+          451.0
+        ],
+        [
+          345.0,
+          452.0
+        ],
+        [
+          344.0,
+          455.0
+        ],
+        [
+          327.0,
+          456.0
+        ],
+        [
+          288.0,
+          455.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 402.5px\u00b2, aspect: 5.27)"
+    },
+    {
+      "id": "obs_019",
+      "polygon_px": [
+        [
+          343.0,
+          422.0
+        ],
+        [
+          347.0,
+          419.0
+        ],
+        [
+          357.0,
+          419.0
+        ],
+        [
+          357.0,
+          429.0
+        ],
+        [
+          345.0,
+          431.0
+        ],
+        [
+          343.0,
+          422.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 152.5px\u00b2, aspect: 1.23)"
+    },
+    {
+      "id": "obs_020",
+      "polygon_px": [
+        [
+          366.0,
+          418.0
+        ],
+        [
+          373.0,
+          417.0
+        ],
+        [
+          376.0,
+          426.0
+        ],
+        [
+          373.0,
+          427.0
+        ],
+        [
+          366.0,
+          418.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 65.0px\u00b2, aspect: 1.00)"
+    },
+    {
+      "id": "obs_021",
+      "polygon_px": [
+        [
+          273.0,
+          409.0
+        ],
+        [
+          269.0,
+          418.0
+        ],
+        [
+          261.0,
+          417.0
+        ],
+        [
+          262.0,
+          411.0
+        ],
+        [
+          267.0,
+          408.0
+        ],
+        [
+          273.0,
+          409.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 94.0px\u00b2, aspect: 1.18)"
+    },
+    {
+      "id": "obs_022",
+      "polygon_px": [
+        [
+          298.0,
+          407.0
+        ],
+        [
+          297.0,
+          413.0
+        ],
+        [
+          287.0,
+          413.0
+        ],
+        [
+          289.0,
+          407.0
+        ],
+        [
+          298.0,
+          407.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 72.5px\u00b2, aspect: 1.33)"
+    },
+    {
+      "id": "obs_023",
+      "polygon_px": [
+        [
+          343.0,
+          401.0
+        ],
+        [
+          356.0,
+          398.0
+        ],
+        [
+          356.0,
+          408.0
+        ],
+        [
+          349.0,
+          409.0
+        ],
+        [
+          343.0,
+          401.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 122.0px\u00b2, aspect: 1.25)"
+    },
+    {
+      "id": "obs_024",
+      "polygon_px": [
+        [
+          374.0,
+          395.0
+        ],
+        [
+          375.0,
+          405.0
+        ],
+        [
+          363.0,
+          408.0
+        ],
+        [
+          360.0,
+          398.0
+        ],
+        [
+          374.0,
+          395.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 161.0px\u00b2, aspect: 1.14)"
+    },
+    {
+      "id": "obs_025",
+      "polygon_px": [
+        [
+          380.0,
+          395.0
+        ],
+        [
+          394.0,
+          393.0
+        ],
+        [
+          395.0,
+          402.0
+        ],
+        [
+          383.0,
+          405.0
+        ],
+        [
+          380.0,
+          395.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 155.5px\u00b2, aspect: 1.23)"
+    },
+    {
+      "id": "obs_026",
+      "polygon_px": [
+        [
+          282.0,
+          391.0
+        ],
+        [
+          285.0,
+          392.0
+        ],
+        [
+          284.0,
+          404.0
+        ],
+        [
+          278.0,
+          402.0
+        ],
+        [
+          282.0,
+          391.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 64.0px\u00b2, aspect: 1.75)"
+    },
+    {
+      "id": "obs_027",
+      "polygon_px": [
+        [
+          272.0,
+          400.0
+        ],
+        [
+          263.0,
+          403.0
+        ],
+        [
+          259.0,
+          398.0
+        ],
+        [
+          257.0,
+          404.0
+        ],
+        [
+          250.0,
+          404.0
+        ],
+        [
+          243.0,
+          393.0
+        ],
+        [
+          258.0,
+          394.0
+        ],
+        [
+          270.0,
+          390.0
+        ],
+        [
+          272.0,
+          400.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 276.5px\u00b2, aspect: 2.00)"
+    },
+    {
+      "id": "obs_028",
+      "polygon_px": [
+        [
+          302.0,
+          388.0
+        ],
+        [
+          306.0,
+          389.0
+        ],
+        [
+          307.0,
+          403.0
+        ],
+        [
+          320.0,
+          402.0
+        ],
+        [
+          320.0,
+          408.0
+        ],
+        [
+          317.0,
+          410.0
+        ],
+        [
+          307.0,
+          407.0
+        ],
+        [
+          305.0,
+          415.0
+        ],
+        [
+          301.0,
+          413.0
+        ],
+        [
+          302.0,
+          388.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 230.5px\u00b2, aspect: 1.33)"
+    },
+    {
+      "id": "obs_029",
+      "polygon_px": [
+        [
+          296.0,
+          387.0
+        ],
+        [
+          297.0,
+          396.0
+        ],
+        [
+          289.0,
+          398.0
+        ],
+        [
+          287.0,
+          390.0
+        ],
+        [
+          296.0,
+          387.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 91.0px\u00b2, aspect: 1.09)"
+    },
+    {
+      "id": "obs_030",
+      "polygon_px": [
+        [
+          308.0,
+          385.0
+        ],
+        [
+          311.0,
+          382.0
+        ],
+        [
+          318.0,
+          382.0
+        ],
+        [
+          319.0,
+          390.0
+        ],
+        [
+          311.0,
+          392.0
+        ],
+        [
+          308.0,
+          385.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 93.5px\u00b2, aspect: 1.09)"
+    },
+    {
+      "id": "obs_031",
+      "polygon_px": [
+        [
+          247.0,
+          382.0
+        ],
+        [
+          246.0,
+          389.0
+        ],
+        [
+          233.0,
+          387.0
+        ],
+        [
+          236.0,
+          383.0
+        ],
+        [
+          247.0,
+          382.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 84.0px\u00b2, aspect: 1.67)"
+    },
+    {
+      "id": "obs_032",
+      "polygon_px": [
+        [
+          355.0,
+          378.0
+        ],
+        [
+          356.0,
+          386.0
+        ],
+        [
+          345.0,
+          389.0
+        ],
+        [
+          343.0,
+          381.0
+        ],
+        [
+          355.0,
+          378.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 120.5px\u00b2, aspect: 1.17)"
+    },
+    {
+      "id": "obs_033",
+      "polygon_px": [
+        [
+          373.0,
+          374.0
+        ],
+        [
+          374.0,
+          384.0
+        ],
+        [
+          363.0,
+          386.0
+        ],
+        [
+          361.0,
+          377.0
+        ],
+        [
+          373.0,
+          374.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 140.0px\u00b2, aspect: 1.08)"
+    },
+    {
+      "id": "obs_034",
+      "polygon_px": [
+        [
+          393.0,
+          371.0
+        ],
+        [
+          394.0,
+          376.0
+        ],
+        [
+          382.0,
+          383.0
+        ],
+        [
+          379.0,
+          374.0
+        ],
+        [
+          393.0,
+          371.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 117.0px\u00b2, aspect: 1.23)"
+    },
+    {
+      "id": "obs_035",
+      "polygon_px": [
+        [
+          244.0,
+          370.0
+        ],
+        [
+          271.0,
+          364.0
+        ],
+        [
+          283.0,
+          370.0
+        ],
+        [
+          302.0,
+          371.0
+        ],
+        [
+          302.0,
+          367.0
+        ],
+        [
+          305.0,
+          366.0
+        ],
+        [
+          306.0,
+          382.0
+        ],
+        [
+          302.0,
+          384.0
+        ],
+        [
+          299.0,
+          379.0
+        ],
+        [
+          277.0,
+          383.0
+        ],
+        [
+          274.0,
+          377.0
+        ],
+        [
+          261.0,
+          380.0
+        ],
+        [
+          246.0,
+          374.0
+        ],
+        [
+          244.0,
+          370.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 717.0px\u00b2, aspect: 3.00)"
+    },
+    {
+      "id": "obs_036",
+      "polygon_px": [
+        [
+          318.0,
+          362.0
+        ],
+        [
+          319.0,
+          367.0
+        ],
+        [
+          311.0,
+          372.0
+        ],
+        [
+          308.0,
+          365.0
+        ],
+        [
+          318.0,
+          362.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 76.0px\u00b2, aspect: 1.09)"
+    },
+    {
+      "id": "obs_037",
+      "polygon_px": [
+        [
+          318.0,
+          342.0
+        ],
+        [
+          319.0,
+          350.0
+        ],
+        [
+          311.0,
+          353.0
+        ],
+        [
+          308.0,
+          346.0
+        ],
+        [
+          318.0,
+          342.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 88.0px\u00b2, aspect: 1.00)"
+    },
+    {
+      "id": "obs_038",
+      "polygon_px": [
+        [
+          354.0,
+          338.0
+        ],
+        [
+          348.0,
+          345.0
+        ],
+        [
+          343.0,
+          345.0
+        ],
+        [
+          344.0,
+          339.0
+        ],
+        [
+          354.0,
+          338.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 62.5px\u00b2, aspect: 1.20)"
+    },
+    {
+      "id": "obs_039",
+      "polygon_px": [
+        [
+          512.0,
+          331.0
+        ],
+        [
+          522.0,
+          328.0
+        ],
+        [
+          523.0,
+          336.0
+        ],
+        [
+          514.0,
+          335.0
+        ],
+        [
+          512.0,
+          331.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 72.5px\u00b2, aspect: 1.20)"
+    },
+    {
+      "id": "obs_040",
+      "polygon_px": [
+        [
+          338.0,
+          270.0
+        ],
+        [
+          326.0,
+          274.0
+        ],
+        [
+          329.0,
+          277.0
+        ],
+        [
+          328.0,
+          284.0
+        ],
+        [
+          333.0,
+          285.0
+        ],
+        [
+          331.0,
+          276.0
+        ],
+        [
+          336.0,
+          275.0
+        ],
+        [
+          338.0,
+          270.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 65.5px\u00b2, aspect: 1.23)"
+    },
+    {
+      "id": "obs_041",
+      "polygon_px": [
+        [
+          58.0,
+          268.0
+        ],
+        [
+          51.0,
+          269.0
+        ],
+        [
+          46.0,
+          275.0
+        ],
+        [
+          51.0,
+          279.0
+        ],
+        [
+          51.0,
+          285.0
+        ],
+        [
+          60.0,
+          285.0
+        ],
+        [
+          55.0,
+          280.0
+        ],
+        [
+          58.0,
+          268.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 136.0px\u00b2, aspect: 1.20)"
+    },
+    {
+      "id": "obs_042",
+      "polygon_px": [
+        [
+          258.0,
+          238.0
+        ],
+        [
+          253.0,
+          254.0
+        ],
+        [
+          253.0,
+          264.0
+        ],
+        [
+          256.0,
+          268.0
+        ],
+        [
+          248.0,
+          285.0
+        ],
+        [
+          300.0,
+          283.0
+        ],
+        [
+          308.0,
+          251.0
+        ],
+        [
+          294.0,
+          246.0
+        ],
+        [
+          293.0,
+          242.0
+        ],
+        [
+          283.0,
+          240.0
+        ],
+        [
+          276.0,
+          243.0
+        ],
+        [
+          270.0,
+          238.0
+        ],
+        [
+          258.0,
+          238.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 2201.5px\u00b2, aspect: 1.24)"
+    },
+    {
+      "id": "obs_043",
+      "polygon_px": [
+        [
+          25.0,
+          234.0
+        ],
+        [
+          23.0,
+          241.0
+        ],
+        [
+          32.0,
+          238.0
+        ],
+        [
+          31.0,
+          244.0
+        ],
+        [
+          35.0,
+          247.0
+        ],
+        [
+          35.0,
+          235.0
+        ],
+        [
+          25.0,
+          234.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 75.5px\u00b2, aspect: 1.00)"
+    },
+    {
+      "id": "obs_044",
+      "polygon_px": [
+        [
+          423.0,
+          232.0
+        ],
+        [
+          423.0,
+          285.0
+        ],
+        [
+          432.0,
+          279.0
+        ],
+        [
+          436.0,
+          279.0
+        ],
+        [
+          436.0,
+          285.0
+        ],
+        [
+          439.0,
+          285.0
+        ],
+        [
+          440.0,
+          264.0
+        ],
+        [
+          450.0,
+          244.0
+        ],
+        [
+          450.0,
+          235.0
+        ],
+        [
+          440.0,
+          233.0
+        ],
+        [
+          440.0,
+          237.0
+        ],
+        [
+          434.0,
+          239.0
+        ],
+        [
+          434.0,
+          233.0
+        ],
+        [
+          423.0,
+          232.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 1010.5px\u00b2, aspect: 1.86)"
+    },
+    {
+      "id": "obs_045",
+      "polygon_px": [
+        [
+          171.0,
+          231.0
+        ],
+        [
+          159.0,
+          235.0
+        ],
+        [
+          158.0,
+          238.0
+        ],
+        [
+          164.0,
+          240.0
+        ],
+        [
+          171.0,
+          231.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 62.5px\u00b2, aspect: 1.40)"
+    },
+    {
+      "id": "obs_046",
+      "polygon_px": [
+        [
+          101.0,
+          231.0
+        ],
+        [
+          94.0,
+          239.0
+        ],
+        [
+          91.0,
+          250.0
+        ],
+        [
+          94.0,
+          261.0
+        ],
+        [
+          88.0,
+          285.0
+        ],
+        [
+          132.0,
+          285.0
+        ],
+        [
+          133.0,
+          282.0
+        ],
+        [
+          136.0,
+          285.0
+        ],
+        [
+          144.0,
+          285.0
+        ],
+        [
+          158.0,
+          254.0
+        ],
+        [
+          157.0,
+          250.0
+        ],
+        [
+          149.0,
+          255.0
+        ],
+        [
+          143.0,
+          246.0
+        ],
+        [
+          133.0,
+          244.0
+        ],
+        [
+          132.0,
+          237.0
+        ],
+        [
+          123.0,
+          241.0
+        ],
+        [
+          110.0,
+          238.0
+        ],
+        [
+          101.0,
+          231.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 2630.0px\u00b2, aspect: 1.29)"
+    },
+    {
+      "id": "obs_047",
+      "polygon_px": [
+        [
+          399.0,
+          227.0
+        ],
+        [
+          405.0,
+          230.0
+        ],
+        [
+          401.0,
+          236.0
+        ],
+        [
+          407.0,
+          233.0
+        ],
+        [
+          411.0,
+          241.0
+        ],
+        [
+          418.0,
+          237.0
+        ],
+        [
+          417.0,
+          226.0
+        ],
+        [
+          414.0,
+          226.0
+        ],
+        [
+          413.0,
+          234.0
+        ],
+        [
+          410.0,
+          233.0
+        ],
+        [
+          409.0,
+          227.0
+        ],
+        [
+          399.0,
+          227.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 131.5px\u00b2, aspect: 1.25)"
+    },
+    {
+      "id": "obs_048",
+      "polygon_px": [
+        [
+          182.0,
+          218.0
+        ],
+        [
+          176.0,
+          237.0
+        ],
+        [
+          180.0,
+          238.0
+        ],
+        [
+          174.0,
+          268.0
+        ],
+        [
+          166.0,
+          271.0
+        ],
+        [
+          165.0,
+          278.0
+        ],
+        [
+          169.0,
+          281.0
+        ],
+        [
+          164.0,
+          282.0
+        ],
+        [
+          164.0,
+          285.0
+        ],
+        [
+          224.0,
+          284.0
+        ],
+        [
+          225.0,
+          280.0
+        ],
+        [
+          218.0,
+          281.0
+        ],
+        [
+          220.0,
+          270.0
+        ],
+        [
+          217.0,
+          265.0
+        ],
+        [
+          223.0,
+          262.0
+        ],
+        [
+          230.0,
+          231.0
+        ],
+        [
+          219.0,
+          223.0
+        ],
+        [
+          182.0,
+          218.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 3155.0px\u00b2, aspect: 1.01)"
+    },
+    {
+      "id": "obs_049",
+      "polygon_px": [
+        [
+          539.0,
+          241.0
+        ],
+        [
+          539.0,
+          209.0
+        ],
+        [
+          501.0,
+          215.0
+        ],
+        [
+          507.0,
+          223.0
+        ],
+        [
+          525.0,
+          222.0
+        ],
+        [
+          523.0,
+          230.0
+        ],
+        [
+          528.0,
+          232.0
+        ],
+        [
+          527.0,
+          242.0
+        ],
+        [
+          539.0,
+          241.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 631.5px\u00b2, aspect: 1.15)"
+    },
+    {
+      "id": "obs_050",
+      "polygon_px": [
+        [
+          423.0,
+          185.0
+        ],
+        [
+          419.0,
+          186.0
+        ],
+        [
+          415.0,
+          195.0
+        ],
+        [
+          425.0,
+          193.0
+        ],
+        [
+          423.0,
+          185.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 63.0px\u00b2, aspect: 1.00)"
+    },
+    {
+      "id": "obs_051",
+      "polygon_px": [
+        [
+          416.0,
+          157.0
+        ],
+        [
+          418.0,
+          170.0
+        ],
+        [
+          415.0,
+          171.0
+        ],
+        [
+          413.0,
+          178.0
+        ],
+        [
+          419.0,
+          182.0
+        ],
+        [
+          425.0,
+          177.0
+        ],
+        [
+          425.0,
+          170.0
+        ],
+        [
+          421.0,
+          169.0
+        ],
+        [
+          425.0,
+          160.0
+        ],
+        [
+          416.0,
+          157.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 161.0px\u00b2, aspect: 2.00)"
+    },
+    {
+      "id": "obs_052",
+      "polygon_px": [
+        [
+          80.0,
+          117.0
+        ],
+        [
+          75.0,
+          124.0
+        ],
+        [
+          81.0,
+          132.0
+        ],
+        [
+          81.0,
+          143.0
+        ],
+        [
+          89.0,
+          142.0
+        ],
+        [
+          92.0,
+          146.0
+        ],
+        [
+          91.0,
+          122.0
+        ],
+        [
+          87.0,
+          117.0
+        ],
+        [
+          80.0,
+          117.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 316.0px\u00b2, aspect: 1.67)"
+    },
+    {
+      "id": "obs_053",
+      "polygon_px": [
+        [
+          32.0,
+          105.0
+        ],
+        [
+          24.0,
+          106.0
+        ],
+        [
+          21.0,
+          116.0
+        ],
+        [
+          16.0,
+          119.0
+        ],
+        [
+          22.0,
+          121.0
+        ],
+        [
+          20.0,
+          131.0
+        ],
+        [
+          17.0,
+          132.0
+        ],
+        [
+          18.0,
+          139.0
+        ],
+        [
+          4.0,
+          139.0
+        ],
+        [
+          0.0,
+          155.0
+        ],
+        [
+          0.0,
+          211.0
+        ],
+        [
+          4.0,
+          206.0
+        ],
+        [
+          8.0,
+          206.0
+        ],
+        [
+          10.0,
+          213.0
+        ],
+        [
+          22.0,
+          213.0
+        ],
+        [
+          23.0,
+          206.0
+        ],
+        [
+          33.0,
+          206.0
+        ],
+        [
+          36.0,
+          203.0
+        ],
+        [
+          35.0,
+          190.0
+        ],
+        [
+          38.0,
+          189.0
+        ],
+        [
+          40.0,
+          179.0
+        ],
+        [
+          39.0,
+          169.0
+        ],
+        [
+          29.0,
+          171.0
+        ],
+        [
+          31.0,
+          156.0
+        ],
+        [
+          26.0,
+          154.0
+        ],
+        [
+          27.0,
+          144.0
+        ],
+        [
+          33.0,
+          148.0
+        ],
+        [
+          33.0,
+          143.0
+        ],
+        [
+          27.0,
+          140.0
+        ],
+        [
+          33.0,
+          129.0
+        ],
+        [
+          23.0,
+          128.0
+        ],
+        [
+          25.0,
+          115.0
+        ],
+        [
+          32.0,
+          113.0
+        ],
+        [
+          32.0,
+          105.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 2524.5px\u00b2, aspect: 2.66)"
+    },
+    {
+      "id": "obs_054",
+      "polygon_px": [
+        [
+          404.0,
+          76.0
+        ],
+        [
+          399.0,
+          80.0
+        ],
+        [
+          393.0,
+          80.0
+        ],
+        [
+          392.0,
+          120.0
+        ],
+        [
+          393.0,
+          126.0
+        ],
+        [
+          401.0,
+          125.0
+        ],
+        [
+          405.0,
+          129.0
+        ],
+        [
+          405.0,
+          135.0
+        ],
+        [
+          411.0,
+          137.0
+        ],
+        [
+          411.0,
+          116.0
+        ],
+        [
+          407.0,
+          103.0
+        ],
+        [
+          409.0,
+          90.0
+        ],
+        [
+          412.0,
+          88.0
+        ],
+        [
+          412.0,
+          77.0
+        ],
+        [
+          404.0,
+          76.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 881.5px\u00b2, aspect: 2.95)"
+    },
+    {
+      "id": "obs_055",
+      "polygon_px": [
+        [
+          96.0,
+          55.0
+        ],
+        [
+          76.0,
+          56.0
+        ],
+        [
+          76.0,
+          60.0
+        ],
+        [
+          72.0,
+          62.0
+        ],
+        [
+          76.0,
+          67.0
+        ],
+        [
+          73.0,
+          74.0
+        ],
+        [
+          78.0,
+          81.0
+        ],
+        [
+          83.0,
+          82.0
+        ],
+        [
+          81.0,
+          90.0
+        ],
+        [
+          86.0,
+          85.0
+        ],
+        [
+          90.0,
+          85.0
+        ],
+        [
+          91.0,
+          90.0
+        ],
+        [
+          94.0,
+          90.0
+        ],
+        [
+          98.0,
+          79.0
+        ],
+        [
+          101.0,
+          78.0
+        ],
+        [
+          99.0,
+          72.0
+        ],
+        [
+          88.0,
+          75.0
+        ],
+        [
+          86.0,
+          81.0
+        ],
+        [
+          82.0,
+          81.0
+        ],
+        [
+          82.0,
+          70.0
+        ],
+        [
+          91.0,
+          68.0
+        ],
+        [
+          96.0,
+          63.0
+        ],
+        [
+          96.0,
+          55.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 497.5px\u00b2, aspect: 1.20)"
+    },
+    {
+      "id": "obs_056",
+      "polygon_px": [
+        [
+          415.0,
+          18.0
+        ],
+        [
+          411.0,
+          15.0
+        ],
+        [
+          403.0,
+          19.0
+        ],
+        [
+          380.0,
+          18.0
+        ],
+        [
+          380.0,
+          38.0
+        ],
+        [
+          387.0,
+          41.0
+        ],
+        [
+          400.0,
+          39.0
+        ],
+        [
+          402.0,
+          42.0
+        ],
+        [
+          414.0,
+          39.0
+        ],
+        [
+          411.0,
+          31.0
+        ],
+        [
+          405.0,
+          33.0
+        ],
+        [
+          407.0,
+          19.0
+        ],
+        [
+          415.0,
+          25.0
+        ],
+        [
+          415.0,
+          18.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 638.5px\u00b2, aspect: 1.29)"
+    },
+    {
+      "id": "obs_057",
+      "polygon_px": [
+        [
+          326.0,
+          8.0
+        ],
+        [
+          136.0,
+          7.0
+        ],
+        [
+          135.0,
+          42.0
+        ],
+        [
+          108.0,
+          44.0
+        ],
+        [
+          106.0,
+          47.0
+        ],
+        [
+          107.0,
+          112.0
+        ],
+        [
+          116.0,
+          114.0
+        ],
+        [
+          116.0,
+          134.0
+        ],
+        [
+          108.0,
+          131.0
+        ],
+        [
+          101.0,
+          133.0
+        ],
+        [
+          98.0,
+          149.0
+        ],
+        [
+          83.0,
+          157.0
+        ],
+        [
+          76.0,
+          155.0
+        ],
+        [
+          76.0,
+          162.0
+        ],
+        [
+          92.0,
+          164.0
+        ],
+        [
+          95.0,
+          160.0
+        ],
+        [
+          103.0,
+          161.0
+        ],
+        [
+          103.0,
+          154.0
+        ],
+        [
+          107.0,
+          148.0
+        ],
+        [
+          116.0,
+          148.0
+        ],
+        [
+          116.0,
+          169.0
+        ],
+        [
+          102.0,
+          183.0
+        ],
+        [
+          98.0,
+          182.0
+        ],
+        [
+          98.0,
+          172.0
+        ],
+        [
+          95.0,
+          172.0
+        ],
+        [
+          94.0,
+          179.0
+        ],
+        [
+          83.0,
+          189.0
+        ],
+        [
+          87.0,
+          194.0
+        ],
+        [
+          87.0,
+          204.0
+        ],
+        [
+          96.0,
+          213.0
+        ],
+        [
+          95.0,
+          219.0
+        ],
+        [
+          98.0,
+          224.0
+        ],
+        [
+          105.0,
+          222.0
+        ],
+        [
+          115.0,
+          232.0
+        ],
+        [
+          128.0,
+          232.0
+        ],
+        [
+          159.0,
+          203.0
+        ],
+        [
+          169.0,
+          212.0
+        ],
+        [
+          240.0,
+          212.0
+        ],
+        [
+          244.0,
+          233.0
+        ],
+        [
+          304.0,
+          232.0
+        ],
+        [
+          328.0,
+          206.0
+        ],
+        [
+          329.0,
+          162.0
+        ],
+        [
+          333.0,
+          159.0
+        ],
+        [
+          328.0,
+          156.0
+        ],
+        [
+          325.0,
+          137.0
+        ],
+        [
+          333.0,
+          136.0
+        ],
+        [
+          334.0,
+          127.0
+        ],
+        [
+          345.0,
+          118.0
+        ],
+        [
+          349.0,
+          104.0
+        ],
+        [
+          354.0,
+          100.0
+        ],
+        [
+          347.0,
+          95.0
+        ],
+        [
+          347.0,
+          90.0
+        ],
+        [
+          342.0,
+          88.0
+        ],
+        [
+          342.0,
+          81.0
+        ],
+        [
+          347.0,
+          79.0
+        ],
+        [
+          346.0,
+          71.0
+        ],
+        [
+          340.0,
+          71.0
+        ],
+        [
+          336.0,
+          81.0
+        ],
+        [
+          340.0,
+          101.0
+        ],
+        [
+          334.0,
+          108.0
+        ],
+        [
+          326.0,
+          110.0
+        ],
+        [
+          326.0,
+          8.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 47426.5px\u00b2, aspect: 1.22)"
+    },
+    {
+      "id": "obs_058",
+      "polygon_px": [
+        [
+          239.0,
+          194.0
+        ],
+        [
+          242.0,
+          195.0
+        ],
+        [
+          243.0,
+          202.0
+        ],
+        [
+          240.0,
+          210.0
+        ],
+        [
+          234.0,
+          209.0
+        ],
+        [
+          231.0,
+          203.0
+        ],
+        [
+          232.0,
+          197.0
+        ],
+        [
+          239.0,
+          194.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 143.5px\u00b2, aspect: 1.31)"
+    },
+    {
+      "id": "obs_059",
+      "polygon_px": [
+        [
+          248.0,
+          193.0
+        ],
+        [
+          264.0,
+          194.0
+        ],
+        [
+          263.0,
+          213.0
+        ],
+        [
+          259.0,
+          210.0
+        ],
+        [
+          257.0,
+          200.0
+        ],
+        [
+          247.0,
+          198.0
+        ],
+        [
+          248.0,
+          193.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 175.5px\u00b2, aspect: 1.17)"
+    },
+    {
+      "id": "obs_060",
+      "polygon_px": [
+        [
+          155.0,
+          190.0
+        ],
+        [
+          164.0,
+          182.0
+        ],
+        [
+          170.0,
+          182.0
+        ],
+        [
+          170.0,
+          177.0
+        ],
+        [
+          173.0,
+          176.0
+        ],
+        [
+          176.0,
+          183.0
+        ],
+        [
+          176.0,
+          199.0
+        ],
+        [
+          224.0,
+          199.0
+        ],
+        [
+          225.0,
+          203.0
+        ],
+        [
+          220.0,
+          209.0
+        ],
+        [
+          171.0,
+          209.0
+        ],
+        [
+          159.0,
+          198.0
+        ],
+        [
+          155.0,
+          190.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 906.5px\u00b2, aspect: 2.09)"
+    },
+    {
+      "id": "obs_061",
+      "polygon_px": [
+        [
+          283.0,
+          154.0
+        ],
+        [
+          289.0,
+          155.0
+        ],
+        [
+          286.0,
+          165.0
+        ],
+        [
+          290.0,
+          165.0
+        ],
+        [
+          295.0,
+          156.0
+        ],
+        [
+          298.0,
+          157.0
+        ],
+        [
+          298.0,
+          169.0
+        ],
+        [
+          295.0,
+          171.0
+        ],
+        [
+          295.0,
+          207.0
+        ],
+        [
+          321.0,
+          206.0
+        ],
+        [
+          301.0,
+          230.0
+        ],
+        [
+          273.0,
+          229.0
+        ],
+        [
+          273.0,
+          191.0
+        ],
+        [
+          278.0,
+          187.0
+        ],
+        [
+          286.0,
+          171.0
+        ],
+        [
+          282.0,
+          167.0
+        ],
+        [
+          283.0,
+          154.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 1737.5px\u00b2, aspect: 1.54)"
+    },
+    {
+      "id": "obs_062",
+      "polygon_px": [
+        [
+          165.0,
+          117.0
+        ],
+        [
+          174.0,
+          122.0
+        ],
+        [
+          174.0,
+          126.0
+        ],
+        [
+          191.0,
+          146.0
+        ],
+        [
+          197.0,
+          149.0
+        ],
+        [
+          198.0,
+          154.0
+        ],
+        [
+          207.0,
+          152.0
+        ],
+        [
+          198.0,
+          162.0
+        ],
+        [
+          194.0,
+          175.0
+        ],
+        [
+          178.0,
+          175.0
+        ],
+        [
+          165.0,
+          159.0
+        ],
+        [
+          159.0,
+          165.0
+        ],
+        [
+          156.0,
+          164.0
+        ],
+        [
+          156.0,
+          123.0
+        ],
+        [
+          165.0,
+          117.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 1665.0px\u00b2, aspect: 1.13)"
+    },
+    {
+      "id": "obs_063",
+      "polygon_px": [
+        [
+          277.0,
+          114.0
+        ],
+        [
+          278.0,
+          140.0
+        ],
+        [
+          270.0,
+          141.0
+        ],
+        [
+          269.0,
+          152.0
+        ],
+        [
+          277.0,
+          153.0
+        ],
+        [
+          278.0,
+          160.0
+        ],
+        [
+          269.0,
+          164.0
+        ],
+        [
+          259.0,
+          163.0
+        ],
+        [
+          258.0,
+          118.0
+        ],
+        [
+          260.0,
+          115.0
+        ],
+        [
+          277.0,
+          114.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 848.0px\u00b2, aspect: 2.43)"
+    },
+    {
+      "id": "obs_064",
+      "polygon_px": [
+        [
+          182.0,
+          110.0
+        ],
+        [
+          188.0,
+          110.0
+        ],
+        [
+          188.0,
+          116.0
+        ],
+        [
+          192.0,
+          117.0
+        ],
+        [
+          191.0,
+          122.0
+        ],
+        [
+          181.0,
+          113.0
+        ],
+        [
+          182.0,
+          110.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 73.0px\u00b2, aspect: 1.17)"
+    },
+    {
+      "id": "obs_065",
+      "polygon_px": [
+        [
+          202.0,
+          107.0
+        ],
+        [
+          207.0,
+          110.0
+        ],
+        [
+          229.0,
+          149.0
+        ],
+        [
+          237.0,
+          148.0
+        ],
+        [
+          230.0,
+          161.0
+        ],
+        [
+          222.0,
+          166.0
+        ],
+        [
+          216.0,
+          159.0
+        ],
+        [
+          210.0,
+          158.0
+        ],
+        [
+          211.0,
+          151.0
+        ],
+        [
+          200.0,
+          136.0
+        ],
+        [
+          198.0,
+          129.0
+        ],
+        [
+          192.0,
+          126.0
+        ],
+        [
+          202.0,
+          107.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 1020.0px\u00b2, aspect: 1.30)"
+    },
+    {
+      "id": "obs_066",
+      "polygon_px": [
+        [
+          222.0,
+          106.0
+        ],
+        [
+          229.0,
+          113.0
+        ],
+        [
+          237.0,
+          103.0
+        ],
+        [
+          239.0,
+          117.0
+        ],
+        [
+          255.0,
+          118.0
+        ],
+        [
+          255.0,
+          126.0
+        ],
+        [
+          251.0,
+          128.0
+        ],
+        [
+          251.0,
+          133.0
+        ],
+        [
+          255.0,
+          135.0
+        ],
+        [
+          255.0,
+          165.0
+        ],
+        [
+          280.0,
+          167.0
+        ],
+        [
+          271.0,
+          185.0
+        ],
+        [
+          251.0,
+          187.0
+        ],
+        [
+          241.0,
+          184.0
+        ],
+        [
+          241.0,
+          141.0
+        ],
+        [
+          235.0,
+          137.0
+        ],
+        [
+          222.0,
+          112.0
+        ],
+        [
+          222.0,
+          106.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 1739.0px\u00b2, aspect: 1.42)"
+    },
+    {
+      "id": "obs_067",
+      "polygon_px": [
+        [
+          263.0,
+          105.0
+        ],
+        [
+          265.0,
+          100.0
+        ],
+        [
+          277.0,
+          101.0
+        ],
+        [
+          272.0,
+          106.0
+        ],
+        [
+          263.0,
+          105.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 74.5px\u00b2, aspect: 2.14)"
+    },
+    {
+      "id": "obs_068",
+      "polygon_px": [
+        [
+          123.0,
+          73.0
+        ],
+        [
+          129.0,
+          74.0
+        ],
+        [
+          130.0,
+          85.0
+        ],
+        [
+          125.0,
+          84.0
+        ],
+        [
+          123.0,
+          73.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 69.0px\u00b2, aspect: 1.30)"
+    },
+    {
+      "id": "obs_069",
+      "polygon_px": [
+        [
+          284.0,
+          52.0
+        ],
+        [
+          319.0,
+          51.0
+        ],
+        [
+          320.0,
+          79.0
+        ],
+        [
+          285.0,
+          80.0
+        ],
+        [
+          284.0,
+          52.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 1035.0px\u00b2, aspect: 1.27)"
+    },
+    {
+      "id": "obs_070",
+      "polygon_px": [
+        [
+          185.0,
+          12.0
+        ],
+        [
+          203.0,
+          13.0
+        ],
+        [
+          201.0,
+          40.0
+        ],
+        [
+          195.0,
+          38.0
+        ],
+        [
+          194.0,
+          31.0
+        ],
+        [
+          189.0,
+          32.0
+        ],
+        [
+          186.0,
+          28.0
+        ],
+        [
+          185.0,
+          12.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 416.5px\u00b2, aspect: 1.45)"
+    },
+    {
+      "id": "obs_071",
+      "polygon_px": [
+        [
+          267.0,
+          11.0
+        ],
+        [
+          273.0,
+          12.0
+        ],
+        [
+          272.0,
+          20.0
+        ],
+        [
+          265.0,
+          19.0
+        ],
+        [
+          267.0,
+          11.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 68.5px\u00b2, aspect: 1.11)"
+    },
+    {
+      "id": "obs_072",
+      "polygon_px": [
+        [
+          90.0,
+          202.0
+        ],
+        [
+          90.0,
+          199.0
+        ],
+        [
+          119.0,
+          171.0
+        ],
+        [
+          121.0,
+          120.0
+        ],
+        [
+          119.0,
+          111.0
+        ],
+        [
+          109.0,
+          107.0
+        ],
+        [
+          109.0,
+          49.0
+        ],
+        [
+          138.0,
+          46.0
+        ],
+        [
+          139.0,
+          10.0
+        ],
+        [
+          180.0,
+          10.0
+        ],
+        [
+          182.0,
+          42.0
+        ],
+        [
+          206.0,
+          41.0
+        ],
+        [
+          207.0,
+          10.0
+        ],
+        [
+          261.0,
+          10.0
+        ],
+        [
+          263.0,
+          23.0
+        ],
+        [
+          275.0,
+          23.0
+        ],
+        [
+          277.0,
+          10.0
+        ],
+        [
+          317.0,
+          11.0
+        ],
+        [
+          315.0,
+          41.0
+        ],
+        [
+          283.0,
+          40.0
+        ],
+        [
+          277.0,
+          45.0
+        ],
+        [
+          278.0,
+          85.0
+        ],
+        [
+          322.0,
+          87.0
+        ],
+        [
+          320.0,
+          150.0
+        ],
+        [
+          310.0,
+          146.0
+        ],
+        [
+          310.0,
+          138.0
+        ],
+        [
+          304.0,
+          141.0
+        ],
+        [
+          303.0,
+          148.0
+        ],
+        [
+          299.0,
+          144.0
+        ],
+        [
+          285.0,
+          143.0
+        ],
+        [
+          286.0,
+          138.0
+        ],
+        [
+          293.0,
+          136.0
+        ],
+        [
+          291.0,
+          131.0
+        ],
+        [
+          281.0,
+          129.0
+        ],
+        [
+          280.0,
+          94.0
+        ],
+        [
+          276.0,
+          98.0
+        ],
+        [
+          250.0,
+          96.0
+        ],
+        [
+          250.0,
+          89.0
+        ],
+        [
+          258.0,
+          75.0
+        ],
+        [
+          249.0,
+          72.0
+        ],
+        [
+          249.0,
+          66.0
+        ],
+        [
+          244.0,
+          66.0
+        ],
+        [
+          238.0,
+          59.0
+        ],
+        [
+          240.0,
+          49.0
+        ],
+        [
+          237.0,
+          21.0
+        ],
+        [
+          227.0,
+          22.0
+        ],
+        [
+          227.0,
+          69.0
+        ],
+        [
+          224.0,
+          71.0
+        ],
+        [
+          216.0,
+          71.0
+        ],
+        [
+          214.0,
+          59.0
+        ],
+        [
+          207.0,
+          58.0
+        ],
+        [
+          200.0,
+          59.0
+        ],
+        [
+          194.0,
+          70.0
+        ],
+        [
+          184.0,
+          70.0
+        ],
+        [
+          180.0,
+          67.0
+        ],
+        [
+          173.0,
+          71.0
+        ],
+        [
+          171.0,
+          36.0
+        ],
+        [
+          153.0,
+          33.0
+        ],
+        [
+          153.0,
+          40.0
+        ],
+        [
+          159.0,
+          41.0
+        ],
+        [
+          160.0,
+          87.0
+        ],
+        [
+          170.0,
+          87.0
+        ],
+        [
+          172.0,
+          83.0
+        ],
+        [
+          219.0,
+          83.0
+        ],
+        [
+          222.0,
+          81.0
+        ],
+        [
+          223.0,
+          72.0
+        ],
+        [
+          236.0,
+          72.0
+        ],
+        [
+          237.0,
+          75.0
+        ],
+        [
+          231.0,
+          84.0
+        ],
+        [
+          236.0,
+          92.0
+        ],
+        [
+          232.0,
+          96.0
+        ],
+        [
+          224.0,
+          97.0
+        ],
+        [
+          221.0,
+          91.0
+        ],
+        [
+          215.0,
+          91.0
+        ],
+        [
+          213.0,
+          97.0
+        ],
+        [
+          203.0,
+          106.0
+        ],
+        [
+          149.0,
+          106.0
+        ],
+        [
+          145.0,
+          99.0
+        ],
+        [
+          145.0,
+          73.0
+        ],
+        [
+          140.0,
+          74.0
+        ],
+        [
+          138.0,
+          69.0
+        ],
+        [
+          120.0,
+          71.0
+        ],
+        [
+          120.0,
+          90.0
+        ],
+        [
+          140.0,
+          91.0
+        ],
+        [
+          134.0,
+          98.0
+        ],
+        [
+          135.0,
+          106.0
+        ],
+        [
+          130.0,
+          108.0
+        ],
+        [
+          123.0,
+          125.0
+        ],
+        [
+          126.0,
+          128.0
+        ],
+        [
+          130.0,
+          122.0
+        ],
+        [
+          133.0,
+          123.0
+        ],
+        [
+          133.0,
+          167.0
+        ],
+        [
+          142.0,
+          168.0
+        ],
+        [
+          145.0,
+          173.0
+        ],
+        [
+          155.0,
+          173.0
+        ],
+        [
+          156.0,
+          176.0
+        ],
+        [
+          147.0,
+          189.0
+        ],
+        [
+          140.0,
+          192.0
+        ],
+        [
+          143.0,
+          198.0
+        ],
+        [
+          137.0,
+          204.0
+        ],
+        [
+          134.0,
+          203.0
+        ],
+        [
+          134.0,
+          189.0
+        ],
+        [
+          125.0,
+          193.0
+        ],
+        [
+          120.0,
+          210.0
+        ],
+        [
+          124.0,
+          217.0
+        ],
+        [
+          116.0,
+          225.0
+        ],
+        [
+          111.0,
+          223.0
+        ],
+        [
+          112.0,
+          216.0
+        ],
+        [
+          106.0,
+          218.0
+        ],
+        [
+          90.0,
+          202.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 16291.0px\u00b2, aspect: 1.08)"
+    },
+    {
+      "id": "obs_073",
+      "polygon_px": [
+        [
+          120.0,
+          0.0
+        ],
+        [
+          110.0,
+          0.0
+        ],
+        [
+          113.0,
+          25.0
+        ],
+        [
+          121.0,
+          23.0
+        ],
+        [
+          118.0,
+          14.0
+        ],
+        [
+          120.0,
+          0.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 202.5px\u00b2, aspect: 2.17)"
+    },
+    {
+      "id": "obs_074",
+      "polygon_px": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          2.0,
+          10.0
+        ],
+        [
+          15.0,
+          3.0
+        ],
+        [
+          19.0,
+          9.0
+        ],
+        [
+          25.0,
+          9.0
+        ],
+        [
+          25.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "classification": "solid_structure",
+      "confidence": null,
+      "review_status": "unreviewed",
+      "is_elevated": false,
+      "notes": "Auto-segmented region (area: 168.5px\u00b2, aspect: 2.36)"
     }
   ],
   "uncertain_regions": []
