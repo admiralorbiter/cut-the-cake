@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tactical CAD — Interactive Tactical Workbench (Cut the Cake)</title>
+  <title>Cut the Cake — Tactical CAD Platform (Milestone 2B)</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Load Scene Manifest JavaScript Bundle for local file:// execution -->
+  <!-- Bundled baseline manifest for offline file:// execution fallback -->
   <script src="../data/m1_scene.js"></script>
 </head>
 <body>
@@ -17,22 +17,24 @@
         <span style="color: var(--text-dim);">/</span>
         <span style="color: var(--blue);">Tactical CAD Workbench</span>
       </div>
-      <span class="badge" id="fixtureBadge">RepairPop_F1_StaggerDeficit_00</span>
-      <span class="badge source-tag" id="playbackTag">PLAYBACK: SOURCE MODEL (35 Hz)</span>
-      <span class="badge verified" id="evidenceBadge">EXTERNAL: NATIVE VIZDOOM VERIFIED</span>
-      <span class="badge" id="latencyBadge" style="display: none; background: rgba(88, 166, 255, 0.15); color: #58a6ff;">⚡ Analysis: 0.0 ms</span>
+
+      <!-- Document Switcher -->
+      <div class="doc-select-area">
+        <label for="docSelect" class="doc-select-label">DOCUMENT:</label>
+        <select id="docSelect" class="doc-select">
+          <option value="canonical_f1">Canonical Family 1 (Baffle Stagger)</option>
+          <option value="custom_corridor">Custom Asymmetric Corridor (3 Threats)</option>
+        </select>
+      </div>
+
+      <span class="badge" id="fixtureBadge">canonical_f1_stagger</span>
+      <span class="badge verified" id="evidenceBadge">SOURCE MODEL ONLY — EXTERNAL ENGINE NOT RUN</span>
+      <span class="badge" id="latencyBadge" style="background: rgba(88, 166, 255, 0.15); color: #58a6ff;">⚡ Analysis: 0.0 ms</span>
     </div>
 
     <div class="mode-toggle-area">
-      <button class="toggle-btn active working" id="btnModeWorking">
-        <span>🟡 Working Copy (Drag Wall)</span>
-      </button>
-      <button class="toggle-btn broken" id="btnModeBroken">
-        <span>🔴 Frozen Broken (0.00m)</span>
-      </button>
-      <button class="toggle-btn repaired" id="btnModeRepaired">
-        <span>🟢 Frozen Repair (+1.10m)</span>
-      </button>
+      <button class="btn" id="btnResetDoc">⟲ Reset Baseline</button>
+      <button class="btn" id="btnExportDoc">💾 Export JSON</button>
     </div>
   </header>
 
@@ -45,16 +47,17 @@
       <div class="viewport-overlay">
         <div class="overlay-tag" id="tagPlayerPos">POS: (0.00m, 0.00m)</div>
         <div class="overlay-tag" id="tagReticle">RETICLE: 0.0°</div>
-        <div class="overlay-tag" id="tagLOS">VISIBLE TARGETS: 0</div>
+        <div class="overlay-tag" id="tagSelectedObs">SELECTED: wall_0 (Central Baffle)</div>
       </div>
 
-      <!-- Drag Prompt Banner -->
+      <!-- Live Drag Status Banner -->
       <div class="drag-hint-banner" id="dragHintBanner">
-        <span>↔️ <strong>Interactive CAD:</strong> Drag Obstacle #0 (baffle) horizontally to re-analyze Tactical Margin</span>
+        <span id="dragHintText">🖱️ <strong>Interactive 2D CAD:</strong> Click any obstacle to select, then drag in X or Y to re-analyze Tactical Margin</span>
       </div>
 
-      <div class="viewport-bottleneck-btn">
-        <button class="btn jump-btn" id="btnJumpBottleneck">⚡ Jump to Critical Bottleneck (Tic 3)</button>
+      <!-- Playback Pending Commit Banner -->
+      <div class="pending-commit-banner" id="pendingCommitBanner" style="display: none;">
+        <span>⏳ <strong>SOURCE METRICS UPDATED</strong> — PLAYBACK PENDING COMMIT (Release pointer to simulate)</span>
       </div>
     </div>
 
@@ -77,20 +80,24 @@
 
         <div style="margin-top: 10px;">
           <div class="data-row">
-            <span class="data-label">Obstacle #0 Displacement (d*)</span>
-            <span class="data-value" id="valDisp" style="color: var(--amber); font-weight: 700;">+0.00 m (0.05m snap)</span>
+            <span class="data-label">Selected Obstacle</span>
+            <span class="data-value" id="valSelectedName" style="color: var(--amber); font-weight: 700;">wall_0 (Central Baffle)</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">2D Translation (&Delta;x, &Delta;y)</span>
+            <span class="data-value" id="valDisp" style="color: var(--amber); font-weight: 700;">+0.00m, +0.00m</span>
           </div>
           <div class="data-row">
             <span class="data-label">Optimal Max Lateness (L*)</span>
             <span class="data-value" id="valLStar">+6 tics (Late)</span>
           </div>
           <div class="data-row">
-            <span class="data-label">Threat 2 Reveal (r<sub>2</sub>)</span>
-            <span class="data-value" id="valT2Reveal">Tic 3 (0.09s)</span>
+            <span class="data-label">Schedule Feasibility</span>
+            <span class="data-value" id="valFeasibility" style="color: var(--red); font-weight: 700;">INFEASIBLE</span>
           </div>
           <div class="data-row">
-            <span class="data-label">Reveal Stagger Gap (&Delta;r)</span>
-            <span class="data-value" id="valStaggerGap">85.7 ms</span>
+            <span class="data-label">Min Inter-Threat Gap</span>
+            <span class="data-value" id="valStaggerGap">85.7 ms (3 tics)</span>
           </div>
           <div class="data-row">
             <span class="data-label">External Engine Evidence</span>
@@ -99,56 +106,21 @@
         </div>
       </div>
 
-      <!-- What the Geometry Changed Comparison Table -->
+      <!-- Threat Schedule Table -->
       <div class="card">
         <div class="card-title">
-          <span>Geometry vs Reference Benchmarks</span>
-          <span class="badge verified" style="font-size: 0.65rem;">REAL-TIME DELTA</span>
+          <span>Authored Threats & Deadlines</span>
+          <span class="badge" id="threatCountBadge" style="font-size: 0.65rem;">2 THREATS</span>
         </div>
-        <div class="what-changed-card">
-          <table class="what-changed-table" id="whatChangedTable">
-            <thead>
-              <tr>
-                <th>Mechanism</th>
-                <th>Working Copy</th>
-                <th>Frozen Target</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Obstacle #0 Shift (d*)</td>
-                <td id="tblWorkingShift" style="color: var(--amber); font-weight: 700;">+0.00 m</td>
-                <td>+1.10 m</td>
-              </tr>
-              <tr>
-                <td>Threat 1 Reveal (r<sub>1</sub>)</td>
-                <td id="tblWorkingT1">Tic 0 (0.00s)</td>
-                <td>Tic 0 (0.00s)</td>
-              </tr>
-              <tr class="highlight">
-                <td>Threat 2 Reveal (r<sub>2</sub>)</td>
-                <td id="tblWorkingT2">Tic 3 (0.09s)</td>
-                <td class="shift-positive">Tic 13 (0.37s)</td>
-              </tr>
-              <tr>
-                <td>Reveal Stagger Gap (&Delta;r)</td>
-                <td id="tblWorkingGap">86 ms</td>
-                <td class="shift-positive">371 ms</td>
-              </tr>
-              <tr class="highlight">
-                <td>Tactical Margin (M)</td>
-                <td id="tblWorkingMargin" style="color: var(--red); font-weight: 700;">-6 tics</td>
-                <td class="shift-positive">+2 tics</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="threat-list" id="threatListContainer">
+          <!-- Populated dynamically -->
         </div>
       </div>
 
-      <!-- Live Player State Card -->
-      <div class="card">
+      <!-- Controller & Telemetry Card -->
+      <div class="card" id="controllerCard">
         <div class="card-title">
-          <span>Controller State Machine</span>
+          <span>Controller Execution State</span>
           <span class="badge" id="controllerStateBadge" style="background: #2d1519; color: var(--red);">DEAD</span>
         </div>
         <div class="data-row">
@@ -161,19 +133,11 @@
         </div>
         <div class="data-row">
           <span class="data-label">Movement Speed</span>
-          <span class="data-value" id="valMoveSpeed">4.5 m/s (0.129 m/tic)</span>
+          <span class="data-value" id="valMoveSpeed">4.5 m/s</span>
         </div>
         <div class="data-row">
           <span class="data-label">Angular Slew Velocity</span>
-          <span class="data-value" id="valSlewSpeed">360°/s (10.29°/tic)</span>
-        </div>
-      </div>
-
-      <!-- Threat Schedule Card -->
-      <div class="card">
-        <div class="card-title">Threat Schedulability</div>
-        <div class="threat-list" id="threatListContainer">
-          <!-- Populated dynamically -->
+          <span class="data-value" id="valSlewSpeed">360°/s</span>
         </div>
       </div>
 
