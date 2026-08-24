@@ -46,12 +46,24 @@ def create_cad_app() -> Flask:
 
     # In-memory working document session with undo/redo history
     import copy
+    def compute_initial_wall_sequence(doc: CADDocument) -> int:
+        max_seq = 0
+        for obs in doc.obstacles:
+            if obs.id.startswith("wall_"):
+                try:
+                    seq = int(obs.id.split("_")[1])
+                    max_seq = max(max_seq, seq)
+                except (ValueError, IndexError):
+                    pass
+        return max_seq + 1
+
     active_state = {
         "working_document": get_canonical_f1_document(),
         "baseline_document": get_canonical_f1_document(),
         "document_type": "canonical_f1",
         "undo_stack": [],
-        "redo_stack": []
+        "redo_stack": [],
+        "next_wall_sequence": compute_initial_wall_sequence(get_canonical_f1_document())
     }
 
     def push_undo_state():
@@ -129,6 +141,7 @@ def create_cad_app() -> Flask:
         active_state["working_document"] = copy.deepcopy(doc)
         active_state["undo_stack"].clear()
         active_state["redo_stack"].clear()
+        active_state["next_wall_sequence"] = compute_initial_wall_sequence(doc)
 
         return jsonify({
             "status": "loaded",
@@ -168,7 +181,10 @@ def create_cad_app() -> Flask:
 
         working_doc = active_state["working_document"]
         cand_doc, new_id, is_valid, error_reason = create_rectangle_obstacle(
-            working_doc, x1, y1, x2, y2, obstacle_id=obstacle_id, name=name
+            working_doc, x1, y1, x2, y2,
+            obstacle_id=obstacle_id,
+            name=name,
+            session_sequence=active_state["next_wall_sequence"]
         )
         if not is_valid:
             return jsonify({
@@ -181,6 +197,12 @@ def create_cad_app() -> Flask:
         if commit:
             push_undo_state()
             active_state["working_document"] = cand_doc
+            if not obstacle_id and new_id and new_id.startswith("wall_"):
+                try:
+                    num = int(new_id.split("_")[1])
+                    active_state["next_wall_sequence"] = max(active_state["next_wall_sequence"], num + 1)
+                except (ValueError, IndexError):
+                    active_state["next_wall_sequence"] += 1
 
         res = analyze_cad_document(
             doc=cand_doc,
@@ -295,10 +317,16 @@ def create_cad_app() -> Flask:
 
     @app.route("/api/document/rotate_obstacle", methods=["POST"])
     def rotate_obstacle():
-        """Rotate an obstacle by angle_deg around its centroid."""
+        """Rotate an obstacle by delta or to target orientation angle around its centroid."""
         req_data = request.get_json(force=True, silent=True) or {}
         obstacle_id = req_data.get("obstacle_id")
-        angle_deg = float(req_data.get("angle_deg", 0.0))
+        target_angle = req_data.get("target_angle_deg")
+        if target_angle is None:
+            target_angle = req_data.get("absolute_angle_deg")
+        angle_delta = req_data.get("angle_delta_deg")
+        if angle_delta is None and target_angle is None:
+            angle_delta = req_data.get("angle_deg", 0.0)
+
         client_revision = int(req_data.get("client_revision", 0))
         include_telemetry = bool(req_data.get("include_telemetry", False))
         commit = bool(req_data.get("commit", False))
@@ -313,14 +341,17 @@ def create_cad_app() -> Flask:
 
         working_doc = active_state["working_document"]
         cand_doc, is_valid, error_reason = rotate_obstacle_in_document(
-            working_doc, obstacle_id, angle_deg
+            working_doc, obstacle_id,
+            angle_delta_deg=float(angle_delta) if angle_delta is not None else None,
+            target_angle_deg=float(target_angle) if target_angle is not None else None
         )
         if not is_valid:
             return jsonify({
                 "is_valid": False,
                 "error_reason": error_reason,
                 "client_revision": client_revision,
-                "angle_deg": angle_deg,
+                "angle_delta_deg": angle_delta,
+                "target_angle_deg": target_angle,
                 "runtime_ms": 0.0
             }), 422
 
@@ -335,7 +366,9 @@ def create_cad_app() -> Flask:
             include_telemetry=include_telemetry
         )
         res["obstacle_id"] = obstacle_id
-        res["angle_deg"] = angle_deg
+        res["angle_deg"] = angle_delta if angle_delta is not None else target_angle
+        res["angle_delta_deg"] = angle_delta
+        res["target_angle_deg"] = target_angle
         res["is_committed"] = commit
         res["can_undo"] = len(active_state["undo_stack"]) > 0
         res["can_redo"] = len(active_state["redo_stack"]) > 0

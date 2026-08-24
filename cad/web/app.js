@@ -442,25 +442,54 @@ function getSelectedObstacleBounds() {
 
 function getHandlesForObstacle(obs) {
   if (!obs || !obs.vertices || obs.vertices.length < 3) return null;
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  obs.vertices.forEach(([x, y]) => {
-    minX = Math.min(minX, x);
-    maxX = Math.max(maxX, x);
-    minY = Math.min(minY, y);
-    maxY = Math.max(maxY, y);
-  });
+  const rawVerts = obs.vertices;
+  const isClosed = rawVerts.length > 3 &&
+    Math.hypot(rawVerts[0][0] - rawVerts[rawVerts.length - 1][0], rawVerts[0][1] - rawVerts[rawVerts.length - 1][1]) < 1e-4;
+  const corners = isClosed ? rawVerts.slice(0, -1) : rawVerts;
 
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2;
+  const cx = corners.reduce((sum, v) => sum + v[0], 0) / corners.length;
+  const cy = corners.reduce((sum, v) => sum + v[1], 0) / corners.length;
 
-  // Corner resize handles in canvas coordinates
+  const cornerHandles = corners.map(([x, y], idx) => ({
+    x: toCanvasX(x),
+    y: toCanvasY(y),
+    handle: String(idx),
+    arenaX: x,
+    arenaY: y,
+    idx: idx
+  }));
+
+  // Top edge midpoint for rotation stem
+  const sortedByY = [...corners].sort((a, b) => b[1] - a[1]);
+  const p1 = sortedByY[0] || [cx, cy];
+  const p2 = sortedByY[1] || sortedByY[0] || [cx, cy];
+  const topMidX = (p1[0] + p2[0]) / 2;
+  const topMidY = (p1[1] + p2[1]) / 2;
+
+  let dirX = topMidX - cx;
+  let dirY = topMidY - cy;
+  const len = Math.hypot(dirX, dirY);
+  if (len > 1e-4) {
+    dirX /= len;
+    dirY /= len;
+  } else {
+    dirX = 0;
+    dirY = 1;
+  }
+
+  const stemArenaX = topMidX + dirX * 0.40;
+  const stemArenaY = topMidY + dirY * 0.40;
+
   return {
-    nw: { x: toCanvasX(minX), y: toCanvasY(maxY), handle: 'nw', arenaX: minX, arenaY: maxY },
-    ne: { x: toCanvasX(maxX), y: toCanvasY(maxY), handle: 'ne', arenaX: maxX, arenaY: maxY },
-    se: { x: toCanvasX(maxX), y: toCanvasY(minY), handle: 'se', arenaX: maxX, arenaY: minY },
-    sw: { x: toCanvasX(minX), y: toCanvasY(minY), handle: 'sw', arenaX: minX, arenaY: minY },
-    // Rotation handle: 26px above top-center
-    rot: { x: toCanvasX(cx), y: toCanvasY(maxY) - 24, handle: 'rot', arenaCx: cx, arenaCy: cy }
+    corners: cornerHandles,
+    topMid: { x: toCanvasX(topMidX), y: toCanvasY(topMidY) },
+    rot: {
+      x: toCanvasX(stemArenaX),
+      y: toCanvasY(stemArenaY),
+      handle: 'rot',
+      arenaCx: cx,
+      arenaCy: cy
+    }
   };
 }
 
@@ -470,16 +499,15 @@ function hitTestHandles(cx, cy) {
   const handles = getHandlesForObstacle(obs);
   if (!handles) return null;
 
-  // 1. Rotation handle check (radius 9px)
+  // 1. Rotation handle check (radius 12px)
   const distRot = Math.hypot(cx - handles.rot.x, cy - handles.rot.y);
-  if (distRot <= 10) return { type: 'rot', handle: handles.rot };
+  if (distRot <= 12) return { type: 'rot', handle: handles.rot };
 
   // 2. Corner resize handles check (8px box)
   const hSize = 8;
-  for (const key of ['nw', 'ne', 'se', 'sw']) {
-    const h = handles[key];
+  for (const h of handles.corners) {
     if (Math.abs(cx - h.x) <= hSize && Math.abs(cy - h.y) <= hSize) {
-      return { type: 'resize', handle: key };
+      return { type: 'resize', handle: h.handle, idx: h.idx };
     }
   }
   return null;
@@ -1188,7 +1216,7 @@ function drawMap() {
         ctx.lineWidth = 1.5;
         ctx.setLineDash([2, 2]);
         ctx.beginPath();
-        ctx.moveTo(handles.rot.x, handles.ne.y);
+        ctx.moveTo(handles.topMid.x, handles.topMid.y);
         ctx.lineTo(handles.rot.x, handles.rot.y);
         ctx.stroke();
         ctx.setLineDash([]);
@@ -1202,13 +1230,12 @@ function drawMap() {
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // 4 Corner Resize Handles
+        // Corner Resize Handles
         const hSize = 4;
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#39c5bb';
         ctx.lineWidth = 2;
-        ['nw', 'ne', 'se', 'sw'].forEach(k => {
-          const h = handles[k];
+        handles.corners.forEach(h => {
           ctx.fillRect(h.x - hSize, h.y - hSize, hSize * 2, hSize * 2);
           ctx.strokeRect(h.x - hSize, h.y - hSize, hSize * 2, hSize * 2);
         });

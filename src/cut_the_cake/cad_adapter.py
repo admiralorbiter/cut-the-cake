@@ -9,8 +9,9 @@ Authoritative Python adapter bridging CAD Documents and the scientific core:
 
 from __future__ import annotations
 import math
+import numpy as np
 import time
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Union
 from shapely.geometry import Polygon, Point, LineString
 import shapely.affinity
 
@@ -93,10 +94,10 @@ def validate_candidate_obstacle_in_module(
     return True, None
 
 
-def generate_next_obstacle_id(doc: CADDocument) -> str:
-    """Generate a unique deterministic obstacle ID (e.g. wall_001, wall_002)."""
+def generate_next_obstacle_id(doc: CADDocument, session_sequence: Optional[int] = None) -> str:
+    """Generate a unique monotonic obstacle ID (e.g. wall_001, wall_002)."""
     existing_ids = {obs.id for obs in doc.obstacles}
-    counter = 1
+    counter = max(1, session_sequence if session_sequence is not None else 1)
     while True:
         candidate_id = f"wall_{counter:03d}"
         if candidate_id not in existing_ids:
@@ -111,7 +112,8 @@ def create_rectangle_obstacle(
     x2: float,
     y2: float,
     obstacle_id: Optional[str] = None,
-    name: Optional[str] = None
+    name: Optional[str] = None,
+    session_sequence: Optional[int] = None
 ) -> Tuple[CADDocument, Optional[str], bool, Optional[str]]:
     """Creates a new axis-aligned rectangle obstacle and validates against spatial invariants."""
     min_x = min(float(x1), float(x2))
@@ -139,7 +141,7 @@ def create_rectangle_obstacle(
     if not is_valid:
         return doc, None, False, error_reason
 
-    obs_id = obstacle_id if obstacle_id else generate_next_obstacle_id(doc)
+    obs_id = obstacle_id if obstacle_id else generate_next_obstacle_id(doc, session_sequence=session_sequence)
     obs_name = name if name else f"Wall ({obs_id})"
 
     new_obstacles = list(doc.obstacles) + [
@@ -221,11 +223,11 @@ def translate_obstacle_in_document(
 def resize_rectangle_obstacle(
     doc: CADDocument,
     obstacle_id: str,
-    handle: str,
+    handle: Any,
     dx: float,
     dy: float
 ) -> Tuple[CADDocument, bool, Optional[str]]:
-    """Resizes an obstacle by moving the specified handle corner with the opposite corner anchored."""
+    """Resizes an obstacle in its local oriented coordinate frame preserving its orientation and opposite pinned corner."""
     obs_idx = -1
     for idx, obs in enumerate(doc.obstacles):
         if obs.id == obstacle_id:
@@ -236,57 +238,86 @@ def resize_rectangle_obstacle(
         return doc, False, f"Obstacle ID '{obstacle_id}' not found in document '{doc.document_id}'."
 
     orig_obs = doc.obstacles[obs_idx]
-    orig_poly = orig_obs.to_polygon()
-    min_x, min_y, max_x, max_y = orig_poly.bounds
+    verts_raw = [np.array(v, dtype=float) for v in orig_obs.vertices]
+    if len(verts_raw) < 4:
+        return doc, False, "Obstacle has fewer than 4 vertices."
 
-    h = handle.lower()
-    if h in ("se", "bottom_right"):
-        # Anchor top-left (min_x, max_y), move bottom-right (max_x, min_y)
-        max_x += float(dx)
-        min_y += float(dy)
-    elif h in ("nw", "top_left"):
-        # Anchor bottom-right (max_x, min_y), move top-left (min_x, max_y)
-        min_x += float(dx)
-        max_y += float(dy)
-    elif h in ("ne", "top_right"):
-        # Anchor bottom-left (min_x, min_y), move top-right (max_x, max_y)
-        max_x += float(dx)
-        max_y += float(dy)
-    elif h in ("sw", "bottom_left"):
-        # Anchor top-right (max_x, max_y), move bottom-left (min_x, min_y)
-        min_x += float(dx)
-        min_y += float(dy)
-    elif h in ("e", "right"):
-        max_x += float(dx)
-    elif h in ("w", "left"):
-        min_x += float(dx)
-    elif h in ("n", "top"):
-        max_y += float(dy)
-    elif h in ("s", "bottom"):
-        min_y += float(dy)
+    # 4 unique corners
+    corners = verts_raw[:-1] if np.allclose(verts_raw[0], verts_raw[-1]) else verts_raw
+    if len(corners) != 4:
+        return doc, False, "Obstacle is not a 4-corner polygon."
+
+    # Determine drag index
+    if isinstance(handle, int) or (isinstance(handle, str) and handle.isdigit()):
+        drag_idx = int(handle) % 4
     else:
-        return doc, False, f"Unknown resize handle '{handle}'."
+        h = str(handle).lower()
+        c_pts = np.array(corners)
+        c_center = np.mean(c_pts, axis=0)
+        if h in ("se", "bottom_right"):
+            target_dir = np.array([1.0, -1.0])
+        elif h in ("nw", "top_left"):
+            target_dir = np.array([-1.0, 1.0])
+        elif h in ("ne", "top_right"):
+            target_dir = np.array([1.0, 1.0])
+        elif h in ("sw", "bottom_left"):
+            target_dir = np.array([-1.0, -1.0])
+        elif h in ("e", "right"):
+            target_dir = np.array([1.0, 0.0])
+        elif h in ("w", "left"):
+            target_dir = np.array([-1.0, 0.0])
+        elif h in ("n", "top"):
+            target_dir = np.array([0.0, 1.0])
+        elif h in ("s", "bottom"):
+            target_dir = np.array([0.0, -1.0])
+        else:
+            target_dir = np.array([1.0, -1.0])
 
-    # Normalize bounds in case handle crossed over anchor
-    norm_min_x = min(min_x, max_x)
-    norm_max_x = max(min_x, max_x)
-    norm_min_y = min(min_y, max_y)
-    norm_max_y = max(min_y, max_y)
+        dots = [np.dot(pt - c_center, target_dir) for pt in corners]
+        drag_idx = int(np.argmax(dots))
 
-    width = norm_max_x - norm_min_x
-    height = norm_max_y - norm_min_y
+    opp_idx = (drag_idx + 2) % 4
+    v_opp = corners[opp_idx]
+    v_drag = corners[drag_idx]
 
-    if width < 0.10 or height < 0.10:
-        return doc, False, f"Resized dimensions ({width:.2f}m x {height:.2f}m) are smaller than minimum allowed (0.10m x 0.10m)."
+    adj1_idx = (opp_idx + 1) % 4
+    adj2_idx = (opp_idx + 3) % 4
 
-    new_verts = [
-        [round(norm_min_x, 4), round(norm_min_y, 4)],
-        [round(norm_max_x, 4), round(norm_min_y, 4)],
-        [round(norm_max_x, 4), round(norm_max_y, 4)],
-        [round(norm_min_x, 4), round(norm_max_y, 4)],
-        [round(norm_min_x, 4), round(norm_min_y, 4)]
-    ]
+    e1 = corners[adj1_idx] - v_opp
+    e2 = corners[adj2_idx] - v_opp
+    len1 = float(np.linalg.norm(e1))
+    len2 = float(np.linalg.norm(e2))
+    if len1 < 1e-4 or len2 < 1e-4:
+        return doc, False, "Degenerate obstacle edge length."
+
+    u1 = e1 / len1
+    u2 = e2 / len2
+
+    v_drag_new = v_drag + np.array([float(dx), float(dy)])
+    d = v_drag_new - v_opp
+
+    new_len1 = float(np.dot(d, u1))
+    new_len2 = float(np.dot(d, u2))
+
+    if abs(new_len1) < 0.10 or abs(new_len2) < 0.10:
+        return doc, False, f"Resized dimensions ({abs(new_len1):.2f}m x {abs(new_len2):.2f}m) are smaller than minimum allowed (0.10m x 0.10m)."
+
+    new_v_opp = v_opp
+    new_adj1 = v_opp + new_len1 * u1
+    new_drag = v_opp + new_len1 * u1 + new_len2 * u2
+    new_adj2 = v_opp + new_len2 * u2
+
+    res_corners = [None] * 4
+    res_corners[opp_idx] = new_v_opp.tolist()
+    res_corners[adj1_idx] = new_adj1.tolist()
+    res_corners[drag_idx] = new_drag.tolist()
+    res_corners[adj2_idx] = new_adj2.tolist()
+    res_corners.append(res_corners[0])
+
+    new_verts = [[round(float(pt[0]), 4), round(float(pt[1]), 4)] for pt in res_corners]
     cand_poly = Polygon(new_verts)
+    if not cand_poly.is_valid or cand_poly.area < 1e-4:
+        return doc, False, "Invalid non-simple polygon generated."
 
     geo_mod = doc.to_geometric_module()
     is_valid, error_reason = validate_candidate_obstacle_in_module(geo_mod, obs_idx, cand_poly)
@@ -319,9 +350,11 @@ def resize_rectangle_obstacle(
 def rotate_obstacle_in_document(
     doc: CADDocument,
     obstacle_id: str,
-    angle_deg: float
+    angle_deg: Optional[float] = None,
+    angle_delta_deg: Optional[float] = None,
+    target_angle_deg: Optional[float] = None
 ) -> Tuple[CADDocument, bool, Optional[str]]:
-    """Rotates an obstacle by angle_deg around its centroid and validates spatial invariants."""
+    """Rotates an obstacle by angle_deg or to target_angle_deg around its centroid and validates spatial invariants."""
     obs_idx = -1
     for idx, obs in enumerate(doc.obstacles):
         if obs.id == obstacle_id:
@@ -334,7 +367,23 @@ def rotate_obstacle_in_document(
     orig_obs = doc.obstacles[obs_idx]
     orig_poly = orig_obs.to_polygon()
 
-    cand_poly = shapely.affinity.rotate(orig_poly, float(angle_deg), origin='centroid', use_radians=False)
+    if target_angle_deg is not None:
+        coords = list(orig_poly.exterior.coords)
+        if len(coords) >= 2:
+            dx = coords[1][0] - coords[0][0]
+            dy = coords[1][1] - coords[0][1]
+            curr_angle = float(np.degrees(np.arctan2(dy, dx)))
+        else:
+            curr_angle = 0.0
+        rot_delta = float(target_angle_deg) - curr_angle
+    elif angle_delta_deg is not None:
+        rot_delta = float(angle_delta_deg)
+    elif angle_deg is not None:
+        rot_delta = float(angle_deg)
+    else:
+        return doc, False, "No angle specified."
+
+    cand_poly = shapely.affinity.rotate(orig_poly, rot_delta, origin='centroid', use_radians=False)
 
     geo_mod = doc.to_geometric_module()
     is_valid, error_reason = validate_candidate_obstacle_in_module(geo_mod, obs_idx, cand_poly)

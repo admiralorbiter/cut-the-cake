@@ -258,3 +258,89 @@ def test_undo_redo_history_stack():
     resp_r2 = client.post("/api/document/redo")
     assert resp_r2.status_code == 200
     assert abs(client.get("/api/document").get_json()["geometry"]["obstacles"][2]["vertices"][0][0] - 6.2) < 1e-3
+
+
+def test_monotonic_wall_id_allocation_no_reuse():
+    """Verify create -> delete -> create allocates monotonic wall ID without reusing deleted ID."""
+    app = create_cad_app()
+    client = app.test_client()
+    client.post("/api/document/load", json={"name": "custom_corridor"})
+
+    # 1. Create wall_001
+    resp1 = client.post("/api/document/create_obstacle", json={
+        "x1": 6.0, "y1": 0.5, "x2": 7.0, "y2": 1.5, "commit": True
+    })
+    assert resp1.status_code == 200
+    id1 = resp1.get_json()["created_obstacle_id"]
+    assert id1 == "wall_001"
+
+    # 2. Delete wall_001
+    resp_del = client.post("/api/document/delete_obstacle", json={"obstacle_id": id1})
+    assert resp_del.status_code == 200
+
+    # 3. Create another wall -> must be wall_002, NOT wall_001
+    resp2 = client.post("/api/document/create_obstacle", json={
+        "x1": 6.0, "y1": 0.5, "x2": 7.0, "y2": 1.5, "commit": True
+    })
+    assert resp2.status_code == 200
+    id2 = resp2.get_json()["created_obstacle_id"]
+    assert id2 == "wall_002"
+    assert id2 != id1
+
+
+def test_rotation_target_angle_and_delta_composition():
+    """Verify rotating to 20 deg then to target 35 deg ends at 35 deg."""
+    doc = get_custom_asymmetric_corridor_document()
+    doc, obs_id, _, _ = create_rectangle_obstacle(doc, x1=6.0, y1=0.5, x2=7.0, y2=1.5)
+
+    # 1. Rotate to 20 degrees
+    doc_20, is_valid_1, _ = rotate_obstacle_in_document(doc, obstacle_id=obs_id, target_angle_deg=20.0)
+    assert is_valid_1 is True
+
+    # 2. Rotate to target 35 degrees
+    doc_35, is_valid_2, _ = rotate_obstacle_in_document(doc_20, obstacle_id=obs_id, target_angle_deg=35.0)
+    assert is_valid_2 is True
+
+    obs_35 = next(o for o in doc_35.obstacles if o.id == obs_id)
+    coords = obs_35.vertices
+    dx = coords[1][0] - coords[0][0]
+    dy = coords[1][1] - coords[0][1]
+    angle = math.degrees(math.atan2(dy, dx))
+    assert abs(angle - 35.0) < 1e-2
+
+
+def test_rotate_then_resize_preserves_orientation():
+    """Verify rotating a rectangle and then resizing corners preserves its orientation angle."""
+    doc = get_custom_asymmetric_corridor_document()
+    doc, obs_id, _, _ = create_rectangle_obstacle(doc, x1=6.0, y1=0.5, x2=7.0, y2=1.5)
+
+    # 1. Rotate by 30 degrees
+    doc_rot, is_valid_rot, _ = rotate_obstacle_in_document(doc, obstacle_id=obs_id, target_angle_deg=30.0)
+    assert is_valid_rot is True
+    obs_rot = next(o for o in doc_rot.obstacles if o.id == obs_id)
+    coords_rot = obs_rot.vertices
+
+    dx_rot = coords_rot[1][0] - coords_rot[0][0]
+    dy_rot = coords_rot[1][1] - coords_rot[0][1]
+    angle_before = math.degrees(math.atan2(dy_rot, dx_rot))
+    assert abs(angle_before - 30.0) < 1e-2
+
+    # 2. Resize corner handle (corner index 2 or "se") in oriented frame
+    doc_resized, is_valid_res, err_res = resize_rectangle_obstacle(
+        doc_rot, obstacle_id=obs_id, handle=2, dx=0.3, dy=0.2
+    )
+    assert is_valid_res is True
+    assert err_res is None
+
+    obs_resized = next(o for o in doc_resized.obstacles if o.id == obs_id)
+    coords_resized = obs_resized.vertices
+    dx_res = coords_resized[1][0] - coords_resized[0][0]
+    dy_res = coords_resized[1][1] - coords_resized[0][1]
+    angle_after = math.degrees(math.atan2(dy_res, dx_res))
+
+    # Orientation must remain 30.0 degrees!
+    assert abs(angle_after - 30.0) < 1e-2
+    # Pinned opposite corner (corner 0) must remain fixed
+    assert abs(coords_resized[0][0] - coords_rot[0][0]) < 1e-3
+    assert abs(coords_resized[0][1] - coords_rot[0][1]) < 1e-3
+
