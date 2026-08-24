@@ -1,1 +1,188 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Tactical Clearability — Visual Concept Prototypes</title><link rel='stylesheet' href='shared.css'></head><body><main class='wrap'><div class='top'><div><div class='eyebrow'>Visual prototype suite</div><h1>One idea at a time.</h1></div><a class='back' href='../index.html'>Full explainer →</a></div><p class='hero p'>These are deliberately isolated teaching pieces. Each page changes one variable, makes one claim, and hides the math until the physical idea is already visible.</p><div class='index-grid'><a class='concept-link' href='01-corner-distance.html'><span class='pill'>01 · geometry</span><b>Why does backing away from a corner help?</b><span class='question'>Same sideways step. Smaller slice of the room.</span></a><a class='concept-link' href='02-crosshair-placement.html'><span class='pill'>02 · aim state</span><b>Why does crosshair placement matter?</b><span class='question'>Less angular correction means less setup time.</span></a><a class='concept-link' href='03-stagger-vs-crossfire.html'><span class='pill'>03 · reveal timing</span><b>Why can two enemies be worse than three?</b><span class='question'>Threat count is not the same thing as simultaneous workload.</span></a><a class='concept-link' href='04-clear-order.html'><span class='pill'>04 · scheduling</span><b>Why does clear order matter?</b><span class='question'>The same three threats can fit or miss depending on sequence.</span></a><a class='concept-link' href='05-tactical-margin.html'><span class='pill'>05 · margin</span><b>What does Tactical Margin actually mean?</b><span class='question'>Did your clear finish before the deadline, and by how much?</span></a><a class='concept-link' href='06-map-knowledge.html'><span class='pill'>06 · information</span><b>What does knowing the map buy you?</b><span class='question'>Earlier actionable information can let the reticle move before reveal.</span></a><a class='concept-link' href='07-route-choice.html'><span class='pill'>07 · traversal</span><b>Can the same room have two answers?</b><span class='question'>Yes: the route changes which threat workload you inherit.</span></a><a class='concept-link' href='08-composition.html'><span class='pill'>08 · research bridge</span><b>How does one corner become PCG math?</b><span class='question'>Summarize local behavior at interfaces, then compose it.</span></a></div><div class='math'><b>Review rule:</b> if any concept is unclear without opening its math panel, that prototype failed.</div></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tactical Clearability — The 8 Visual Concepts</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .index-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .concept-card {
+      background: #0f1622;
+      border: 1px solid #23364f;
+      border-radius: 14px;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .concept-card:hover {
+      transform: translateY(-3px);
+      border-color: #58a6ff;
+      box-shadow: 0 6px 20px rgba(88, 166, 255, 0.15);
+      background: #141e2e;
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-num {
+      font-size: 13px;
+      font-weight: 900;
+      color: #58a6ff;
+      font-family: monospace;
+    }
+    .card-pillar {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8fa1b4;
+    }
+    .concept-card h3 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.25;
+    }
+    .concept-card p {
+      margin: 0;
+      font-size: 13px;
+      color: #8fa1b4;
+      line-height: 1.45;
+      flex: 1;
+    }
+    .card-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      align-self: flex-start;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <div>
+        <div class="eyebrow">VISUAL CONCEPTS STUDIO · 8 FOUNDATIONAL LESSONS</div>
+        <h1 style="margin: 6px 0 0 0;">One core physical idea at a time.</h1>
+      </div>
+      <a class="btn btn-primary" href="../index.html" style="background: #1f6feb; border-color: #58a6ff; text-decoration: none; color: #fff; font-weight: 800; padding: 10px 18px; border-radius: 8px;">Full Research Explainer →</a>
+    </div>
+
+    <p class="hero p" style="margin-top: 12px; font-size: 16px; color: #8fa1b4; max-width: 820px;">
+      Each lesson below isolates a single tactical mechanism. Explore the interactive simulators to see how geometry, crosshair centering, release stagger, priority scheduling, advance warning, trajectory choice, and modular seams govern combat clearability.
+    </p>
+
+    <div class="index-grid">
+      
+      <!-- 01 -->
+      <a class="concept-card" href="01-corner-distance.html">
+        <div class="card-top">
+          <span class="card-num">01</span>
+          <span class="card-pillar">SPATIAL GEOMETRY</span>
+        </div>
+        <h3>Why does backing away from a corner help?</h3>
+        <p>Stepping back increases standoff distance <i>d</i>, compressing angular reveal rate (<i>&theta;</i> = atan(<i>x</i>/<i>d</i>)) and slicing the room into manageable chunks.</p>
+        <span class="card-badge status-good" style="background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3);">Slice the Pie</span>
+      </a>
+
+      <!-- 02 -->
+      <a class="concept-card" href="02-crosshair-placement.html">
+        <div class="card-top">
+          <span class="card-num">02</span>
+          <span class="card-pillar">AIM LATENCY</span>
+        </div>
+        <h3>Why does crosshair placement matter?</h3>
+        <p>Pre-centering your reticle tight to corner apexes reduces rotational slew distance &Delta;<i>&theta;</i>, eliminating costly rotational latency <i>q</i>.</p>
+        <span class="card-badge status-good" style="background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3);">Reticle Centering</span>
+      </a>
+
+      <!-- 03 -->
+      <a class="concept-card" href="03-stagger-vs-crossfire.html">
+        <div class="card-top">
+          <span class="card-num">03</span>
+          <span class="card-pillar">TEMPORAL TIMING</span>
+        </div>
+        <h3>Why can two enemies be worse than three?</h3>
+        <p>Static threat count is deceptive. Geometry that staggers release timestamps (<i>r<sub>j</sub></i>) turns multi-threat fights into manageable sequential duels.</p>
+        <span class="card-badge status-warn" style="background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.3);">Release Stagger</span>
+      </a>
+
+      <!-- 04 -->
+      <a class="concept-card" href="04-clear-order.html">
+        <div class="card-top">
+          <span class="card-num">04</span>
+          <span class="card-pillar">SCHEDULING</span>
+        </div>
+        <h3>Why does clear order matter?</h3>
+        <p>Shooting the wrong target first wastes precious reaction buffer on tight deadlines. The optimal permutation <i>&pi;</i>* minimizes maximum lateness (<i>L</i>*).</p>
+        <span class="card-badge status-good" style="background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3);">Priority Order</span>
+      </a>
+
+      <!-- 05 -->
+      <a class="concept-card" href="05-tactical-margin.html">
+        <div class="card-top">
+          <span class="card-num">05</span>
+          <span class="card-pillar">DUEL STOPWATCH</span>
+        </div>
+        <h3>What does Tactical Margin mean?</h3>
+        <p>The core duel metric: Tactical Margin (<b><i>M</i></b> = &minus;<i>L</i>*) measures the exact millisecond buffer between your final shot and the enemy's lethal reaction.</p>
+        <span class="card-badge status-good" style="background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3);">Live Stopwatch</span>
+      </a>
+
+      <!-- 06 -->
+      <a class="concept-card" href="06-map-knowledge.html">
+        <div class="card-top">
+          <span class="card-num">06</span>
+          <span class="card-pillar">ADVANCE WARNING</span>
+        </div>
+        <h3>What does knowing the map buy you?</h3>
+        <p>Advance lead <i>&ell;</i> allows pre-aiming behind solid cover before peek unocclusion, converting impossible ambushes into instant kills at threshold <i>&ell;</i>*.</p>
+        <span class="card-badge status-good" style="background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3);">Pre-Aim Lab</span>
+      </a>
+
+      <!-- 07 -->
+      <a class="concept-card" href="07-route-choice.html">
+        <div class="card-top">
+          <span class="card-num">07</span>
+          <span class="card-pillar">TRAJECTORY</span>
+        </div>
+        <h3>Can the same room have two answers?</h3>
+        <p>The shortcut paradox: taking the shorter physical path can trigger an alternating 240° zigzag thrash trap, while a wide arc yields an effortless 60° sweep.</p>
+        <span class="card-badge status-warn" style="background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.3);">Slew Thrash</span>
+      </a>
+
+      <!-- 08 -->
+      <a class="concept-card" href="08-composition.html">
+        <div class="card-top">
+          <span class="card-num">08</span>
+          <span class="card-pillar">GRAND FINALE</span>
+        </div>
+        <h3>How does one corner become PCG math?</h3>
+        <p>Quiescent boundary seams isolate combat state across rooms, enabling min-plus matrix contracts and 100% zero-simulation procedural dungeon generation.</p>
+        <span class="card-badge status-good" style="background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.3);">Grand Capstone</span>
+      </a>
+
+    </div>
+
+    <!-- Review Philosophy Rule Banner -->
+    <div style="background: #080d14; border: 1px solid #1f2d3d; border-radius: 12px; padding: 16px 20px; color: #8fa1b4; font-size: 13.5px; margin-top: 24px;">
+      <strong style="color: #58a6ff;">Scientific Design Rule:</strong> Every concept is verified against the 4 perspectives (FPS Player Intuition, Clean HCI, Phenomenon-First Math, and Frozen Research Provenance).
+    </div>
+  </main>
+</body>
+</html>

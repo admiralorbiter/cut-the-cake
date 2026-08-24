@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tactical CAD — Single-Arena Tactical Debugger (Cut the Cake)</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Load Scene Manifest JavaScript Bundle for local file:// execution -->
+  <script src="../data/m1_scene.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="logo-area">
+      <div class="logo-title">
+        <span>🍰 Cut the Cake</span>
+        <span style="color: var(--text-dim);">/</span>
+        <span style="color: var(--blue);">Tactical CAD Debugger</span>
+      </div>
+      <span class="badge" id="fixtureBadge">RepairPop_F1_StaggerDeficit_00</span>
+      <span class="badge verified" id="evidenceBadge">Source Model + ViZDoom Verified</span>
+    </div>
+
+    <div class="mode-toggle-area">
+      <button class="toggle-btn active broken" id="btnModeBroken">
+        <span>🔴 Broken Encounter</span>
+      </button>
+      <button class="toggle-btn repaired" id="btnModeRepaired">
+        <span>🟢 Repaired Encounter</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Workbench Layout -->
+  <div class="workbench">
+    <!-- Viewport -->
+    <div class="viewport-container" id="viewportContainer">
+      <canvas id="mapCanvas"></canvas>
+      
+      <div class="viewport-overlay">
+        <div class="overlay-tag" id="tagPlayerPos">POS: (0.00m, 0.00m)</div>
+        <div class="overlay-tag" id="tagReticle">RETICLE: 0.0°</div>
+        <div class="overlay-tag" id="tagLOS">VISIBLE TARGETS: 0</div>
+      </div>
+    </div>
+
+    <!-- Inspector Sidebar -->
+    <div class="inspector">
+      <!-- Margin Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Tactical Schedulability</span>
+          <span class="badge" id="verdictBadge">UNSERVICEABLE</span>
+        </div>
+        <div class="margin-banner">
+          <div>
+            <div class="data-label">Tactical Margin (M)</div>
+            <div class="margin-val status-unserviceable" id="valMargin">-6 tics</div>
+          </div>
+          <div class="margin-status status-unserviceable" id="valMarginMs">-171.4 ms</div>
+        </div>
+        <div style="margin-top: 10px;">
+          <div class="data-row">
+            <span class="data-label">Required Margin Reserve (&epsilon;)</span>
+            <span class="data-value">+2 tics (+57.1 ms)</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Max Realized Lateness (L*)</span>
+            <span class="data-value" id="valLStar">+6 tics</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Native ViZDoom Status</span>
+            <span class="data-value" id="valEngineStatus" style="color: var(--red);">Fatal Death (0 HP)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Player State Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Controller State Machine</span>
+          <span class="badge" id="controllerStateBadge" style="background: #2d1519; color: var(--red);">DEAD</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Active Target</span>
+          <span class="data-value" id="valActiveTarget">None</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Traversed Distance</span>
+          <span class="data-value" id="valRouteDist">0.00 m / 10.00 m</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Movement Speed</span>
+          <span class="data-value">4.5 m/s (0.129 m/tic)</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Angular Slew Velocity</span>
+          <span class="data-value">360°/s (10.29°/tic)</span>
+        </div>
+      </div>
+
+      <!-- Threat Schedule Card -->
+      <div class="card">
+        <div class="card-title">Threat Schedulability</div>
+        <div class="threat-list" id="threatListContainer">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Diagnostic & Repair Card -->
+      <div class="card" id="diagnosticCard">
+        <div class="card-title">Bottleneck Attribution</div>
+        <div class="why-card" id="whyCard">
+          <div class="why-header">
+            <span>⚠️ Scheduling Bottleneck (Why?)</span>
+          </div>
+          <div class="why-text" id="whyText">
+            Loading diagnostic explanation...
+          </div>
+        </div>
+
+        <div class="repair-summary-card" id="repairCard" style="display: none;">
+          <div class="repair-header">
+            <span>✨ Geometric Intervention</span>
+          </div>
+          <div class="why-text" id="repairText">
+            Loading repair details...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline Controls -->
+  <footer>
+    <div class="timeline-scrubber-area" id="timelineScrubber">
+      <div class="timeline-track">
+        <div class="timeline-progress" id="timelineProgress"></div>
+        <div class="timeline-head" id="timelineHead"></div>
+        <div id="eventMarkerLayer"></div>
+      </div>
+    </div>
+
+    <div class="control-bar">
+      <div class="button-group">
+        <button class="btn primary" id="btnPlayPause">▶ Play</button>
+        <button class="btn" id="btnStepBack">⏮ Step -1</button>
+        <button class="btn" id="btnStepFwd">⏭ Step +1</button>
+        <button class="btn" id="btnReset">⟲ Reset</button>
+      </div>
+
+      <div class="time-readout">
+        <span>Tic: <strong id="readoutTic" style="color: var(--blue);">0</strong> / <span id="readoutTotalTics">78</span></span>
+        <span>Time: <strong id="readoutTime">0.00s</strong> / <span id="readoutTotalTime">2.23s</span></span>
+      </div>
+
+      <div class="button-group">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Speed:</span>
+        <button class="btn" id="btnSpeed05">0.5x</button>
+        <button class="btn" id="btnSpeed10" style="background: #233145;">1.0x</button>
+        <button class="btn" id="btnSpeed20">2.0x</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

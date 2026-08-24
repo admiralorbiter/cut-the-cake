@@ -65,7 +65,8 @@ See [**ROUND_11_4A_FREEZE.md**](results/repair/ROUND_11_4A_FREEZE.md) for the fr
 ```
 cut-the-cake/
 ├── src/cut_the_cake/           # Core Python engine, compiler, schedulers, and repair optimizer
-├── tests/                      # 74 comprehensive unit, PCG, and native ViZDoom tests
+├── tests/                      # 80 comprehensive unit, PCG, and native ViZDoom tests
+├── cad/                        # Tactical CAD schemas, exports, and top-down 2D playback client
 ├── paper/                      # Academic manuscript, SVGs, and BibTeX references
 │   ├── manuscript.md
 │   ├── references.bib
@@ -74,7 +75,7 @@ cut-the-cake/
 │   ├── round11s/               # 9,000-episode discrete simulation benchmark
 │   ├── vizdoom/                # Native C++ ViZDoom bridge verification
 │   ├── actionability-lead/     # Critical lead sweeps & threshold transitions
-│   └── repair/                 # 50-arena population repair benchmark
+│   └── repair/                 # 50-arena population repair benchmark & freeze certificate
 ├── explainer/                  # Interactive visual web explainer suite
 └── human/                      # Prospective pilot protocol and telemetry instrument
 ```

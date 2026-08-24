@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,21 +9,37 @@
 <body>
   <div class="page-container">
 
+    <!-- STICKY TOP NAVIGATION BAR -->
+    <nav class="sticky-navbar">
+      <div class="nav-brand">
+        <span>⚔</span> TACTICAL CLEARABILITY
+      </div>
+      <div class="nav-links">
+        <a href="#section-concepts" class="nav-link-btn">🎓 8 Concepts</a>
+        <a href="#section-tworooms" class="nav-link-btn">⚔ Two Rooms</a>
+        <a href="#section-pipeline" class="nav-link-btn">⚡ 4-Step Pipeline</a>
+        <a href="#section-knowledge" class="nav-link-btn">🧠 Pre-Aim (ℓ*)</a>
+        <a href="#section-atlas" class="nav-link-btn">🗺️ Atlas (12 Contrasts)</a>
+        <a href="#section-linter" class="nav-link-btn">🧩 PCG (C ≡ D)</a>
+        <button id="btn-export-pdf" class="btn btn-sm" onclick="window.print()" style="background: #238636; color: #fff; border-color: #2ea043; cursor: pointer; padding: 4px 10px; font-size: 11.5px;">📄 PDF</button>
+      </div>
+    </nav>
+
     <!-- =====================================================================
          SECTION 1: HERO
          ===================================================================== -->
     <header class="hero-section">
-      <div class="badge">VISUAL RESEARCH EXPLAINER · FIRST DRAFT</div>
+      <div class="badge">TACTICAL CLEARABILITY · UNIFIED RESEARCH EXPLAINER</div>
       <h1 class="hero-title">A map can be reachable and still be tactically impossible to read.</h1>
       <p class="hero-subtitle">
         Level geometry controls <em>when</em> threats become visible. The player's single crosshair has to rotate and service each threat before its combat deadline expires.
       </p>
       <div class="hero-actions">
-        <a href="#section-tworooms" class="btn btn-primary">See why counting sightlines fails ↓</a>
+        <a href="#section-concepts" class="btn btn-primary">Explore the 8 Core Concepts ↓</a>
+        <a href="#section-tworooms" class="btn">Two Rooms Counterexample ↓</a>
         <a href="#section-pipeline" class="btn">Geometry → Schedule Pipeline ↓</a>
-        <a href="#section-knowledge" class="btn">Map Knowledge Slider (ℓ*) ↓</a>
+        <a href="#section-knowledge" class="btn">Map Knowledge Lab (ℓ*) ↓</a>
         <a href="#section-atlas" class="btn btn-primary">Tactical Readability Atlas ↓</a>
-        <button id="btn-export-pdf" class="btn" onclick="window.print()" style="background: #238636; color: #fff; border-color: #2ea043; cursor: pointer;">📄 Export / Print PDF</button>
       </div>
     </header>
 
@@ -132,6 +148,112 @@
       <!-- Final Centered Punchline -->
       <div class="punchline-banner">
         <h3>Counting sightlines predicts the wrong answer twice. Timing and angular sequence matter.</h3>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         SECTION 2.5: THE 8 CORE TACTICAL CONCEPTS (INTERACTIVE STUDIO)
+         ===================================================================== -->
+    <section id="section-concepts" class="explainer-card">
+      <div class="card-header-row">
+        <div>
+          <span class="badge-pill">FOUNDATIONAL CONCEPTS STUDIO</span>
+          <h2>The 8 Pillars of Tactical Clearability</h2>
+          <p class="section-desc">Each concept isolates one physical phenomenon, demonstrating how geometry, aim state, timing, trajectory, and modular composition govern combat feasibility.</p>
+        </div>
+        <div>
+          <a href="concepts/index.html" class="btn btn-primary" target="_blank">Open Concept Hub ↗</a>
+        </div>
+      </div>
+
+      <div class="concepts-eight-grid">
+        <!-- Card 1 -->
+        <a class="concept-hub-card" href="concepts/01-corner-distance.html" target="_blank">
+          <div class="ch-top">
+            <span class="ch-num">01</span>
+            <span class="ch-cat">GEOMETRY</span>
+          </div>
+          <h4>Corner Distance</h4>
+          <p>Why backing away from a wall opens angles faster (<i>&theta;</i> = atan(<i>x</i>/<i>d</i>)).</p>
+          <span class="ch-badge tag-pass">Slice the Pie</span>
+        </a>
+
+        <!-- Card 2 -->
+        <a class="concept-hub-card" href="concepts/02-crosshair-placement.html" target="_blank">
+          <div class="ch-top">
+            <span class="ch-num">02</span>
+            <span class="ch-cat">AIM STATE</span>
+          </div>
+          <h4>Crosshair Placement</h4>
+          <p>Pre-centering minimizes rotational slew latency (<i>q</i> = &Delta;<i>&theta;</i>/<i>&omega;</i>).</p>
+          <span class="ch-badge tag-pass">Centering</span>
+        </a>
+
+        <!-- Card 3 -->
+        <a class="concept-hub-card" href="concepts/03-stagger-vs-crossfire.html" target="_blank">
+          <div class="ch-top">
+            <span class="ch-num">03</span>
+            <span class="ch-cat">TIMING</span>
+          </div>
+          <h4>Stagger vs. Crossfire</h4>
+          <p>Why 2 simultaneous threats are worse than 3 staggered ones.</p>
+          <span class="ch-badge tag-warn">Release Stagger</span>
+        </a>
+
+        <!-- Card 4 -->
+        <a class="concept-hub-card" href="concepts/04-clear-order.html" target="_blank">
+          <div class="ch-top">
+            <span class="ch-num">04</span>
+            <span class="ch-cat">SCHEDULING</span>
+          </div>
+          <h4>Target Priority Order</h4>
+          <p>The optimal permutation <i>&pi;</i>* that minimizes total lateness (<i>L</i>*).</p>
+          <span class="ch-badge tag-pass">Priority Order</span>
+        </a>
+
+        <!-- Card 5 -->
+        <a class="concept-hub-card" href="concepts/05-tactical-margin.html" target="_blank">
+          <div class="ch-top">
+            <span class="ch-num">05</span>
+            <span class="ch-cat">DUEL STOPWATCH</span>
+          </div>
+          <h4>Tactical Margin</h4>
+          <p>The timeline race: did your clear finish before enemy reaction? (<b><i>M</i></b> = &minus;<i>L</i>*).</p>
+          <span class="ch-badge tag-pass">Live Stopwatch</span>
+        </a>
+
+        <!-- Card 6 -->
+        <a class="concept-hub-card" href="concepts/06-map-knowledge.html" target="_blank">
+          <div class="ch-top">
+            <span class="ch-num">06</span>
+            <span class="ch-cat">INFORMATION</span>
+          </div>
+          <h4>Map Knowledge Lab</h4>
+          <p>Pre-aiming behind cover shifts rotational latency into safe time (<i>&ell;</i>*).</p>
+          <span class="ch-badge tag-pass">Pre-Aim Lab</span>
+        </a>
+
+        <!-- Card 7 -->
+        <a class="concept-hub-card" href="concepts/07-route-choice.html" target="_blank">
+          <div class="ch-top">
+            <span class="ch-num">07</span>
+            <span class="ch-cat">TRAJECTORY</span>
+          </div>
+          <h4>Trajectory Conditioning</h4>
+          <p>Why the shorter shortcut can cause a 4&times; wrist thrash death trap.</p>
+          <span class="ch-badge tag-warn">Slew Thrash</span>
+        </a>
+
+        <!-- Card 8 -->
+        <a class="concept-hub-card" href="concepts/08-composition.html" target="_blank">
+          <div class="ch-top">
+            <span class="ch-num">08</span>
+            <span class="ch-cat">COMPOSITION</span>
+          </div>
+          <h4>From Corner to PCG</h4>
+          <p>Quiescent seams & min-plus contracts enable zero-overhead dungeon synthesis.</p>
+          <span class="ch-badge tag-pass">Grand Capstone</span>
+        </a>
       </div>
     </section>
 
@@ -670,7 +792,7 @@
     <!-- =====================================================================
          SECTION 5: PROCEDURAL LINTER & EVIDENCE LADDER
          ===================================================================== -->
-    <section class="explainer-card">
+    <section id="section-linter" class="explainer-card">
       <div class="card-header-row">
         <div>
           <h2>Procedural Level Linting & Evidence Hierarchy</h2>
