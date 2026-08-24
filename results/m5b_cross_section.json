@@ -1,8 +1,16 @@
 {
-  "milestone": "M5-B.1",
+  "milestone": "M5-B.2",
   "title": "Pre-Registered Multi-Engagement Falsification Cross-Section Results",
+  "evaluation_protocol": "Pre-registered, analyzer-label-neutral evaluation",
   "protocol_reference": "M5-B.0",
   "protocol_version": "1.0.0-blinded",
+  "aggregate_summary": {
+    "total_engagements": 3,
+    "total_pre_registered_hypotheses": 6,
+    "supported_hypotheses_count": 5,
+    "falsified_hypotheses_count": 1,
+    "support_rate": 0.833
+  },
   "engagements": {
     "ascent_a_main": {
       "game": "Valorant",
@@ -20,6 +28,11 @@
         "approach_suffix_margin": "min_{s in [8, 16]} M_suffix(route_A, s) > min_{s in [8, 16]} M_suffix(route_B, s)",
         "falsification_criterion": "If route_B achieves equal or higher approach suffix margin than route_A, the off-angle serialization hypothesis is falsified."
       },
+      "hypothesis_outcomes": {
+        "reveal_stagger_ordering": "FAIL",
+        "approach_suffix_margin": "PASS"
+      },
+      "disposition": "PARTIAL_SUPPORT",
       "routes": {
         "route_A": {
           "blind_id": "route_A",
@@ -82,9 +95,8 @@
           ]
         }
       },
-      "hypothesis_supported": true,
       "two_d_model_adequacy": "Adequate for ground-plane choke; Heaven/Rafters verticality is an explicit 2D model boundary limit.",
-      "findings_summary": "Wine slice (route_A: M_min=-20) strictly outperforms direct rush (route_B: M_min=-24) over choke approach. Inside Wine mouth (s=18m), route_A achieves K=1 isolation (M_suffix=+3) while route_B suffers K=3 crossfire (M_suffix=-26)."
+      "findings_summary": "Approach suffix-margin hypothesis SUPPORTED (route_A M_min=-20 > route_B M_min=-24; Wine mouth achieves K=1, M_suffix=+3 vs K=3, M_suffix=-26). Reveal stagger hypothesis FALSIFIED (stagger_A=0, stagger_B=0) because both routes see Generator and Backsite at tic 0 down the long corridor. Local safety advantage emerges from spatial suffix geometry along path, not initial reveal delays."
     },
     "dust2_b_tunnels": {
       "game": "Counter-Strike 2",
@@ -102,6 +114,11 @@
         "critical_exit_deficit": "min_{s in [0, 6]} M_suffix(s) <= 0 for both routes (model must refuse to manufacture false serialization).",
         "falsification_criterion": "If either dry route achieves positive suffix margin (M_suffix >= +1) on exit, the choke crossfire hypothesis is falsified."
       },
+      "hypothesis_outcomes": {
+        "choke_crossfire_collapse": "PASS",
+        "critical_exit_deficit": "PASS"
+      },
+      "disposition": "FULL_SUPPORT",
       "routes": {
         "route_A": {
           "blind_id": "route_A",
@@ -152,9 +169,8 @@
           ]
         }
       },
-      "hypothesis_supported": true,
       "two_d_model_adequacy": "Adequate (choke crossfire topology represented faithfully in 2D).",
-      "findings_summary": "Choke crossfire collapse confirmed: both dry routes suffer immediate K>=2 (route_A at 0.0m, route_B at 0.3857m) and exit deficits (M_A=-7, M_B=-7). Model refused to fabricate false serialization."
+      "findings_summary": "Choke crossfire collapse confirmed as expected negative: both dry routes suffer immediate K>=2 (route_A at 0.0m, route_B at 0.3857m) and exit deficits (M_A=-7, M_B=-7). Model correctly refused to fabricate false serialization."
     },
     "transit_213": {
       "game": "Modern Warfare 4 (Beta)",
@@ -172,6 +188,11 @@
         "lot_suffix_margin": "min_{s in [6, 18]} M_suffix(route_A, s) > min_{s in [6, 18]} M_suffix(route_B, s)",
         "falsification_criterion": "If route_B achieves earlier cover or superior suffix margin over route_A, the occluder lattice hypothesis is falsified."
       },
+      "hypothesis_outcomes": {
+        "exposure_onset_delay": "PASS",
+        "lot_suffix_margin": "PASS"
+      },
+      "disposition": "FULL_SUPPORT",
       "routes": {
         "route_A": {
           "blind_id": "route_A",
@@ -234,9 +255,8 @@
           ]
         }
       },
-      "hypothesis_supported": true,
       "two_d_model_adequacy": "Adequate (planar vehicular occluder lattice).",
-      "findings_summary": "Bus lattice (route_A: M_min=-4) preserves superior cover over open lot push (route_B: M_min=-19)."
+      "findings_summary": "Bus lattice preserves superior cover over open lot push (route_A M_min=-4 > route_B M_min=-19) and delays K>=2 exposure onset (route_A at 23.1m > route_B at 12.6m)."
     }
   }
 }

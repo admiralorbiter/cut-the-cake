@@ -3,10 +3,19 @@
 Tests:
 1. Pre-Registration Protocol Validation (preregistration/m5b_preregistration.json)
 2. Strict 2D Navigability & Positive Clearance across all 3 fixtures (Ascent, Dust II B, Transit 213)
-3. Engagement 1 (Ascent A-Main / Wine): Suffix margin approach superiority & Wine pocket isolation
-4. Engagement 2 (Dust II B-Tunnels): Immediate choke crossfire collapse & negative exit margins
-5. Engagement 3 (Transit 213): Occluder lattice cover preservation over open lot exposure
-6. Aggregate Cross-Section Truthfulness (results/m5b_cross_section.json matches live solver)
+3. Engagement 1 (Ascent A-Main / Wine):
+   - reveal_stagger_ordering: FALSIFIED (stagger=0 for both routes down corridor)
+   - approach_suffix_margin: SUPPORTED (route_A M_min=-20 > route_B M_min=-24; Wine mouth K=1, M=+3 vs K=3, M=-26)
+   - disposition: PARTIAL_SUPPORT
+4. Engagement 2 (Dust II B-Tunnels):
+   - choke_crossfire_collapse: SUPPORTED (immediate K>=2 for both dry routes at s <= 4m)
+   - critical_exit_deficit: SUPPORTED (both routes min M_suffix <= 0)
+   - disposition: FULL_SUPPORT (expected negative)
+5. Engagement 3 (Transit 213):
+   - exposure_onset_delay: SUPPORTED (s_{K>=2}^A = 23.1m > s_{K>=2}^B = 12.6m)
+   - lot_suffix_margin: SUPPORTED (route_A M_min=-4 > route_B M_min=-19)
+   - disposition: FULL_SUPPORT
+6. Aggregate Cross-Section Matrix Truthfulness (results/m5b_cross_section.json records 5/6 supported hypotheses)
 7. REST API Template Loading & Multi-Route Analysis Parity across all 3 new maps
 """
 
@@ -76,59 +85,75 @@ def test_m5b_fixtures_navigability_and_clearance():
                     )
 
 
-def test_m5b_ascent_a_main_wine_slice_superiority():
-    """Engagement 1: Assert route_A (Wine slice) achieves higher approach suffix margin and reaches Wine isolation."""
+def test_m5b_ascent_a_main_per_hypothesis_scoring():
+    """Engagement 1: Assert approach suffix margin PASS and reveal stagger FAIL (partial support)."""
     doc = get_ascent_a_main_document()
 
+    # Part A: Reveal Stagger Hypothesis (FALSIFIED)
+    res_a = analyze_cad_document(doc, route_id="route_A", include_telemetry=False)
+    res_b = analyze_cad_document(doc, route_id="route_B", include_telemetry=False)
+    stagger_a = res_a["stagger_gap_tics"]
+    stagger_b = res_b["stagger_gap_tics"]
+    # Both routes see Generator and Deep Site at tic 0 down corridor -> stagger gap is 0 for both
+    assert stagger_a == 0 and stagger_b == 0
+    assert not (stagger_a > stagger_b), "Reveal stagger ordering should fail (falsified)"
+
+    # Part B: Approach Suffix Margin Hypothesis (SUPPORTED)
     h_a = compute_cad_route_spatial_heatmap(doc, route_id="route_A")
     h_b = compute_cad_route_spatial_heatmap(doc, route_id="route_B")
 
-    # 1. Approach interval s in [8, 16] m
     m_min_a = min(s["suffix_margin_tics"] for s in h_a["samples"] if 8.0 <= s["distance_m"] <= 16.0)
     m_min_b = min(s["suffix_margin_tics"] for s in h_b["samples"] if 8.0 <= s["distance_m"] <= 16.0)
     assert m_min_a > m_min_b, f"Expected route_A ({m_min_a}) > route_B ({m_min_b}) over approach interval"
 
-    # 2. Wine pocket isolation (at s ~ 18m inside Wine mouth)
+    # Part C: Wine pocket isolation (at s ~ 18m inside Wine mouth)
     wine_samples = [s for s in h_a["samples"] if 17.0 <= s["distance_m"] <= 19.0]
     isolated_sample = next((s for s in wine_samples if s["los_concurrency"] == 1 and s["suffix_margin_tics"] >= 0), None)
     assert isolated_sample is not None, "route_A failed to achieve isolated K=1 non-negative margin in Wine mouth"
 
 
-def test_m5b_dust2_b_tunnels_crossfire_collapse():
-    """Engagement 2: Assert both dry routes suffer immediate K>=2 crossfire and exit deficit (model refuses false serialization)."""
+def test_m5b_dust2_b_tunnels_crossfire_collapse_both_hypotheses():
+    """Engagement 2: Assert both dry routes suffer immediate K>=2 crossfire and exit deficit (full support)."""
     doc = get_dust2_b_tunnels_document()
 
     h_a = compute_cad_route_spatial_heatmap(doc, route_id="route_A")
     h_b = compute_cad_route_spatial_heatmap(doc, route_id="route_B")
 
-    # Both routes suffer immediate K>=2 upon crossing exit threshold s in [0, 4]m
+    # Hypothesis 1: Immediate K>=2 crossfire upon crossing exit threshold s in [0, 4]m
     first_k2_a = next(s for s in h_a["samples"] if s["los_concurrency"] >= 2)
     first_k2_b = next(s for s in h_b["samples"] if s["los_concurrency"] >= 2)
     assert first_k2_a["distance_m"] <= 4.0, f"route_A K=2 delayed unexpectedly to {first_k2_a['distance_m']}m"
     assert first_k2_b["distance_m"] <= 4.0, f"route_B K=2 delayed unexpectedly to {first_k2_b['distance_m']}m"
 
-    # Suffix margin over exit interval [0, 6]m remains in deficit (<= 0)
+    # Hypothesis 2: Suffix margin over exit interval [0, 6]m remains in deficit (<= 0)
     min_exit_a = min(s["suffix_margin_tics"] for s in h_a["samples"] if 0.0 <= s["distance_m"] <= 6.0)
     min_exit_b = min(s["suffix_margin_tics"] for s in h_b["samples"] if 0.0 <= s["distance_m"] <= 6.0)
     assert min_exit_a <= 0, f"route_A unexpectedly achieved positive margin {min_exit_a} on dry tunnel exit"
     assert min_exit_b <= 0, f"route_B unexpectedly achieved positive margin {min_exit_b} on dry tunnel exit"
 
 
-def test_m5b_transit_213_occluder_lattice_cover():
-    """Engagement 3: Assert bus lattice route_A preserves superior lot suffix margin over open lot route_B."""
+def test_m5b_transit_213_occluder_lattice_both_hypotheses():
+    """Engagement 3: Assert bus lattice delays K>=2 exposure onset AND preserves superior lot suffix margin (full support)."""
     doc = get_transit_213_document()
 
     h_a = compute_cad_route_spatial_heatmap(doc, route_id="route_A")
     h_b = compute_cad_route_spatial_heatmap(doc, route_id="route_B")
 
-    # Over lot transit interval s in [6, 18] m
+    # Hypothesis 1: Exposure onset delay (s_{K>=2}^A > s_{K>=2}^B)
+    first_k2_a = next(s for s in h_a["samples"] if s["los_concurrency"] >= 2)
+    first_k2_b = next(s for s in h_b["samples"] if s["los_concurrency"] >= 2)
+    assert first_k2_a["distance_m"] > first_k2_b["distance_m"], (
+        f"Expected bus lattice K=2 ({first_k2_a['distance_m']}m) > open lot K=2 ({first_k2_b['distance_m']}m)"
+    )
+
+    # Hypothesis 2: Suffix margin over lot transit interval s in [6, 18] m
     min_lot_a = min(s["suffix_margin_tics"] for s in h_a["samples"] if 6.0 <= s["distance_m"] <= 18.0)
     min_lot_b = min(s["suffix_margin_tics"] for s in h_b["samples"] if 6.0 <= s["distance_m"] <= 18.0)
     assert min_lot_a > min_lot_b, f"Bus lattice ({min_lot_a}) should exceed open lot ({min_lot_b})"
 
 
 def test_m5b_aggregate_cross_section_matrix_truthfulness():
-    """Verify results/m5b_cross_section.json accurately records all 3 engagement outcomes."""
+    """Verify results/m5b_cross_section.json accurately records 5/6 supported hypotheses across the cross-section."""
     res_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "results", "m5b_cross_section.json")
     assert os.path.exists(res_path), "results/m5b_cross_section.json missing"
 
@@ -136,9 +161,18 @@ def test_m5b_aggregate_cross_section_matrix_truthfulness():
         saved = json.load(f)
 
     assert saved["protocol_reference"] == "M5-B.0"
-    for eng_id in ["ascent_a_main", "dust2_b_tunnels", "transit_213"]:
-        assert eng_id in saved["engagements"]
-        assert saved["engagements"][eng_id]["hypothesis_supported"] is True
+    summary = saved["aggregate_summary"]
+    assert summary["total_pre_registered_hypotheses"] == 6
+    assert summary["supported_hypotheses_count"] == 5
+    assert summary["falsified_hypotheses_count"] == 1
+    assert summary["support_rate"] == 0.833
+
+    assert saved["engagements"]["ascent_a_main"]["disposition"] == "PARTIAL_SUPPORT"
+    assert saved["engagements"]["ascent_a_main"]["hypothesis_outcomes"]["reveal_stagger_ordering"] == "FAIL"
+    assert saved["engagements"]["ascent_a_main"]["hypothesis_outcomes"]["approach_suffix_margin"] == "PASS"
+
+    assert saved["engagements"]["dust2_b_tunnels"]["disposition"] == "FULL_SUPPORT"
+    assert saved["engagements"]["transit_213"]["disposition"] == "FULL_SUPPORT"
 
 
 def test_m5b_server_template_loading_for_all_fixtures():
