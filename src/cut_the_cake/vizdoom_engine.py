@@ -641,19 +641,19 @@ class DeterministicSimulationReferee:
         policy: ControllerPolicy = ControllerPolicy.ORACLE,
         route_index: int = 0,
         initial_reticle_deg: float = 0.0,
-        initial_reticle_elevation_deg: float = 0.0
+        initial_reticle_elevation_deg: float = 0.0,
+        elevation_mode: str = "GEOMETRIC"
     ) -> SimulationEpisodeLog:
         """Run one synchronous deterministic episode."""
         route = geo_module.routes[route_index]
         total_tics = int(math.ceil(route.total_length_m / self.params.move_m_per_tic))
-        jobs = self.extract_tic_jobs(geo_module, route_index)
+        jobs = self.extract_tic_jobs(geo_module, route_index, elevation_mode=elevation_mode)
         job_map = {j.id: j for j in jobs}
 
         # Solve scheduling oracle
         sched_res = self.scheduler.solve(
             jobs,
-            initial_reticle_deg=initial_reticle_deg,
-            initial_reticle_elevation_deg=initial_reticle_elevation_deg
+            initial_reticle_deg=(initial_reticle_deg, initial_reticle_elevation_deg)
         )
 
         controller = SimulationController(

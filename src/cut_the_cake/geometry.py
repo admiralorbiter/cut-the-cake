@@ -81,12 +81,28 @@ def slew_towards_spherical(
     f = max_step_deg / total_dist
     sin_alpha = math.sin(alpha_rad)
 
-    w1 = math.sin((1.0 - f) * alpha_rad) / sin_alpha
-    w2 = math.sin(f * alpha_rad) / sin_alpha
+    if sin_alpha < 1e-6:
+        # Antipodal condition (alpha ~ 180 deg) -> deterministic orthogonal geodesic
+        if abs(u1[2]) < 0.99:
+            v = (-u1[1], u1[0], 0.0)
+        else:
+            v = (0.0, -u1[2], u1[1])
+        v_norm = math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+        v = (v[0] / v_norm, v[1] / v_norm, v[2] / v_norm)
 
-    ux = w1 * u1[0] + w2 * u2[0]
-    uy = w1 * u1[1] + w2 * u2[1]
-    uz = w1 * u1[2] + w2 * u2[2]
+        angle_step_rad = f * math.pi
+        cos_step = math.cos(angle_step_rad)
+        sin_step = math.sin(angle_step_rad)
+        ux = cos_step * u1[0] + sin_step * v[0]
+        uy = cos_step * u1[1] + sin_step * v[1]
+        uz = cos_step * u1[2] + sin_step * v[2]
+    else:
+        w1 = math.sin((1.0 - f) * alpha_rad) / sin_alpha
+        w2 = math.sin(f * alpha_rad) / sin_alpha
+
+        ux = w1 * u1[0] + w2 * u2[0]
+        uy = w1 * u1[1] + w2 * u2[1]
+        uz = w1 * u1[2] + w2 * u2[2]
 
     norm = math.sqrt(ux * ux + uy * uy + uz * uz)
     if norm < 1e-9:

@@ -344,6 +344,12 @@ def _generate_telemetry_and_events(
 
     events.sort(key=lambda e: e["tic"])
 
+    # Map realized completions strictly from emitted SERVICE_COMPLETE events
+    realized_complete_from_events: Dict[str, Optional[int]] = {j.id: None for j in jobs}
+    for ev in events:
+        if ev.get("type") == "SERVICE_COMPLETE":
+            realized_complete_from_events[ev["threat_id"]] = ev["tic"]
+
     # Threat job details
     threat_job_records = []
     for tid in sched_res.optimal_permutation:
@@ -352,10 +358,7 @@ def _generate_telemetry_and_events(
         lat_tic = sched_res.lateness_per_threat.get(tid, 0)
         lbl = _threat_label(j.id, threat_idx_map.get(j.id, 0))
         sched_end_tic = max(0, c_tic - 1)
-        if player_survived:
-            realized_comp_tic = sched_end_tic
-        else:
-            realized_comp_tic = sched_end_tic if (death_tic is not None and sched_end_tic < death_tic) else None
+        realized_comp_tic = realized_complete_from_events.get(j.id)
 
         threat_job_records.append({
             "id": j.id,
