@@ -1,0 +1,12 @@
+{
+  "map_name": "Transit 213",
+  "difficulty_rank": "★ (Low)",
+  "planar_2d_confidence": "HIGH",
+  "setting": "Overgrown bus depot in western India",
+  "geometry_character": "Planar rectangular arena with abandoned bus occluders, gas station, and repair shop flanking central lanes.",
+  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
+  "retrieval_date": "2026-08-23",
+  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
+  "confidence_status": "reference_reconstruction",
+  "notes": "Ideal canonical first MW4 test case. Highly planar geometry dominated by rectangular bus occluders."
+}

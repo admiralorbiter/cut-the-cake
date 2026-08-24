@@ -1,0 +1,12 @@
+{
+  "map_name": "Rooftops",
+  "difficulty_rank": "★★★★★ (Very High)",
+  "planar_2d_confidence": "LOW",
+  "setting": "Skyscraper rooftops in high-density metropolis with ziplines and vertical shafts",
+  "geometry_character": "High vertical disparity, multi-level drops, helipads, and mechanical penthouses.",
+  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-rooftops",
+  "retrieval_date": "2026-08-23",
+  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
+  "confidence_status": "reference_reconstruction",
+  "notes": "Planar 2D projection breaks down due to true vertical combat layers; canonical case study for Milestone 6 (2.5D)."
+}

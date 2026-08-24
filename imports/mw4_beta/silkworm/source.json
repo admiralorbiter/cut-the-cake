@@ -1,0 +1,12 @@
+{
+  "map_name": "Silkworm",
+  "difficulty_rank": "★★ (Medium-Low)",
+  "planar_2d_confidence": "HIGH",
+  "setting": "South Korean neon-lit shopping district and subway entrance",
+  "geometry_character": "Ground-level street combat with tight alleys, storefront interiors, and central stairs.",
+  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-silkworm",
+  "retrieval_date": "2026-08-23",
+  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
+  "confidence_status": "reference_reconstruction",
+  "notes": "Strong 2D applicability with straightforward shop partitions."
+}

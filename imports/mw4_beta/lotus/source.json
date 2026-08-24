@@ -1,0 +1,12 @@
+{
+  "map_name": "Lotus",
+  "difficulty_rank": "★★★★ (High)",
+  "planar_2d_confidence": "LOW-MEDIUM",
+  "setting": "Lakeside hotel retreat with garden courtyards and water canals",
+  "geometry_character": "Multi-floor building interiors, swimming pavilions, balconies, and shallow water traversal.",
+  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-lotus",
+  "retrieval_date": "2026-08-23",
+  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
+  "confidence_status": "reference_reconstruction",
+  "notes": "Balcony overwatch positions will require 2.5D elevation models."
+}

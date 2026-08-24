@@ -1,0 +1,12 @@
+{
+  "map_name": "Lithium",
+  "difficulty_rank": "★★–★★★ (Medium)",
+  "planar_2d_confidence": "MEDIUM",
+  "setting": "Lithium processing refinery in rural Mexico",
+  "geometry_character": "Industrial structure with catwalks, heavy tanks, and interactive security doors.",
+  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-lithium",
+  "retrieval_date": "2026-08-23",
+  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
+  "confidence_status": "reference_reconstruction",
+  "notes": "Introduces dynamic doors and catwalk sightlines requiring careful 2D projection."
+}

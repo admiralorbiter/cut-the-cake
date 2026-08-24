@@ -1,0 +1,12 @@
+{
+  "map_name": "Cachette",
+  "difficulty_rank": "★★★ (Medium)",
+  "planar_2d_confidence": "MEDIUM",
+  "setting": "French rail terminal outskirts with wine warehouse and covert armory",
+  "geometry_character": "Interiors, rail cars, stacked shipping containers, and modest rooftop access.",
+  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-cachette",
+  "retrieval_date": "2026-08-23",
+  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
+  "confidence_status": "reference_reconstruction",
+  "notes": "Container stacking creates partial 2.5D sightline blockage."
+}
