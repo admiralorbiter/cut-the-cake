@@ -1351,44 +1351,30 @@ def analyze_cad_document(
     model_death_tic: Optional[int] = None
     telemetry_frames_output: Optional[List[Dict[str, Any]]] = None
     events_output: Optional[List[Dict[str, Any]]] = None
-
     # 8. Full Simulated Execution (Only when requested on commit)
-    has_elevation = (
-        any(abs(j.elevation_deg) > 1e-4 for j in jobs)
-        or abs(doc.player_model.initial_reticle_elevation_deg) > 1e-4
-        or getattr(selected_route, "_is_3d", False)
-        or any(len(pt) > 2 for pt in selected_route.waypoints)
-        or any(t.z_m is not None or abs(t.elevation_deg) > 1e-4 for t in doc.threats)
-        or any(o.z_min_m is not None or (o.z_max_m is not None and not math.isinf(o.z_max_m)) for o in doc.obstacles)
-    )
     telemetry_status = "not_run"
 
     if include_telemetry:
-        if has_elevation:
-            model_episode_survived = None
-            model_death_tic = None
-            telemetry_frames_output = None
-            events_output = None
-            telemetry_status = "HEIGHT_AWARE_EXECUTION_UNSUPPORTED_M6B"
-        else:
-            from .cad_export import _generate_telemetry_and_events
-            telemetry_frames, events, stats = _generate_telemetry_and_events(
-                geo_module=geo_module,
-                params=params,
-                policy=ControllerPolicy.ORACLE,
-                route_index=route_idx,
-                initial_reticle_deg=doc.player_model.initial_reticle_deg
-            )
-            model_episode_survived = stats.get("model_episode_survived", False)
-            model_death_tic = stats.get("model_death_tic")
-            telemetry_frames_output = telemetry_frames
-            events_output = events
-            telemetry_status = "SUCCESS"
+        from .cad_export import _generate_telemetry_and_events
+        telemetry_frames, events, stats = _generate_telemetry_and_events(
+            geo_module=geo_module,
+            params=params,
+            policy=ControllerPolicy.ORACLE,
+            route_index=route_idx,
+            initial_reticle_deg=doc.player_model.initial_reticle_deg,
+            initial_reticle_elevation_deg=doc.player_model.initial_reticle_elevation_deg,
+            elevation_mode=elev_mode_str
+        )
+        model_episode_survived = stats.get("model_episode_survived", False)
+        model_death_tic = stats.get("model_death_tic")
+        telemetry_frames_output = telemetry_frames
+        events_output = events
+        telemetry_status = "SUCCESS"
 
-            # Populate realized completions strictly from actual controller events
-            for ev in events:
-                if ev.get("type") == "SERVICE_COMPLETE":
-                    realized_complete_map[ev["threat_id"]] = ev["tic"]
+        # Populate realized completions strictly from actual controller events
+        for ev in events:
+            if ev.get("type") == "SERVICE_COMPLETE":
+                realized_complete_map[ev["threat_id"]] = ev["tic"]
 
     for j in jobs:
         c_tic = sched_res.completion_tics.get(j.id, 0)

@@ -42,6 +42,63 @@ def spherical_aim_distance_deg(
     return math.degrees(math.acos(dot))
 
 
+def slew_towards_heading(current_deg: float, target_deg: float, max_step_deg: float) -> float:
+    """Slew planar heading towards target_deg by at most max_step_deg."""
+    diff = normalize_angle_deg(target_deg - current_deg)
+    if abs(diff) <= max_step_deg:
+        return normalize_angle_deg(target_deg)
+    step = math.copysign(max_step_deg, diff)
+    return normalize_angle_deg(current_deg + step)
+
+
+def slew_towards_spherical(
+    curr_theta_deg: float,
+    curr_phi_deg: float,
+    target_theta_deg: float,
+    target_phi_deg: float,
+    max_step_deg: float
+) -> Tuple[float, float]:
+    """Slew 3D unit-sphere aim state towards target by at most max_step_deg along great-circle geodesic.
+
+    Guarantees bit-for-bit identity with planar slew_towards_heading when both elevations are 0.0.
+    """
+    total_dist = spherical_aim_distance_deg(curr_theta_deg, curr_phi_deg, target_theta_deg, target_phi_deg)
+    if total_dist <= max_step_deg or total_dist < 1e-7:
+        return normalize_angle_deg(target_theta_deg), float(target_phi_deg)
+
+    if curr_phi_deg == 0.0 and target_phi_deg == 0.0:
+        return slew_towards_heading(curr_theta_deg, target_theta_deg, max_step_deg), 0.0
+
+    # Spherical Slerp along unit sphere
+    rad = math.pi / 180.0
+    th1, ph1 = curr_theta_deg * rad, curr_phi_deg * rad
+    th2, ph2 = target_theta_deg * rad, target_phi_deg * rad
+
+    u1 = (math.cos(ph1) * math.cos(th1), math.cos(ph1) * math.sin(th1), math.sin(ph1))
+    u2 = (math.cos(ph2) * math.cos(th2), math.cos(ph2) * math.sin(th2), math.sin(ph2))
+
+    alpha_rad = total_dist * rad
+    f = max_step_deg / total_dist
+    sin_alpha = math.sin(alpha_rad)
+
+    w1 = math.sin((1.0 - f) * alpha_rad) / sin_alpha
+    w2 = math.sin(f * alpha_rad) / sin_alpha
+
+    ux = w1 * u1[0] + w2 * u2[0]
+    uy = w1 * u1[1] + w2 * u2[1]
+    uz = w1 * u1[2] + w2 * u2[2]
+
+    norm = math.sqrt(ux * ux + uy * uy + uz * uz)
+    if norm < 1e-9:
+        return normalize_angle_deg(target_theta_deg), float(target_phi_deg)
+
+    ux, uy, uz = ux / norm, uy / norm, uz / norm
+    new_theta = math.degrees(math.atan2(uy, ux))
+    new_phi = math.degrees(math.atan2(uz, math.hypot(ux, uy)))
+
+    return normalize_angle_deg(new_theta), float(new_phi)
+
+
 
 def heading_to_deg(from_pt: Tuple[float, float], to_pt: Tuple[float, float]) -> float:
     """Calculate heading angle in degrees from from_pt to to_pt (0 deg = +X, 90 deg = +Y)."""

@@ -522,13 +522,13 @@ def test_m6a_gate8_elevation_validation_bounds():
 
 
 def test_m6a_gate8_fail_closed_elevated_telemetry():
-    """Gate 6A-8: Assert request for telemetry on elevated geometry fails closed with unsupported status."""
+    """Gate 6A-8: Assert request for telemetry on elevated geometry executes 3D controller successfully (M6-C)."""
     doc = get_canonical_f1_document()
     doc.threats[0].elevation_deg = 30.0  # Introduce 3D elevation
 
-    # Running with include_telemetry=True must fail closed on simulation telemetry
+    # Running with include_telemetry=True executes 3D controller in M6-C
     res = analyze_cad_document(doc, include_telemetry=True)
     assert res["is_valid"] is True
-    assert res["telemetry_status"] in ("ELEVATED_EXECUTION_UNSUPPORTED_M6A", "HEIGHT_AWARE_EXECUTION_UNSUPPORTED_M6B")
-    assert res["telemetry_frames"] is None
-    assert res["model_episode_survived"] is None
+    assert res["telemetry_status"] == "SUCCESS"
+    assert res["telemetry_frames"] is not None
+    assert len(res["telemetry_frames"]) > 0

@@ -21,9 +21,10 @@ from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
 from shapely.geometry import Polygon, LineString
 
-from .compiler import GeometricModule, GeometricRoute, GeometricThreat, GeometricPort
+from .compiler import GeometricModule, GeometricRoute, GeometricThreat, GeometricPort, GeometricObstacle
 from .repair import MinimalRepairOptimizer, TacticalDiagnostic, diagnose_clearability, validate_repair_preservation
 from .repair_benchmark import build_unserviceable_population
+from .cad_document import ElevationMode
 from .vizdoom_engine import (
     TicCombatParameters,
     TicThreatJob,
@@ -39,6 +40,9 @@ from .geometry import (
     heading_to_deg,
     normalize_angle_deg,
     angle_diff_deg,
+    spherical_aim_distance_deg,
+    slew_towards_spherical,
+    ray_intersects_prism_25d,
     segments_intersect,
     extract_polygon_segments
 )
@@ -121,22 +125,41 @@ def _generate_telemetry_and_events(
     params: TicCombatParameters,
     policy: ControllerPolicy = ControllerPolicy.ORACLE,
     route_index: int = 0,
-    initial_reticle_deg: float = 0.0
+    initial_reticle_deg: float = 0.0,
+    initial_reticle_elevation_deg: float = 0.0,
+    elevation_mode: ElevationMode = ElevationMode.GEOMETRIC
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Dict[str, Any]]:
     """Generate per-tic telemetry frames and discrete scheduling events from authoritative physics."""
     route = geo_module.routes[route_index]
     total_tics = int(math.ceil(route.total_length_m / params.move_m_per_tic))
     obs_segs = extract_polygon_segments(geo_module.obstacles)
     dt_s = params.tic_duration_s
-    
+
+    if geo_module.obstacles_25d:
+        obs_25d = geo_module.obstacles_25d
+    else:
+        obs_25d = [
+            GeometricObstacle(id=f"obs_{i}", polygon=p, z_min_m=0.0, z_max_m=float("inf"))
+            for i, p in enumerate(geo_module.obstacles)
+        ]
+
+    is_pure_planar = (
+        not getattr(route, "_is_3d", False)
+        and all(t.z_m is None for t in geo_module.threats)
+        and all(math.isinf(o.z_max_m) for o in obs_25d)
+    )
+
     # 1. Authoritative job extraction & scheduler solve
     referee = DeterministicSimulationReferee(params)
-    jobs = referee.extract_tic_jobs(geo_module, route_index=route_index)
+    jobs = referee.extract_tic_jobs(geo_module, route_index=route_index, elevation_mode=elevation_mode)
     scheduler = DiscreteTicScheduler(params)
-    sched_res = scheduler.solve(jobs, initial_reticle_deg=initial_reticle_deg)
+    sched_res = scheduler.solve(
+        jobs,
+        initial_reticle_deg=(initial_reticle_deg, initial_reticle_elevation_deg)
+    )
     job_map = {j.id: j for j in jobs}
     threat_idx_map = {t.id: idx for idx, t in enumerate(geo_module.threats)}
-    
+
     # Track discrete events
     events: List[Dict[str, Any]] = []
     for j in jobs:
@@ -157,45 +180,74 @@ def _generate_telemetry_and_events(
         })
 
     # 2. Simulate with authoritative SimulationController
-    controller = SimulationController(policy, params, initial_reticle_deg=initial_reticle_deg)
+    controller = SimulationController(
+        policy,
+        params,
+        initial_reticle_deg=initial_reticle_deg,
+        initial_reticle_elevation_deg=initial_reticle_elevation_deg
+    )
     visible_threats: Dict[str, TicThreatJob] = {}
     player_survived = True
     death_tic: Optional[int] = None
-    death_pos: Optional[Tuple[float, float]] = None
+    death_pos: Optional[Tuple[float, ...]] = None
     death_s: Optional[float] = None
     death_reticle: Optional[float] = None
-    
+    death_reticle_elevation: Optional[float] = None
+
     telemetry_frames: List[Dict[str, Any]] = []
-    
+
     for k in range(total_tics + 1):
         if player_survived:
             s = min(k * params.move_m_per_tic, route.total_length_m)
-            pos = route.position_at_distance(s)
+            if is_pure_planar:
+                pos = route.position_at_distance(s)
+            else:
+                pos = route.position_3d_at_distance(s)
             forward_heading = route.forward_heading_at_distance(s)
         else:
             # Post-death: freeze physical coordinates
             s = death_s if death_s is not None else 0.0
-            pos = death_pos if death_pos is not None else (0.0, 0.0)
+            pos = death_pos if death_pos is not None else ((0.0, 0.0) if is_pure_planar else (0.0, 0.0, 0.0))
             forward_heading = route.forward_heading_at_distance(s)
-        
+
         # 1. Update revelations
         visible_ids = []
         los_rays = []
-        for threat in geo_module.threats:
-            qx, qy = threat.threat_anchor
-            blocked = False
-            for s1, s2 in obs_segs:
-                if segments_intersect(pos, (qx, qy), s1, s2):
-                    blocked = True
-                    break
-            is_vis = not blocked
-            if is_vis and player_survived:
-                visible_ids.append(threat.id)
-            los_rays.append({
-                "threat_id": threat.id,
-                "target_pos": [round(float(qx), 4), round(float(qy), 4)],
-                "is_visible": is_vis and player_survived
-            })
+        if is_pure_planar:
+            for threat in geo_module.threats:
+                qx, qy = threat.threat_anchor
+                blocked = False
+                for s1, s2 in obs_segs:
+                    if segments_intersect(pos, (qx, qy), s1, s2):
+                        blocked = True
+                        break
+                is_vis = not blocked
+                if is_vis and player_survived:
+                    visible_ids.append(threat.id)
+                los_rays.append({
+                    "threat_id": threat.id,
+                    "target_pos": [round(float(qx), 4), round(float(qy), 4)],
+                    "is_visible": is_vis and player_survived
+                })
+        else:
+            eye_pt = route.eye_position_at_distance(s, params.eye_height_m)
+            for threat in geo_module.threats:
+                qx, qy = threat.threat_anchor
+                qz = float(threat.z_m) if threat.z_m is not None else params.eye_height_m
+                target_pt_3d = (float(qx), float(qy), qz)
+                blocked = False
+                for obs in obs_25d:
+                    if ray_intersects_prism_25d(eye_pt, target_pt_3d, obs.polygon, obs.z_min_m, obs.z_max_m):
+                        blocked = True
+                        break
+                is_vis = not blocked
+                if is_vis and player_survived:
+                    visible_ids.append(threat.id)
+                los_rays.append({
+                    "threat_id": threat.id,
+                    "target_pos": [round(float(qx), 4), round(float(qy), 4), round(float(qz), 4)],
+                    "is_visible": is_vis and player_survived
+                })
 
         if player_survived:
             for j in jobs:
@@ -212,6 +264,7 @@ def _generate_telemetry_and_events(
                         death_pos = pos
                         death_s = s
                         death_reticle = normalize_angle_deg(forward_heading + controller.reticle_deg)
+                        death_reticle_elevation = controller.reticle_elevation_deg
                         lbl = _threat_label(j.id, threat_idx_map.get(j.id, 0))
                         events.append({
                             "tic": k,
@@ -228,6 +281,14 @@ def _generate_telemetry_and_events(
                             "description": f"Player defeated at tic {k} ({k * dt_s:.2f}s) due to deadline breach."
                         })
                         break
+
+        # Sample reticle orientation at start of tic k
+        if player_survived:
+            abs_reticle_deg = normalize_angle_deg(forward_heading + controller.reticle_deg)
+            reticle_elev_deg = controller.reticle_elevation_deg
+        else:
+            abs_reticle_deg = death_reticle if death_reticle is not None else 0.0
+            reticle_elev_deg = death_reticle_elevation if death_reticle_elevation is not None else 0.0
 
         # 3. Update Controller Action
         prev_target = controller.current_target_id
@@ -253,25 +314,28 @@ def _generate_telemetry_and_events(
                     "description": f"Commenced fire / servicing {lbl} at tic {k}"
                 })
 
-        # Absolute reticle angle in global room coordinates
-        if player_survived:
-            abs_reticle_deg = normalize_angle_deg(forward_heading + controller.reticle_deg)
-        else:
-            abs_reticle_deg = death_reticle if death_reticle is not None else 0.0
-
         ui_state = "DEAD" if not player_survived and death_tic is not None and k >= death_tic else (
             "CLEARED" if len(controller.cleared_threat_ids) == len(geo_module.threats) else (
                 "SLEWING" if controller.target_state == "ROTATING" else controller.target_state
             )
         )
 
+        pos_record = [round(float(c), 4) for c in pos]
+        target_elev_deg = (
+            round(float(job_map[controller.current_target_id].elevation_deg), 2)
+            if (player_survived and controller.current_target_id and controller.current_target_id in job_map)
+            else None
+        )
+
         telemetry_frames.append({
             "tic": k,
             "time_s": round(k * dt_s, 4),
-            "player_pos": [round(float(pos[0]), 4), round(float(pos[1]), 4)],
+            "player_pos": pos_record,
             "route_dist_m": round(float(s), 4),
             "forward_heading_deg": round(float(forward_heading), 2),
             "reticle_heading_deg": round(float(abs_reticle_deg), 2),
+            "reticle_elevation_deg": round(float(reticle_elev_deg), 2),
+            "target_elevation_deg": target_elev_deg,
             "visible_threat_ids": list(visible_ids),
             "active_target_id": controller.current_target_id if player_survived else None,
             "controller_state": ui_state,
@@ -303,6 +367,7 @@ def _generate_telemetry_and_events(
             "deadline_tic": j.deadline_tic,
             "deadline_s": round(j.deadline_tic * dt_s, 4),
             "angle_deg": round(j.angle_deg, 2),
+            "elevation_deg": round(j.elevation_deg, 2),
             "service_duration_tics": j.service_duration_tics,
             "completion_tic": c_tic,
             "scheduled_service_end_tic": sched_end_tic,

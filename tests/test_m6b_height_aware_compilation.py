@@ -530,11 +530,11 @@ def test_m6b_gate10_prism_raycaster_volumetric_occupancy_and_boundaries():
 
 
 # =============================================================================
-# GATE 6B-11: TELEMETRY FAIL-CLOSED ON ALL 2.5D GEOMETRY FEATURES
+# GATE 6B-11: 2.5D GEOMETRY TELEMETRY EXECUTION
 # =============================================================================
 
 def test_m6b_gate11_telemetry_fails_closed_on_all_25d_geometry():
-    """Gate 6B-11: Verify that simulation telemetry fails closed when ANY 2.5D geometry is active, even if pitch is 0."""
+    """Gate 6B-11: Verify that simulation telemetry on 2.5D geometry executes 3D controller successfully (M6-C)."""
     # Flat route, target at eye height (phi = 0), but finite-height wall (z_max = 1.0m)
     doc = get_canonical_f1_document()
     doc.obstacles[0].z_min_m = 0.0
@@ -542,6 +542,6 @@ def test_m6b_gate11_telemetry_fails_closed_on_all_25d_geometry():
 
     res = analyze_cad_document(doc, include_telemetry=True)
     assert res["is_valid"] is True
-    assert res["telemetry_status"] == "HEIGHT_AWARE_EXECUTION_UNSUPPORTED_M6B"
-    assert res["telemetry_frames"] is None
-    assert res["model_episode_survived"] is None
+    assert res["telemetry_status"] == "SUCCESS"
+    assert res["telemetry_frames"] is not None
+    assert len(res["telemetry_frames"]) > 0

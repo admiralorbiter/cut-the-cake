@@ -25,6 +25,7 @@ from .geometry import (
     normalize_angle_deg,
     angle_diff_deg,
     spherical_aim_distance_deg,
+    slew_towards_spherical,
     derived_aim_elevation_deg,
     ray_intersects_prism_25d,
     heading_to_deg,
@@ -331,10 +332,17 @@ class ControllerPolicy(str, Enum):
 class SimulationController:
     """Base class for clearing agents executing inside the discrete ViZDoom loop."""
 
-    def __init__(self, policy: ControllerPolicy, params: TicCombatParameters, initial_reticle_deg: float = 0.0):
+    def __init__(
+        self,
+        policy: ControllerPolicy,
+        params: TicCombatParameters,
+        initial_reticle_deg: float = 0.0,
+        initial_reticle_elevation_deg: float = 0.0
+    ):
         self.policy = policy
         self.params = params
         self.reticle_deg: float = float(initial_reticle_deg)
+        self.reticle_elevation_deg: float = float(initial_reticle_elevation_deg)
         self.current_target_id: Optional[str] = None
         self.target_state: str = "IDLE"  # IDLE, ROTATING, ACQUIRING, SERVICING
         self.state_countdown_tics: int = 0
@@ -361,8 +369,8 @@ class SimulationController:
             return candidates[0].id
 
         elif self.policy == ControllerPolicy.NEAREST_ANGLE:
-            # Sort by smallest angular difference to current reticle
-            candidates.sort(key=lambda t: angle_diff_deg(self.reticle_deg, t.angle_deg))
+            # Sort by smallest spherical angular distance to current reticle
+            candidates.sort(key=lambda t: spherical_aim_distance_deg(self.reticle_deg, self.reticle_elevation_deg, t.angle_deg, t.elevation_deg))
             return candidates[0].id
 
         elif self.policy == ControllerPolicy.EDF:
@@ -393,7 +401,7 @@ class SimulationController:
                 target_job = visible_threats[next_t]
                 
                 # Check if rotation is needed
-                diff = angle_diff_deg(self.reticle_deg, target_job.angle_deg)
+                diff = spherical_aim_distance_deg(self.reticle_deg, self.reticle_elevation_deg, target_job.angle_deg, target_job.elevation_deg)
                 if diff > 1e-4:
                     self.target_state = "ROTATING"
                     rot_tics = int(math.ceil(diff / self.params.max_aim_deg_per_tic))
@@ -407,10 +415,18 @@ class SimulationController:
 
         # Execute state machine countdown
         if self.target_state == "ROTATING":
+            target_job = visible_threats[self.current_target_id]
+            self.reticle_deg, self.reticle_elevation_deg = slew_towards_spherical(
+                self.reticle_deg,
+                self.reticle_elevation_deg,
+                target_job.angle_deg,
+                target_job.elevation_deg,
+                self.params.max_aim_deg_per_tic
+            )
             self.state_countdown_tics -= 1
             if self.state_countdown_tics <= 0:
-                target_job = visible_threats[self.current_target_id]
                 self.reticle_deg = target_job.angle_deg
+                self.reticle_elevation_deg = target_job.elevation_deg
                 self.target_state = "ACQUIRING"
                 self.state_countdown_tics = self.params.acquisition_tics
 
@@ -624,7 +640,8 @@ class DeterministicSimulationReferee:
         geo_module: GeometricModule,
         policy: ControllerPolicy = ControllerPolicy.ORACLE,
         route_index: int = 0,
-        initial_reticle_deg: float = 0.0
+        initial_reticle_deg: float = 0.0,
+        initial_reticle_elevation_deg: float = 0.0
     ) -> SimulationEpisodeLog:
         """Run one synchronous deterministic episode."""
         route = geo_module.routes[route_index]
@@ -633,9 +650,18 @@ class DeterministicSimulationReferee:
         job_map = {j.id: j for j in jobs}
 
         # Solve scheduling oracle
-        sched_res = self.scheduler.solve(jobs, initial_reticle_deg=initial_reticle_deg)
+        sched_res = self.scheduler.solve(
+            jobs,
+            initial_reticle_deg=initial_reticle_deg,
+            initial_reticle_elevation_deg=initial_reticle_elevation_deg
+        )
 
-        controller = SimulationController(policy, self.params, initial_reticle_deg=initial_reticle_deg)
+        controller = SimulationController(
+            policy,
+            self.params,
+            initial_reticle_deg=initial_reticle_deg,
+            initial_reticle_elevation_deg=initial_reticle_elevation_deg
+        )
         visible_threats: Dict[str, TicThreatJob] = {}
         threat_reveal_tics: Dict[str, int] = {}
         threat_clear_tics: Dict[str, int] = {}
