@@ -1,12 +1,13 @@
 """Deterministic API & Unit Tests for Milestone 2E (M2E): Auto-Fix Repair Optimizer.
 
 Verifies:
-1. Canonical F1 Baffle Stagger repair (M0 = -6 tics -> M1 = +2 tics with minimal shift 0.20m).
+1. Canonical F1 Baffle Stagger repair (M0 = -6 tics -> M1 = +2 tics with minimal shift 1.10m).
 2. Custom corridor repair and candidate traversal.
 3. Already serviceable document no-op avoidance (no_repair_needed=True, evals=1).
 4. Tri-state candidate evaluation accounting (EXACT_EVALUATED vs UNSUPPORTED_ENVELOPE vs INVALID_GEOMETRY).
 5. REST API endpoint /api/document/auto_fix with commit=False (preview) and commit=True (undo/redo stack).
 6. Exact vertical-slice closed loop (G0 -> analyze -> diagnose -> repair -> re-analyze -> replay).
+7. Differential equivalence with validated MinimalRepairOptimizer across common certified domain.
 """
 
 import pytest
@@ -23,6 +24,9 @@ from cut_the_cake.cad_document import (
     get_custom_asymmetric_corridor_document,
     validate_cad_document
 )
+from cut_the_cake.repair import MinimalRepairOptimizer
+from cut_the_cake.repair_benchmark import build_unserviceable_population
+from cut_the_cake.vizdoom_engine import TicCombatParameters
 from cut_the_cake.cad_adapter import (
     analyze_cad_document,
     auto_fix_cad_document
@@ -333,4 +337,59 @@ def test_auto_fix_stale_proposal_fail_closed():
     # Initial wall_0 vertices started at x in [0.2, 0.4]; with dx=+0.30, they should start at x in [0.5, 0.7]
     xs = [v[0] for v in wall_curr["vertices"]]
     assert min(xs) == pytest.approx(0.50, abs=1e-3)
+
+
+def test_auto_fix_differential_equivalence_with_legacy_minimal_repair_optimizer():
+    """Verify differential equivalence between legacy MinimalRepairOptimizer and
+    envelope-aware auto_fix_cad_document() across the common certified domain
+    (same geometry G0, same route, theta0=0, J <= 6, same perturbation operator grid).
+    """
+    # 1. Canonical F1 Baffle Stagger
+    doc_f1 = get_canonical_f1_document()
+    geo_f1 = doc_f1.to_geometric_module()
+
+    params = TicCombatParameters()
+    legacy_opt = MinimalRepairOptimizer(params=params)
+    legacy_res = legacy_opt.repair(geo_f1, target_margin_tics=2, max_perturbation_m=1.80, search_resolution_m=0.05)
+
+    cad_res = auto_fix_cad_document(doc_f1, target_margin_tics=2, max_perturbation_m=1.80, search_resolution_m=0.05)
+
+    assert legacy_res.success is True
+    assert cad_res["success"] is True
+
+    # Initial and repaired margins must be identical
+    assert legacy_res.initial_margin_tics == cad_res["initial_margin_tics"] == -6
+    assert legacy_res.repaired_margin_tics == cad_res["repaired_margin_tics"] == 2
+
+    # Minimal edit distance must be identical (1.10m baffle shift)
+    assert legacy_res.edit_distance_m == pytest.approx(cad_res["edit_distance_m"], abs=1e-3)
+    assert legacy_res.edit_distance_m == pytest.approx(1.10, abs=1e-3)
+
+    # 2. Custom Asymmetric Corridor Document
+    doc_custom = get_custom_asymmetric_corridor_document()
+    geo_custom = doc_custom.to_geometric_module()
+
+    legacy_custom_res = legacy_opt.repair(geo_custom, target_margin_tics=2, max_perturbation_m=2.0, search_resolution_m=0.05)
+    cad_custom_res = auto_fix_cad_document(doc_custom, target_margin_tics=2, max_perturbation_m=2.0, search_resolution_m=0.05)
+
+    assert legacy_custom_res.success == cad_custom_res["success"]
+    assert legacy_custom_res.initial_margin_tics == cad_custom_res["initial_margin_tics"]
+    assert legacy_custom_res.repaired_margin_tics == cad_custom_res["repaired_margin_tics"]
+    assert legacy_custom_res.edit_distance_m == pytest.approx(cad_custom_res["edit_distance_m"], abs=1e-3)
+
+    # 3. Family 1 Population Fixtures (Audited repair benchmark suite)
+    pop = build_unserviceable_population(n_per_family=3)
+    f1_pop = [m for m in pop if m.category == "Family_1_Stagger_Deficit"]
+
+    for mod in f1_pop:
+        doc_mod = CADDocument.from_geometric_module(mod)
+        legacy_mod_res = legacy_opt.repair(mod, target_margin_tics=2, max_perturbation_m=1.80, search_resolution_m=0.05)
+        cad_mod_res = auto_fix_cad_document(doc_mod, target_margin_tics=2, max_perturbation_m=1.80, search_resolution_m=0.05)
+
+        assert legacy_mod_res.success == cad_mod_res["success"]
+        assert legacy_mod_res.initial_margin_tics == cad_mod_res["initial_margin_tics"]
+        assert legacy_mod_res.repaired_margin_tics == cad_mod_res["repaired_margin_tics"]
+        assert legacy_mod_res.edit_distance_m == pytest.approx(cad_mod_res["edit_distance_m"], abs=1e-3)
+
+
 
