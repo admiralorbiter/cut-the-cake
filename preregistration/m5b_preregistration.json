@@ -1,0 +1,85 @@
+{
+  "protocol": "M5-B.0",
+  "title": "Pre-Registered Multi-Engagement Falsification Protocol",
+  "author": "Cut the Cake Research Team",
+  "date": "2026-08-24",
+  "protocol_version": "1.0.0-blinded",
+  "description": "Pre-registered hypotheses, sealed route mappings, and falsification criteria for Milestone 5-B cross-section evaluation prior to model execution.",
+  "engagements": {
+    "ascent_a_main": {
+      "game": "Valorant",
+      "map": "Ascent",
+      "section": "A-Main to A-Site / Wine Pocket",
+      "topological_mechanism": "Off-Angle Serialization & Narrow Corridor Choke",
+      "independent_sources": [
+        "Blitz.gg Valorant Strategy Guides: Ascent A-Site Execution & Wine Clearing",
+        "VLR.gg Pro Tactical Breakdown: A-Main Wine Crossfire Defense"
+      ],
+      "declared_model_boundary": "2D Ground-plane encounter; Heaven/Rafters verticality explicitly excluded as 2D model limitation.",
+      "blinded_mapping": {
+        "route_A": "Layered Wine slice clearing off-angle before site commit",
+        "route_B": "Direct center dry rush down A-Main choke into site"
+      },
+      "evaluation_interval_m": {
+        "start": 8.0,
+        "end": 16.0,
+        "description": "A-Main choke mouth to Wine pocket threshold"
+      },
+      "pre_registered_hypotheses": {
+        "reveal_stagger_ordering": "Delta_r(route_A) > Delta_r(route_B)",
+        "approach_suffix_margin": "min_{s in [8, 16]} M_suffix(route_A, s) > min_{s in [8, 16]} M_suffix(route_B, s)",
+        "falsification_criterion": "If route_B achieves equal or higher approach suffix margin than route_A, the off-angle serialization hypothesis is falsified."
+      }
+    },
+    "dust2_b_tunnels": {
+      "game": "Counter-Strike 2",
+      "map": "de_dust2",
+      "section": "Upper B-Tunnels to B-Site Exit",
+      "topological_mechanism": "Multi-Angle Compressed Choke Exit Crossfire",
+      "independent_sources": [
+        "HLTV.org Tactical Fundamentals: Dust II Upper B Choke Vulnerability",
+        "Valve Source Overview Metadata: de_dust2 pos_x=-2476, pos_y=3239, scale=4.4"
+      ],
+      "declared_model_boundary": "Dry entry without tactical utility; multi-angle crossfire cannot be serialized by 2D geometry.",
+      "blinded_mapping": {
+        "route_A": "Left-hugging exit toward Car",
+        "route_B": "Right-swing exit toward Platform"
+      },
+      "evaluation_interval_m": {
+        "start": 0.0,
+        "end": 6.0,
+        "description": "Immediate tunnel exit threshold into B site crossfire"
+      },
+      "pre_registered_hypotheses": {
+        "choke_crossfire_collapse": "Both dry routes experience immediate K_LOS >= 2 exposure upon crossing exit threshold (s in [0, 4]m).",
+        "critical_exit_deficit": "min_{s in [0, 6]} M_suffix(s) <= 0 for both routes (model must refuse to manufacture false serialization).",
+        "falsification_criterion": "If either dry route achieves positive suffix margin (M_suffix >= +1) on exit, the choke crossfire hypothesis is falsified."
+      }
+    },
+    "transit_213": {
+      "game": "Modern Warfare 4 (Beta)",
+      "map": "Transit 213",
+      "section": "Center Parking Lot / Rusting Buses",
+      "topological_mechanism": "Occluder Lattice / Concealed Movement vs Open Lot Exposure",
+      "independent_sources": [
+        "Infinity Ward Official Tactical Overview: Transit 213 Central Lot Bus Cover vs Perimeter Sightlines",
+        "Activision Tactical Map Reference: Transit 213 Rusting Bus Corridors"
+      ],
+      "declared_model_boundary": "Planar vehicular bounding-box occluders on flat parking lot.",
+      "blinded_mapping": {
+        "route_A": "Weaves through bus lattice corridor using vehicular cover",
+        "route_B": "Direct push across open north lot lane with zero cover"
+      },
+      "evaluation_interval_m": {
+        "start": 6.0,
+        "end": 18.0,
+        "description": "Central bus parking lot transit zone"
+      },
+      "pre_registered_hypotheses": {
+        "exposure_onset_delay": "s_{K >= 2}(route_A) > s_{K >= 2}(route_B)",
+        "lot_suffix_margin": "min_{s in [6, 18]} M_suffix(route_A, s) > min_{s in [6, 18]} M_suffix(route_B, s)",
+        "falsification_criterion": "If route_B achieves earlier cover or superior suffix margin over route_A, the occluder lattice hypothesis is falsified."
+      }
+    }
+  }
+}

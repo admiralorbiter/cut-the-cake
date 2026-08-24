@@ -672,3 +672,22 @@ def get_dust2_a_long_document() -> CADDocument:
     from cut_the_cake.cad_fixtures.dust2_a_long import get_dust2_a_long_document as _get_dust2
     return _get_dust2()
 
+
+def get_ascent_a_main_document() -> CADDocument:
+    """Return metric graybox CADDocument of Valorant Ascent A-Main (M5-B)."""
+    from cut_the_cake.cad_fixtures.ascent_a_main import get_ascent_a_main_document as _get_ascent
+    return _get_ascent()
+
+
+def get_dust2_b_tunnels_document() -> CADDocument:
+    """Return metric graybox CADDocument of Dust II Upper B-Tunnels exit (M5-B)."""
+    from cut_the_cake.cad_fixtures.dust2_b_tunnels import get_dust2_b_tunnels_document as _get_dust2_b
+    return _get_dust2_b()
+
+
+def get_transit_213_document() -> CADDocument:
+    """Return metric graybox CADDocument of MW4 Transit 213 Center Lot (M5-B)."""
+    from cut_the_cake.cad_fixtures.transit_213 import get_transit_213_document as _get_transit
+    return _get_transit()
+
+

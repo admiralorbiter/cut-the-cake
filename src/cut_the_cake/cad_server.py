@@ -25,6 +25,9 @@ from .cad_document import (
     get_canonical_f1_document,
     get_custom_asymmetric_corridor_document,
     get_dust2_a_long_document,
+    get_ascent_a_main_document,
+    get_dust2_b_tunnels_document,
+    get_transit_213_document,
     validate_cad_document
 )
 from .cad_adapter import (
@@ -178,6 +181,15 @@ def create_cad_app() -> Flask:
         elif name in ("dust2_a_long", "dust2", "dust_2", "dustii"):
             doc = get_dust2_a_long_document()
             active_state["document_type"] = "dust2_a_long"
+        elif name in ("ascent_a_main", "ascent", "ascent_a"):
+            doc = get_ascent_a_main_document()
+            active_state["document_type"] = "ascent_a_main"
+        elif name in ("dust2_b_tunnels", "dust2_b", "dust2_tunnels", "b_tunnels"):
+            doc = get_dust2_b_tunnels_document()
+            active_state["document_type"] = "dust2_b_tunnels"
+        elif name in ("transit_213", "transit", "transit213"):
+            doc = get_transit_213_document()
+            active_state["document_type"] = "transit_213"
         elif "document" in req_data:
             doc_dict = req_data["document"]
             is_valid, errors = validate_cad_document(doc_dict)
