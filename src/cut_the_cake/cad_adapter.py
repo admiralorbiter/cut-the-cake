@@ -166,9 +166,6 @@ def analyze_cad_document(
     """
     t_start = time.perf_counter()
 
-    if params is None:
-        params = doc.player_model.to_combat_params()
-
     geo_module = doc.to_geometric_module()
 
     # Route selection & effective combat parameters
@@ -190,7 +187,7 @@ def analyze_cad_document(
 
     selected_route = doc.routes[route_idx]
     if params is None:
-        effective_v_move = float(selected_route.v_move_mps) if selected_route.v_move_mps > 0 else float(doc.player_model.v_move_mps)
+        effective_v_move = float(selected_route.v_move_mps) if (selected_route.v_move_mps and selected_route.v_move_mps > 0) else float(doc.player_model.v_move_mps)
         params = TicCombatParameters(
             v_move_mps=effective_v_move,
             aim_velocity_deg_s=float(doc.player_model.omega_slew_deg_per_s),
@@ -320,6 +317,8 @@ def analyze_cad_document(
         "is_valid": True,
         "document_id": doc.document_id,
         "document_name": doc.name,
+        "selected_route_id": selected_route.id,
+        "effective_v_move_mps": params.v_move_mps,
         "client_revision": client_revision,
         "runtime_ms": runtime_ms,
         "status_band": status_band,

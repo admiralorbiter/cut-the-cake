@@ -73,7 +73,7 @@ def run_benchmark(n_samples: int = 150) -> dict:
 
     results = {
         "benchmark_name": "Tactical CAD Latency Benchmark",
-        "milestone": "M2B.1",
+        "milestone": "M2B.2",
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "sample_size": n_samples,
         "layers": {

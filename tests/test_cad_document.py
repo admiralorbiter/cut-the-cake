@@ -397,32 +397,78 @@ def test_document_load_and_analyze_raw_upload_regression():
 
 def test_route_speed_override_and_reveal_timing():
     """Selected route v_move_mps must override default player speed and scale reveal/deadline tics."""
-    doc = get_custom_asymmetric_corridor_document()
-    
-    # Route 0: default 4.5 m/s
-    doc.routes[0].v_move_mps = 4.5
-    # Route 1: half speed 2.25 m/s (identical path)
-    doc.routes.append(CADRoute(
-        id="route_slow",
-        name="Slow Crawl",
-        waypoints=[[0.0, 0.0], [6.0, 0.0], [12.0, 0.0]],
-        v_move_mps=2.25
-    ))
+    doc = CADDocument(
+        document_id="route_speed_audit",
+        name="Route Speed Audit Room",
+        description="Test room for verifying route traversal speed override on reveal timing",
+        metadata={},
+        units={"coordinates": "meters", "angles": "degrees", "time": "seconds"},
+        player_model=CADPlayerModel(
+            v_move_mps=4.5,
+            omega_slew_deg_per_s=360.0,
+            acquisition_latency_s=0.15,
+            service_duration_s=0.10,
+            initial_reticle_deg=0.0
+        ),
+        boundary=[[0.0, -3.0], [10.0, -3.0], [10.0, 3.0], [0.0, 3.0], [0.0, -3.0]],
+        obstacles=[
+            CADObstacle(
+                id="blocking_wall",
+                name="Blocking Wall",
+                vertices=[[2.5, 0.3], [3.0, 0.3], [3.0, 2.8], [2.5, 2.8], [2.5, 0.3]]
+            )
+        ],
+        routes=[
+            CADRoute(
+                id="route_fast",
+                name="Fast Route (4.5 m/s)",
+                waypoints=[[0.0, 0.0], [8.0, 0.0]],
+                v_move_mps=4.5
+            ),
+            CADRoute(
+                id="route_slow",
+                name="Slow Route (2.25 m/s)",
+                waypoints=[[0.0, 0.0], [8.0, 0.0]],
+                v_move_mps=2.25
+            )
+        ],
+        threats=[
+            CADThreat(
+                id="threat_hidden",
+                name="Hidden Threat Behind Wall",
+                polygon=[[5.0, 1.5], [6.0, 1.5], [6.0, 2.5], [5.0, 2.5], [5.0, 1.5]],
+                anchor=[5.5, 2.0],
+                due_window_s=0.60,
+                service_duration_s=0.10
+            )
+        ],
+        ports=[]
+    )
 
-    # Fast and committed analysis for fast route (4.5 m/s)
-    res_fast_45 = analyze_cad_document(doc, route_id=doc.routes[0].id, include_telemetry=False)
-    res_comm_45 = analyze_cad_document(doc, route_id=doc.routes[0].id, include_telemetry=True)
-    assert res_fast_45["tactical_margin_tics"] == res_comm_45["tactical_margin_tics"]
+    # 1. Fast route analysis (4.5 m/s)
+    res_fast = analyze_cad_document(doc, route_id="route_fast", include_telemetry=False)
+    res_fast_comm = analyze_cad_document(doc, route_id="route_fast", include_telemetry=True)
+    assert res_fast["selected_route_id"] == "route_fast"
+    assert res_fast["effective_v_move_mps"] == 4.5
+    assert res_fast["tactical_margin_tics"] == res_fast_comm["tactical_margin_tics"]
 
-    # Fast and committed analysis for slow route (2.25 m/s)
-    res_fast_225 = analyze_cad_document(doc, route_id="route_slow", include_telemetry=False)
-    res_comm_225 = analyze_cad_document(doc, route_id="route_slow", include_telemetry=True)
-    assert res_fast_225["tactical_margin_tics"] == res_comm_225["tactical_margin_tics"]
+    # 2. Slow route analysis (2.25 m/s)
+    res_slow = analyze_cad_document(doc, route_id="route_slow", include_telemetry=False)
+    res_slow_comm = analyze_cad_document(doc, route_id="route_slow", include_telemetry=True)
+    assert res_slow["selected_route_id"] == "route_slow"
+    assert res_slow["effective_v_move_mps"] == 2.25
+    assert res_slow["tactical_margin_tics"] == res_slow_comm["tactical_margin_tics"]
 
-    # Traversal at 2.25 m/s takes 2x the time, so reveal tics should be ~2x larger
-    t1_fast = res_fast_45["threat_jobs"][0]["reveal_tic"]
-    t1_slow = res_fast_225["threat_jobs"][0]["reveal_tic"]
-    assert abs(t1_slow - 2 * t1_fast) <= 2
+    # 3. Exact reveal tic checks:
+    # At 4.5 m/s, reveal tic is 20 (0.5714s). At 2.25 m/s, reveal tic is 40 (1.1429s).
+    r_fast = res_fast["threat_jobs"][0]["reveal_tic"]
+    r_slow = res_slow["threat_jobs"][0]["reveal_tic"]
+    assert r_fast == 20
+    assert r_slow == 40
+    assert r_slow > r_fast
+    assert r_slow == 2 * r_fast
+    assert res_fast["threat_jobs"][0]["deadline_tic"] == 41
+    assert res_slow["threat_jobs"][0]["deadline_tic"] == 61
 
 
 def test_structured_generic_deadline_overload_diagnostic():
