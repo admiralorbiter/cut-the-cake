@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tactical Readability — Guided Explainer</title>
+  <link rel="stylesheet" href="guided.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="eyebrow">TACTICAL READABILITY · GUIDED EXPLAINER</div>
+    <h1>Why do some corners feel impossible?</h1>
+    <p class="lede">Start with familiar FPS habits—slicing the pie, centering, holding an angle—and follow them into the geometry, timing, scheduling, and information math behind tactical clearability.</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="#lesson1">Start the guided explainer</a>
+      <a class="btn" href="../index.html#section-atlas">Explore the Atlas</a>
+      <a class="btn" href="../../paper/manuscript.md">Read the research</a>
+    </div>
+  </header>
+
+  <nav class="progress" aria-label="Guided lessons">
+    <a href="#lesson1">01 Angles</a><a href="#lesson2">02 Crosshair</a><a href="#lesson3">03 Information</a><a href="#lesson4">04 Order</a><a href="#lesson5">05 Margin</a><a href="#lesson6">06 Knowledge</a><a href="#lesson7">07 Level Design</a><a href="#lesson8">08 PCG</a>
+  </nav>
+
+  <main>
+    <section id="lesson1" class="lesson">
+      <div class="lesson-copy">
+        <span class="lesson-kicker">LESSON 1 · SLICE THE PIE</span>
+        <h2>Distance from the corner controls how fast new angle is revealed.</h2>
+        <p class="player">Player language: <strong>back up from the corner and slice it instead of swinging wide.</strong></p>
+        <p class="research">Research language: the same lateral movement exposes a smaller angular slice when stand-off distance is larger.</p>
+        <div class="equation">θ(x; d) = arctan(x / d)</div>
+        <div class="equation small">Δθ = arctan((x + Δx)/d) − arctan(x/d) ≈ Δx/d</div>
+        <p class="takeaway">Same movement. Less new angle. Geometry controls the rate at which new information enters the fight.</p>
+      </div>
+      <div class="lab" id="angle-lab">
+        <div class="lab-title">ANGLE SCHOOL</div>
+        <svg id="angle-svg" viewBox="0 0 520 300"></svg>
+        <label>Distance from corner <strong id="distance-val">0.50 m</strong></label>
+        <input id="distance-slider" type="range" min="0.5" max="2.0" step="0.1" value="0.5">
+        <label>Lateral slice <strong id="slice-val">0.25 m</strong></label>
+        <input id="slice-slider" type="range" min="0.05" max="0.50" step="0.05" value="0.25">
+        <div class="readout"><span>New angle revealed</span><strong id="angle-val">26.6°</strong></div>
+      </div>
+    </section>
+
+    <section id="lesson2" class="lesson reverse">
+      <div class="lesson-copy">
+        <span class="lesson-kicker">LESSON 2 · ONE CROSSHAIR</span>
+        <h2>Crosshair placement is state.</h2>
+        <p class="player">Player language: <strong>good centering means your gun is already close to where it needs to be.</strong></p>
+        <p class="research">Research language: reticle travel is sequence-dependent setup cost.</p>
+        <div class="equation">q<sub>ij</sub> = Δθ<sub>ij</sub> / ω<sub>aim</sub></div>
+        <p class="takeaway">A 20° correction and a 120° correction are not the same job.</p>
+      </div>
+      <div class="lab">
+        <div class="lab-title">CROSSHAIR PLACEMENT LAB</div>
+        <svg id="crosshair-svg" viewBox="0 0 520 240"></svg>
+        <label>Starting crosshair angle <strong id="crosshair-val">0°</strong></label>
+        <input id="crosshair-slider" type="range" min="-80" max="80" step="5" value="0">
+        <div class="two-readouts"><div><span>Turn to left target</span><strong id="left-cost">6.8 tics</strong></div><div><span>Turn to right target</span><strong id="right-cost">5.8 tics</strong></div></div>
+      </div>
+    </section>
+
+    <section id="lesson3" class="lesson">
+      <div class="lesson-copy">
+        <span class="lesson-kicker">LESSON 3 · GEOMETRY CREATES TIME</span>
+        <h2>A wall edge acts like an information shutter.</h2>
+        <p class="player">Player language: <strong>the enemy becomes a problem the instant the angle opens.</strong></p>
+        <p class="research">Research language: geometry induces a release time and a response deadline.</p>
+        <div class="equation">r<sub>j</sub> = s<sub>j</sub>/v</div>
+        <div class="equation small">D<sub>j</sub> = r<sub>j</sub> + n<sub>j</sub></div>
+        <p class="takeaway">A sightline is not just present or absent. It opens at a particular time.</p>
+      </div>
+      <div class="lab">
+        <div class="lab-title">REVEAL TIMELINE</div>
+        <svg id="reveal-svg" viewBox="0 0 520 280"></svg>
+        <input id="reveal-slider" type="range" min="0" max="100" value="0">
+        <div class="readout"><span>Status</span><strong id="reveal-status">Threat hidden</strong></div>
+      </div>
+    </section>
+
+    <section id="lesson4" class="lesson reverse">
+      <div class="lesson-copy">
+        <span class="lesson-kicker">LESSON 4 · WHICH ANGLE FIRST?</span>
+        <h2>The order you clear threats changes whether the encounter works.</h2>
+        <p class="player">Player language: <strong>clear the dangerous angle first, then transition efficiently.</strong></p>
+        <p class="research">Research language: choose a permutation π that minimizes maximum lateness.</p>
+        <div class="equation">L<sup>π</sup> = max<sub>j</sub>(C<sub>j</sub><sup>π</sup> − D<sub>j</sub>)</div>
+        <div class="equation small">L* = min<sub>π</sub> L<sup>π</sup></div>
+      </div>
+      <div class="lab">
+        <div class="lab-title">CLEAR-ORDER CHALLENGE</div>
+        <p class="muted">Pick an order for the three threats.</p>
+        <div id="order-buttons" class="order-buttons"></div>
+        <div class="order-current">Your order: <strong id="order-current">—</strong></div>
+        <button id="order-reset" class="btn">Reset</button>
+        <button id="order-best" class="btn primary">Show best clear order</button>
+        <div class="readout"><span>Maximum lateness</span><strong id="order-lateness">—</strong></div>
+      </div>
+    </section>
+
+    <section id="lesson5" class="lesson">
+      <div class="lesson-copy">
+        <span class="lesson-kicker">LESSON 5 · TACTICAL MARGIN</span>
+        <h2>Turn the schedule into one signed reserve.</h2>
+        <div class="equation">M = −L*</div>
+        <div class="margin-legend"><span class="neg">M &lt; 0 · unserviceable</span><span class="zero">M = 0 · boundary</span><span class="pos">M &gt; 0 · reserve</span></div>
+        <p class="takeaway">This is why “two threats” can be worse than “three threats”: timing and angular sequence determine whether the work fits before the deadlines.</p>
+        <a class="btn primary" href="../index.html#section-tworooms">Open the full Two Rooms simulation</a>
+      </div>
+      <div class="lab compact">
+        <div class="lab-title">THE BRIDGE</div>
+        <div class="translation-grid">
+          <div><span>Slice the pie</span><strong>Control release order</strong></div>
+          <div><span>Centering</span><strong>Favorable reticle state</strong></div>
+          <div><span>Crossfire</span><strong>Competing urgent jobs</strong></div>
+          <div><span>Clear order</span><strong>Permutation π</strong></div>
+          <div><span>Room feels impossible</span><strong>M &lt; 0</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lesson6" class="lesson reverse">
+      <div class="lesson-copy">
+        <span class="lesson-kicker">LESSON 6 · MAP KNOWLEDGE</span>
+        <h2>What if you know where to aim before the enemy appears?</h2>
+        <p class="player">Player language: <strong>pre-aim the angle because you know the map.</strong></p>
+        <p class="research">Research language: target direction becomes actionable before visual release.</p>
+        <div class="equation">a<sub>j</sub>(ℓ) = max(0, r<sub>j</sub> − ℓ)</div>
+        <div class="equation small">ℓ* = min { ℓ : M(ℓ) ≥ 0 }</div>
+        <p class="takeaway">ℓ* asks: <strong>how many milliseconds early does target-direction information need to become actionable?</strong></p>
+        <a class="btn primary" href="../index.html#section-knowledge">Open the canonical ℓ* slider</a>
+      </div>
+      <div class="lab compact">
+        <div class="lab-title">THREE INFORMATION REGIMES</div>
+        <div class="class-grid"><div><strong>Blind-clearable</strong><span>ℓ* = 0</span></div><div><strong>Knowledge-rescuable</strong><span>0 &lt; ℓ* &lt; ∞</span></div><div><strong>Capacity-overloaded</strong><span>ℓ* = ∞</span></div></div>
+      </div>
+    </section>
+
+    <section id="lesson7" class="lesson">
+      <div class="lesson-copy">
+        <span class="lesson-kicker">LESSON 7 · LEVEL DESIGN</span>
+        <h2>The same room can change when you move one wall, take another route, or enter from another direction.</h2>
+        <p class="takeaway">Clearability belongs to a traversal through geometry under a declared player model—not to a room in the abstract.</p>
+        <a class="btn primary" href="../index.html#section-atlas">Explore the 12-layout Tactical Readability Atlas</a>
+      </div>
+      <div class="lab compact">
+        <div class="translation-grid">
+          <div><span>Move the wall</span><strong>Change reveal timing</strong></div>
+          <div><span>Take the flank</span><strong>Change job set/order</strong></div>
+          <div><span>Enter from another side</span><strong>Change initial state</strong></div>
+          <div><span>Add a baffle</span><strong>Turn overlap into sequence</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lesson8" class="lesson reverse">
+      <div class="lesson-copy">
+        <span class="lesson-kicker">LESSON 8 · FROM ONE CORNER TO PCG</span>
+        <h2>Compile local tactical behavior into composable contracts.</h2>
+        <p class="research">Once entry/exit reticle states are explicit, authored modules can be summarized by exact state-conditioned transfer maps and composed with min-plus algebra under the declared interface assumptions.</p>
+        <div class="equation">T<sub>A∘B</sub>(a,c,t) = min<sub>b</sub> T<sub>B</sub>(b,c,T<sub>A</sub>(a,b,t))</div>
+        <p class="takeaway">The intuitive question “can I safely clear this?” becomes a compile-time constraint for procedural map generation.</p>
+        <div class="hero-actions"><a class="btn primary" href="../index.html#section-atlas">Explore layouts</a><a class="btn" href="../../paper/manuscript.md">Read the paper</a></div>
+      </div>
+      <div class="lab compact">
+        <div class="final-question">HOW EARLY DO YOU NEED TO KNOW WHERE TO AIM?</div>
+        <div class="final-symbol">ℓ*</div>
+        <p class="muted">The guided explainer stops here. The Atlas, engine validation, evidence hierarchy, and manuscript carry the full research story.</p>
+      </div>
+    </section>
+
+    <section class="scope">
+      <h2>What this model isolates</h2>
+      <div class="scope-grid"><div><h3>Included</h3><p>Visibility timing, route, angular reticle motion, acquisition delay, service time, hostile deadlines, prior target-direction information.</p></div><div><h3>Not yet modeled</h3><p>Network latency, camera desync, ADS/sprint-to-fire transitions, recoil, stance animation, dynamic opponents, and arbitrary full-3D verticality.</p></div></div>
+    </section>
+  </main>
+
+  <script src="guided.js"></script>
+</body>
+</html>

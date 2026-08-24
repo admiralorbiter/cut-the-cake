@@ -1,0 +1,2027 @@
+window.TRIAL_SPEC = {
+  "schema_version": "2.0.0",
+  "created_utc": "2026-08-24T00:23:29Z",
+  "physics_constants": {
+    "ticrate_hz": 35,
+    "tic_duration_ms": 28.5714,
+    "v_move_mps": 4.5,
+    "nominal_acquisition_latency_s": 0.15,
+    "nominal_aim_velocity_deg_s": 360.0,
+    "nominal_service_duration_s": 0.1,
+    "nominal_service_tics": 4,
+    "aim_tolerance_deg": 12.0,
+    "player_eye_height_m": 1.7,
+    "wall_height_m": 2.6,
+    "target_radius_m": 0.22,
+    "target_height_m": 1.1
+  },
+  "calibration_protocol": {
+    "reaction_stage": {
+      "name": "Acquisition Latency Calibration",
+      "instructions": "Keep crosshair centered on the reticle dot. When an amber target appears at close range, click it immediately.",
+      "n_trials": 10,
+      "angular_offsets_deg": [
+        -12,
+        -8,
+        -4,
+        4,
+        8,
+        12,
+        -6,
+        6,
+        -10,
+        10
+      ],
+      "min_delay_s": 0.8,
+      "max_delay_s": 2.2
+    },
+    "slew_stage": {
+      "name": "Aim Slew Rate Calibration",
+      "instructions": "When the target jumps to a wide angle (+/-30 deg, +/-60 deg, +/-90 deg), snap to it as fast as possible and hold left click.",
+      "angles_deg": [
+        -30,
+        30,
+        -60,
+        60,
+        -90,
+        90
+      ]
+    }
+  },
+  "practice_arenas": [
+    {
+      "module_id": "PRACTICE_01_SingleCorner",
+      "name": "Practice 1: Single Corner Clearance",
+      "category": "Practice",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 2.0,
+            "y": -0.2
+          },
+          {
+            "x": 2.3,
+            "y": -0.2
+          },
+          {
+            "x": 2.3,
+            "y": 2.2
+          },
+          {
+            "x": 2.0,
+            "y": 2.2
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T_Prac1",
+          "anchor": {
+            "x": 3.75,
+            "y": 1.05
+          },
+          "reveal_tic": 18,
+          "reveal_ms": 514.3,
+          "due_window_s": 1.2,
+          "due_window_tics": 42,
+          "due_window_ms": 1200.0,
+          "deadline_tic": 60,
+          "deadline_ms": 1714.3,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": 28,
+        "m_reveal_ms": 800.0,
+        "is_reveal_feasible": true,
+        "m_preaim_tics": 32,
+        "m_preaim_ms": 914.3,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 4,
+        "delta_m_knowledge_ms": 114.3,
+        "ell_star_tics": 0,
+        "ell_star_ms": 0.0
+      }
+    },
+    {
+      "module_id": "PRACTICE_02_DoubleAngle",
+      "name": "Practice 2: Double Angle Sequencing",
+      "category": "Practice",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 1.8,
+            "y": 0.0
+          },
+          {
+            "x": 2.1,
+            "y": 0.0
+          },
+          {
+            "x": 2.1,
+            "y": 2.2
+          },
+          {
+            "x": 1.8,
+            "y": 2.2
+          }
+        ],
+        [
+          {
+            "x": 3.6,
+            "y": -2.2
+          },
+          {
+            "x": 3.9,
+            "y": -2.2
+          },
+          {
+            "x": 3.9,
+            "y": 0.0
+          },
+          {
+            "x": 3.6,
+            "y": 0.0
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1_Left",
+          "anchor": {
+            "x": 3.2,
+            "y": 1.0
+          },
+          "reveal_tic": 17,
+          "reveal_ms": 485.7,
+          "due_window_s": 1.0,
+          "due_window_tics": 35,
+          "due_window_ms": 1000.0,
+          "deadline_tic": 52,
+          "deadline_ms": 1485.7,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2_Right",
+          "anchor": {
+            "x": 5.2,
+            "y": -1.0
+          },
+          "reveal_tic": 31,
+          "reveal_ms": 885.7,
+          "due_window_s": 1.2,
+          "due_window_tics": 42,
+          "due_window_ms": 1200.0,
+          "deadline_tic": 73,
+          "deadline_ms": 2085.7,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": 20,
+        "m_reveal_ms": 571.4,
+        "is_reveal_feasible": true,
+        "m_preaim_tics": 25,
+        "m_preaim_ms": 714.3,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 5,
+        "delta_m_knowledge_ms": 142.9,
+        "ell_star_tics": 0,
+        "ell_star_ms": 0.0
+      }
+    }
+  ],
+  "vertical_slice_encounter": {
+    "module_id": "STIM_06_K3_ModestPivot",
+    "name": "Modest Flank Pivot (Boundary Crossing dM=+7)",
+    "category": "Knowledge_K3",
+    "boundary": [
+      {
+        "x": 0.0,
+        "y": -2.5
+      },
+      {
+        "x": 8.0,
+        "y": -2.5
+      },
+      {
+        "x": 8.0,
+        "y": 2.5
+      },
+      {
+        "x": 0.0,
+        "y": 2.5
+      }
+    ],
+    "obstacles": [
+      [
+        {
+          "x": 1.5,
+          "y": 0.4
+        },
+        {
+          "x": 1.8,
+          "y": 0.4
+        },
+        {
+          "x": 1.8,
+          "y": 2.5
+        },
+        {
+          "x": 1.5,
+          "y": 2.5
+        }
+      ],
+      [
+        {
+          "x": 3.0,
+          "y": -2.5
+        },
+        {
+          "x": 3.3,
+          "y": -2.5
+        },
+        {
+          "x": 3.3,
+          "y": -0.4
+        },
+        {
+          "x": 3.0,
+          "y": -0.4
+        }
+      ]
+    ],
+    "route": {
+      "route_id": "main",
+      "waypoints": [
+        {
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "x": 8.0,
+          "y": 0.0
+        }
+      ],
+      "v_move_mps": 4.5,
+      "total_length_m": 8.0,
+      "duration_s": 1.7777777777777777,
+      "total_tics": 63
+    },
+    "threats": [
+      {
+        "id": "T1",
+        "anchor": {
+          "x": 2.4,
+          "y": 1.5
+        },
+        "reveal_tic": 13,
+        "reveal_ms": 371.4,
+        "due_window_s": 0.68,
+        "due_window_tics": 24,
+        "due_window_ms": 680.0,
+        "deadline_tic": 37,
+        "deadline_ms": 1057.1,
+        "service_duration_s": 0.1,
+        "service_tics": 4
+      },
+      {
+        "id": "T2",
+        "anchor": {
+          "x": 3.9,
+          "y": -1.5
+        },
+        "reveal_tic": 24,
+        "reveal_ms": 685.7,
+        "due_window_s": 0.68,
+        "due_window_tics": 24,
+        "due_window_ms": 680.0,
+        "deadline_tic": 48,
+        "deadline_ms": 1371.4,
+        "service_duration_s": 0.1,
+        "service_tics": 4
+      }
+    ],
+    "canonical_schedule": {
+      "m_reveal_tics": -5,
+      "m_reveal_ms": -142.9,
+      "is_reveal_feasible": false,
+      "m_preaim_tics": 2,
+      "m_preaim_ms": 57.1,
+      "is_preaim_feasible": true,
+      "delta_m_knowledge_tics": 7,
+      "delta_m_knowledge_ms": 200.0,
+      "ell_star_tics": 5,
+      "ell_star_ms": 142.9
+    }
+  },
+  "pilot_suite_manifest": [
+    {
+      "module_id": "STIM_01_K0_ImpossibleAmbush",
+      "name": "Impossible Ambush (dM=0)",
+      "category": "Control_K0",
+      "m_reveal_tics": -3,
+      "m_preaim_tics": -3,
+      "ell_star_tics": null
+    },
+    {
+      "module_id": "STIM_02_K0_GenerousCorridor",
+      "name": "Generous Corridor (dM=0)",
+      "category": "Control_K0",
+      "m_reveal_tics": 13,
+      "m_preaim_tics": 13,
+      "ell_star_tics": 0
+    },
+    {
+      "module_id": "STIM_03_K0_LethalCrossfire",
+      "name": "Lethal Wide Crossfire (dM=0)",
+      "category": "Control_K0",
+      "m_reveal_tics": -28,
+      "m_preaim_tics": -20,
+      "ell_star_tics": null
+    },
+    {
+      "module_id": "STIM_04_K0_NarrowCrossfire",
+      "name": "Tight Narrow Crossfire (dM=0)",
+      "category": "Control_K0",
+      "m_reveal_tics": -7,
+      "m_preaim_tics": -7,
+      "ell_star_tics": null
+    },
+    {
+      "module_id": "STIM_05_K2_CornerBoundary",
+      "name": "Staggered Corner Boundary (dM=0)",
+      "category": "Knowledge_K2",
+      "m_reveal_tics": 3,
+      "m_preaim_tics": 3,
+      "ell_star_tics": 0
+    },
+    {
+      "module_id": "STIM_06_K3_ModestPivot",
+      "name": "Modest Flank Pivot (Boundary Crossing dM=+7)",
+      "category": "Knowledge_K3",
+      "m_reveal_tics": -5,
+      "m_preaim_tics": 2,
+      "ell_star_tics": 5
+    },
+    {
+      "module_id": "STIM_07_K4_FeasibleEnhancement",
+      "name": "Feasible Known Enhancement (Boundary Crossing dM=+7)",
+      "category": "Knowledge_K4",
+      "m_reveal_tics": -4,
+      "m_preaim_tics": 3,
+      "ell_star_tics": 4
+    },
+    {
+      "module_id": "STIM_08_K5_SweepArcPivot",
+      "name": "Sweep Arc Pivot (dM=+8)",
+      "category": "Knowledge_K5",
+      "m_reveal_tics": 2,
+      "m_preaim_tics": 10,
+      "ell_star_tics": 0
+    },
+    {
+      "module_id": "STIM_09_K6_AperturePivot",
+      "name": "Aperture Burst Pivot (Boundary Crossing dM=+6)",
+      "category": "Knowledge_K6",
+      "m_reveal_tics": -4,
+      "m_preaim_tics": 2,
+      "ell_star_tics": 4
+    },
+    {
+      "module_id": "STIM_10_K6_AlternatingFlankPivot",
+      "name": "Alternating Flank Pivot (dM=+6)",
+      "category": "Knowledge_K6",
+      "m_reveal_tics": 1,
+      "m_preaim_tics": 7,
+      "ell_star_tics": 0
+    },
+    {
+      "module_id": "STIM_11_K7_ZigzagPivot",
+      "name": "Deep Zigzag Pivot (Boundary Crossing dM=+7)",
+      "category": "Knowledge_K7",
+      "m_reveal_tics": -6,
+      "m_preaim_tics": 1,
+      "ell_star_tics": 6
+    },
+    {
+      "module_id": "STIM_12_K8_SevereKnowledgeGain",
+      "name": "Severe Knowledge Benefit Infeasible (dM=0)",
+      "category": "Knowledge_K8",
+      "m_reveal_tics": -10,
+      "m_preaim_tics": -10,
+      "ell_star_tics": null
+    }
+  ],
+  "all_stimuli": [
+    {
+      "module_id": "STIM_01_K0_ImpossibleAmbush",
+      "name": "Impossible Ambush (dM=0)",
+      "category": "Control_K0",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 2.0,
+            "y": -0.2
+          },
+          {
+            "x": 2.3,
+            "y": -0.2
+          },
+          {
+            "x": 2.3,
+            "y": 2.0
+          },
+          {
+            "x": 2.0,
+            "y": 2.0
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1",
+          "anchor": {
+            "x": 0.5,
+            "y": 1.5
+          },
+          "reveal_tic": 0,
+          "reveal_ms": 0.0,
+          "due_window_s": 0.4,
+          "due_window_tics": 14,
+          "due_window_ms": 400.0,
+          "deadline_tic": 14,
+          "deadline_ms": 400.0,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2",
+          "anchor": {
+            "x": 4.3,
+            "y": 1.3
+          },
+          "reveal_tic": 18,
+          "reveal_ms": 514.3,
+          "due_window_s": 0.4,
+          "due_window_tics": 14,
+          "due_window_ms": 400.0,
+          "deadline_tic": 32,
+          "deadline_ms": 914.3,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": -3,
+        "m_reveal_ms": -85.7,
+        "is_reveal_feasible": false,
+        "m_preaim_tics": -3,
+        "m_preaim_ms": -85.7,
+        "is_preaim_feasible": false,
+        "delta_m_knowledge_tics": 0,
+        "delta_m_knowledge_ms": 0.0,
+        "ell_star_tics": null,
+        "ell_star_ms": null
+      }
+    },
+    {
+      "module_id": "STIM_02_K0_GenerousCorridor",
+      "name": "Generous Corridor (dM=0)",
+      "category": "Control_K0",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 1.8,
+            "y": -0.2
+          },
+          {
+            "x": 2.1,
+            "y": -0.2
+          },
+          {
+            "x": 2.1,
+            "y": 1.8
+          },
+          {
+            "x": 1.8,
+            "y": 1.8
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1",
+          "anchor": {
+            "x": 0.5,
+            "y": 1.5
+          },
+          "reveal_tic": 0,
+          "reveal_ms": 0.0,
+          "due_window_s": 0.85,
+          "due_window_tics": 30,
+          "due_window_ms": 850.0,
+          "deadline_tic": 30,
+          "deadline_ms": 857.1,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2",
+          "anchor": {
+            "x": 4.3,
+            "y": 1.3
+          },
+          "reveal_tic": 17,
+          "reveal_ms": 485.7,
+          "due_window_s": 0.85,
+          "due_window_tics": 30,
+          "due_window_ms": 850.0,
+          "deadline_tic": 47,
+          "deadline_ms": 1342.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": 13,
+        "m_reveal_ms": 371.4,
+        "is_reveal_feasible": true,
+        "m_preaim_tics": 13,
+        "m_preaim_ms": 371.4,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 0,
+        "delta_m_knowledge_ms": 0.0,
+        "ell_star_tics": 0,
+        "ell_star_ms": 0.0
+      }
+    },
+    {
+      "module_id": "STIM_03_K0_LethalCrossfire",
+      "name": "Lethal Wide Crossfire (dM=0)",
+      "category": "Control_K0",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 2.0,
+            "y": 0.6
+          },
+          {
+            "x": 2.3,
+            "y": 0.6
+          },
+          {
+            "x": 2.3,
+            "y": 2.5
+          },
+          {
+            "x": 2.0,
+            "y": 2.5
+          }
+        ],
+        [
+          {
+            "x": 2.0,
+            "y": -2.5
+          },
+          {
+            "x": 2.3,
+            "y": -2.5
+          },
+          {
+            "x": 2.3,
+            "y": -0.6
+          },
+          {
+            "x": 2.0,
+            "y": -0.6
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1_L",
+          "anchor": {
+            "x": 2.776457135307562,
+            "y": 2.897777478867205
+          },
+          "reveal_tic": 17,
+          "reveal_ms": 485.7,
+          "due_window_s": 0.45,
+          "due_window_tics": 16,
+          "due_window_ms": 450.0,
+          "deadline_tic": 33,
+          "deadline_ms": 942.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2_R",
+          "anchor": {
+            "x": 2.776457135307562,
+            "y": -2.897777478867205
+          },
+          "reveal_tic": 17,
+          "reveal_ms": 485.7,
+          "due_window_s": 0.45,
+          "due_window_tics": 16,
+          "due_window_ms": 450.0,
+          "deadline_tic": 33,
+          "deadline_ms": 942.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": -28,
+        "m_reveal_ms": -800.0,
+        "is_reveal_feasible": false,
+        "m_preaim_tics": -20,
+        "m_preaim_ms": -571.4,
+        "is_preaim_feasible": false,
+        "delta_m_knowledge_tics": 8,
+        "delta_m_knowledge_ms": 228.6,
+        "ell_star_tics": null,
+        "ell_star_ms": null
+      }
+    },
+    {
+      "module_id": "STIM_04_K0_NarrowCrossfire",
+      "name": "Tight Narrow Crossfire (dM=0)",
+      "category": "Control_K0",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 2.0,
+            "y": 0.6
+          },
+          {
+            "x": 2.3,
+            "y": 0.6
+          },
+          {
+            "x": 2.3,
+            "y": 2.5
+          },
+          {
+            "x": 2.0,
+            "y": 2.5
+          }
+        ],
+        [
+          {
+            "x": 2.0,
+            "y": -2.5
+          },
+          {
+            "x": 2.3,
+            "y": -2.5
+          },
+          {
+            "x": 2.3,
+            "y": -0.6
+          },
+          {
+            "x": 2.0,
+            "y": -0.6
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1_L",
+          "anchor": {
+            "x": 4.897777478867205,
+            "y": 0.7764571353075622
+          },
+          "reveal_tic": 0,
+          "reveal_ms": 0.0,
+          "due_window_s": 0.45,
+          "due_window_tics": 16,
+          "due_window_ms": 450.0,
+          "deadline_tic": 16,
+          "deadline_ms": 457.1,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2_R",
+          "anchor": {
+            "x": 4.897777478867205,
+            "y": -0.7764571353075622
+          },
+          "reveal_tic": 0,
+          "reveal_ms": 0.0,
+          "due_window_s": 0.45,
+          "due_window_tics": 16,
+          "due_window_ms": 450.0,
+          "deadline_tic": 16,
+          "deadline_ms": 457.1,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": -7,
+        "m_reveal_ms": -200.0,
+        "is_reveal_feasible": false,
+        "m_preaim_tics": -7,
+        "m_preaim_ms": -200.0,
+        "is_preaim_feasible": false,
+        "delta_m_knowledge_tics": 0,
+        "delta_m_knowledge_ms": 0.0,
+        "ell_star_tics": null,
+        "ell_star_ms": null
+      }
+    },
+    {
+      "module_id": "STIM_05_K2_CornerBoundary",
+      "name": "Staggered Corner Boundary (dM=0)",
+      "category": "Knowledge_K2",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 1.5,
+            "y": -0.2
+          },
+          {
+            "x": 1.8,
+            "y": -0.2
+          },
+          {
+            "x": 1.8,
+            "y": 1.8
+          },
+          {
+            "x": 1.5,
+            "y": 1.8
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1",
+          "anchor": {
+            "x": 0.5,
+            "y": 1.5
+          },
+          "reveal_tic": 0,
+          "reveal_ms": 0.0,
+          "due_window_s": 0.55,
+          "due_window_tics": 19,
+          "due_window_ms": 550.0,
+          "deadline_tic": 19,
+          "deadline_ms": 542.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2",
+          "anchor": {
+            "x": 4.3,
+            "y": 1.3
+          },
+          "reveal_tic": 15,
+          "reveal_ms": 428.6,
+          "due_window_s": 0.55,
+          "due_window_tics": 19,
+          "due_window_ms": 550.0,
+          "deadline_tic": 34,
+          "deadline_ms": 971.4,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": 3,
+        "m_reveal_ms": 85.7,
+        "is_reveal_feasible": true,
+        "m_preaim_tics": 3,
+        "m_preaim_ms": 85.7,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 0,
+        "delta_m_knowledge_ms": 0.0,
+        "ell_star_tics": 0,
+        "ell_star_ms": 0.0
+      }
+    },
+    {
+      "module_id": "STIM_06_K3_ModestPivot",
+      "name": "Modest Flank Pivot (Boundary Crossing dM=+7)",
+      "category": "Knowledge_K3",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 1.5,
+            "y": 0.4
+          },
+          {
+            "x": 1.8,
+            "y": 0.4
+          },
+          {
+            "x": 1.8,
+            "y": 2.5
+          },
+          {
+            "x": 1.5,
+            "y": 2.5
+          }
+        ],
+        [
+          {
+            "x": 3.0,
+            "y": -2.5
+          },
+          {
+            "x": 3.3,
+            "y": -2.5
+          },
+          {
+            "x": 3.3,
+            "y": -0.4
+          },
+          {
+            "x": 3.0,
+            "y": -0.4
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1",
+          "anchor": {
+            "x": 2.4,
+            "y": 1.5
+          },
+          "reveal_tic": 13,
+          "reveal_ms": 371.4,
+          "due_window_s": 0.68,
+          "due_window_tics": 24,
+          "due_window_ms": 680.0,
+          "deadline_tic": 37,
+          "deadline_ms": 1057.1,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2",
+          "anchor": {
+            "x": 3.9,
+            "y": -1.5
+          },
+          "reveal_tic": 24,
+          "reveal_ms": 685.7,
+          "due_window_s": 0.68,
+          "due_window_tics": 24,
+          "due_window_ms": 680.0,
+          "deadline_tic": 48,
+          "deadline_ms": 1371.4,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": -5,
+        "m_reveal_ms": -142.9,
+        "is_reveal_feasible": false,
+        "m_preaim_tics": 2,
+        "m_preaim_ms": 57.1,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 7,
+        "delta_m_knowledge_ms": 200.0,
+        "ell_star_tics": 5,
+        "ell_star_ms": 142.9
+      }
+    },
+    {
+      "module_id": "STIM_07_K4_FeasibleEnhancement",
+      "name": "Feasible Known Enhancement (Boundary Crossing dM=+7)",
+      "category": "Knowledge_K4",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 1.5,
+            "y": 0.4
+          },
+          {
+            "x": 1.8,
+            "y": 0.4
+          },
+          {
+            "x": 1.8,
+            "y": 2.5
+          },
+          {
+            "x": 1.5,
+            "y": 2.5
+          }
+        ],
+        [
+          {
+            "x": 3.5,
+            "y": -2.5
+          },
+          {
+            "x": 3.8,
+            "y": -2.5
+          },
+          {
+            "x": 3.8,
+            "y": -0.4
+          },
+          {
+            "x": 3.5,
+            "y": -0.4
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1",
+          "anchor": {
+            "x": 2.4,
+            "y": 1.5
+          },
+          "reveal_tic": 13,
+          "reveal_ms": 371.4,
+          "due_window_s": 0.6,
+          "due_window_tics": 21,
+          "due_window_ms": 600.0,
+          "deadline_tic": 34,
+          "deadline_ms": 971.4,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2",
+          "anchor": {
+            "x": 4.4,
+            "y": -1.5
+          },
+          "reveal_tic": 28,
+          "reveal_ms": 800.0,
+          "due_window_s": 0.6,
+          "due_window_tics": 21,
+          "due_window_ms": 600.0,
+          "deadline_tic": 49,
+          "deadline_ms": 1400.0,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": -4,
+        "m_reveal_ms": -114.3,
+        "is_reveal_feasible": false,
+        "m_preaim_tics": 3,
+        "m_preaim_ms": 85.7,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 7,
+        "delta_m_knowledge_ms": 200.0,
+        "ell_star_tics": 4,
+        "ell_star_ms": 114.3
+      }
+    },
+    {
+      "module_id": "STIM_08_K5_SweepArcPivot",
+      "name": "Sweep Arc Pivot (dM=+8)",
+      "category": "Knowledge_K5",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 1.5,
+            "y": 0.2
+          },
+          {
+            "x": 1.8,
+            "y": 0.2
+          },
+          {
+            "x": 1.8,
+            "y": 2.5
+          },
+          {
+            "x": 1.5,
+            "y": 2.5
+          }
+        ],
+        [
+          {
+            "x": 3.0,
+            "y": 0.2
+          },
+          {
+            "x": 3.3,
+            "y": 0.2
+          },
+          {
+            "x": 3.3,
+            "y": 2.5
+          },
+          {
+            "x": 3.0,
+            "y": 2.5
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1",
+          "anchor": {
+            "x": 2.2,
+            "y": 1.4
+          },
+          "reveal_tic": 14,
+          "reveal_ms": 400.0,
+          "due_window_s": 0.55,
+          "due_window_tics": 19,
+          "due_window_ms": 550.0,
+          "deadline_tic": 33,
+          "deadline_ms": 942.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2",
+          "anchor": {
+            "x": 3.7,
+            "y": 1.4
+          },
+          "reveal_tic": 26,
+          "reveal_ms": 742.9,
+          "due_window_s": 0.55,
+          "due_window_tics": 19,
+          "due_window_ms": 550.0,
+          "deadline_tic": 45,
+          "deadline_ms": 1285.7,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": 2,
+        "m_reveal_ms": 57.1,
+        "is_reveal_feasible": true,
+        "m_preaim_tics": 10,
+        "m_preaim_ms": 285.7,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 8,
+        "delta_m_knowledge_ms": 228.6,
+        "ell_star_tics": 0,
+        "ell_star_ms": 0.0
+      }
+    },
+    {
+      "module_id": "STIM_09_K6_AperturePivot",
+      "name": "Aperture Burst Pivot (Boundary Crossing dM=+6)",
+      "category": "Knowledge_K6",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -3.0
+        },
+        {
+          "x": 9.0,
+          "y": -3.0
+        },
+        {
+          "x": 9.0,
+          "y": 3.0
+        },
+        {
+          "x": 0.0,
+          "y": 3.0
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 1.8,
+            "y": 0.2
+          },
+          {
+            "x": 2.0,
+            "y": 0.2
+          },
+          {
+            "x": 2.0,
+            "y": 2.5
+          },
+          {
+            "x": 1.8,
+            "y": 2.5
+          }
+        ],
+        [
+          {
+            "x": 3.1999999999999997,
+            "y": -2.5
+          },
+          {
+            "x": 3.4,
+            "y": -2.5
+          },
+          {
+            "x": 3.4,
+            "y": -0.2
+          },
+          {
+            "x": 3.1999999999999997,
+            "y": -0.2
+          }
+        ],
+        [
+          {
+            "x": 4.6,
+            "y": 0.2
+          },
+          {
+            "x": 4.8,
+            "y": 0.2
+          },
+          {
+            "x": 4.8,
+            "y": 2.5
+          },
+          {
+            "x": 4.6,
+            "y": 2.5
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 9.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 9.0,
+        "duration_s": 2.0,
+        "total_tics": 70
+      },
+      "threats": [
+        {
+          "id": "F3_T1",
+          "anchor": {
+            "x": 3.0,
+            "y": 1.7
+          },
+          "reveal_tic": 15,
+          "reveal_ms": 428.6,
+          "due_window_s": 0.9,
+          "due_window_tics": 32,
+          "due_window_ms": 900.0,
+          "deadline_tic": 47,
+          "deadline_ms": 1342.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "F3_T2",
+          "anchor": {
+            "x": 4.6,
+            "y": -1.7
+          },
+          "reveal_tic": 26,
+          "reveal_ms": 742.9,
+          "due_window_s": 0.9,
+          "due_window_tics": 32,
+          "due_window_ms": 900.0,
+          "deadline_tic": 58,
+          "deadline_ms": 1657.1,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "F3_T3",
+          "anchor": {
+            "x": 6.0,
+            "y": 1.7
+          },
+          "reveal_tic": 37,
+          "reveal_ms": 1057.1,
+          "due_window_s": 0.9,
+          "due_window_tics": 32,
+          "due_window_ms": 900.0,
+          "deadline_tic": 69,
+          "deadline_ms": 1971.4,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": -4,
+        "m_reveal_ms": -114.3,
+        "is_reveal_feasible": false,
+        "m_preaim_tics": 2,
+        "m_preaim_ms": 57.1,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 6,
+        "delta_m_knowledge_ms": 171.4,
+        "ell_star_tics": 4,
+        "ell_star_ms": 114.3
+      }
+    },
+    {
+      "module_id": "STIM_10_K6_AlternatingFlankPivot",
+      "name": "Alternating Flank Pivot (dM=+6)",
+      "category": "Knowledge_K6",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 10.0,
+          "y": -2.5
+        },
+        {
+          "x": 10.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 2.0,
+            "y": 0.2
+          },
+          {
+            "x": 2.3,
+            "y": 0.2
+          },
+          {
+            "x": 2.3,
+            "y": 2.2
+          },
+          {
+            "x": 2.0,
+            "y": 2.2
+          }
+        ],
+        [
+          {
+            "x": 4.0,
+            "y": -2.2
+          },
+          {
+            "x": 4.3,
+            "y": -2.2
+          },
+          {
+            "x": 4.3,
+            "y": -0.2
+          },
+          {
+            "x": 4.0,
+            "y": -0.2
+          }
+        ],
+        [
+          {
+            "x": 6.0,
+            "y": 0.2
+          },
+          {
+            "x": 6.3,
+            "y": 0.2
+          },
+          {
+            "x": 6.3,
+            "y": 2.2
+          },
+          {
+            "x": 6.0,
+            "y": 2.2
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 10.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 10.0,
+        "duration_s": 2.2222222222222223,
+        "total_tics": 78
+      },
+      "threats": [
+        {
+          "id": "F4_T1_L",
+          "anchor": {
+            "x": 3.0,
+            "y": 1.4
+          },
+          "reveal_tic": 17,
+          "reveal_ms": 485.7,
+          "due_window_s": 0.85,
+          "due_window_tics": 30,
+          "due_window_ms": 850.0,
+          "deadline_tic": 47,
+          "deadline_ms": 1342.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "F4_T2_R",
+          "anchor": {
+            "x": 5.0,
+            "y": -1.4
+          },
+          "reveal_tic": 33,
+          "reveal_ms": 942.9,
+          "due_window_s": 0.85,
+          "due_window_tics": 30,
+          "due_window_ms": 850.0,
+          "deadline_tic": 63,
+          "deadline_ms": 1800.0,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "F4_T3_L",
+          "anchor": {
+            "x": 7.0,
+            "y": 1.4
+          },
+          "reveal_tic": 49,
+          "reveal_ms": 1400.0,
+          "due_window_s": 0.85,
+          "due_window_tics": 30,
+          "due_window_ms": 850.0,
+          "deadline_tic": 79,
+          "deadline_ms": 2257.1,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": 1,
+        "m_reveal_ms": 28.6,
+        "is_reveal_feasible": true,
+        "m_preaim_tics": 7,
+        "m_preaim_ms": 200.0,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 6,
+        "delta_m_knowledge_ms": 171.4,
+        "ell_star_tics": 0,
+        "ell_star_ms": 0.0
+      }
+    },
+    {
+      "module_id": "STIM_11_K7_ZigzagPivot",
+      "name": "Deep Zigzag Pivot (Boundary Crossing dM=+7)",
+      "category": "Knowledge_K7",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 10.0,
+          "y": -2.5
+        },
+        {
+          "x": 10.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 2.0,
+            "y": 0.3
+          },
+          {
+            "x": 2.3,
+            "y": 0.3
+          },
+          {
+            "x": 2.3,
+            "y": 2.5
+          },
+          {
+            "x": 2.0,
+            "y": 2.5
+          }
+        ],
+        [
+          {
+            "x": 3.5,
+            "y": -2.5
+          },
+          {
+            "x": 3.8,
+            "y": -2.5
+          },
+          {
+            "x": 3.8,
+            "y": -0.3
+          },
+          {
+            "x": 3.5,
+            "y": -0.3
+          }
+        ],
+        [
+          {
+            "x": 5.0,
+            "y": 0.3
+          },
+          {
+            "x": 5.3,
+            "y": 0.3
+          },
+          {
+            "x": 5.3,
+            "y": 2.5
+          },
+          {
+            "x": 5.0,
+            "y": 2.5
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 10.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 10.0,
+        "duration_s": 2.2222222222222223,
+        "total_tics": 78
+      },
+      "threats": [
+        {
+          "id": "T1",
+          "anchor": {
+            "x": 2.8,
+            "y": 1.4
+          },
+          "reveal_tic": 17,
+          "reveal_ms": 485.7,
+          "due_window_s": 0.98,
+          "due_window_tics": 34,
+          "due_window_ms": 980.0,
+          "deadline_tic": 51,
+          "deadline_ms": 1457.1,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2",
+          "anchor": {
+            "x": 4.3,
+            "y": -1.4
+          },
+          "reveal_tic": 29,
+          "reveal_ms": 828.6,
+          "due_window_s": 0.98,
+          "due_window_tics": 34,
+          "due_window_ms": 980.0,
+          "deadline_tic": 63,
+          "deadline_ms": 1800.0,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T3",
+          "anchor": {
+            "x": 5.8,
+            "y": 1.4
+          },
+          "reveal_tic": 41,
+          "reveal_ms": 1171.4,
+          "due_window_s": 0.98,
+          "due_window_tics": 34,
+          "due_window_ms": 980.0,
+          "deadline_tic": 75,
+          "deadline_ms": 2142.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": -6,
+        "m_reveal_ms": -171.4,
+        "is_reveal_feasible": false,
+        "m_preaim_tics": 1,
+        "m_preaim_ms": 28.6,
+        "is_preaim_feasible": true,
+        "delta_m_knowledge_tics": 7,
+        "delta_m_knowledge_ms": 200.0,
+        "ell_star_tics": 6,
+        "ell_star_ms": 171.4
+      }
+    },
+    {
+      "module_id": "STIM_12_K8_SevereKnowledgeGain",
+      "name": "Severe Knowledge Benefit Infeasible (dM=0)",
+      "category": "Knowledge_K8",
+      "boundary": [
+        {
+          "x": 0.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": -2.5
+        },
+        {
+          "x": 8.0,
+          "y": 2.5
+        },
+        {
+          "x": 0.0,
+          "y": 2.5
+        }
+      ],
+      "obstacles": [
+        [
+          {
+            "x": 2.0,
+            "y": 0.6
+          },
+          {
+            "x": 2.3,
+            "y": 0.6
+          },
+          {
+            "x": 2.3,
+            "y": 2.5
+          },
+          {
+            "x": 2.0,
+            "y": 2.5
+          }
+        ],
+        [
+          {
+            "x": 2.0,
+            "y": -2.5
+          },
+          {
+            "x": 2.3,
+            "y": -2.5
+          },
+          {
+            "x": 2.3,
+            "y": -0.6
+          },
+          {
+            "x": 2.0,
+            "y": -0.6
+          }
+        ]
+      ],
+      "route": {
+        "route_id": "main",
+        "waypoints": [
+          {
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "x": 8.0,
+            "y": 0.0
+          }
+        ],
+        "v_move_mps": 4.5,
+        "total_length_m": 8.0,
+        "duration_s": 1.7777777777777777,
+        "total_tics": 63
+      },
+      "threats": [
+        {
+          "id": "T1_L",
+          "anchor": {
+            "x": 4.897777478867205,
+            "y": 0.7764571353075622
+          },
+          "reveal_tic": 0,
+          "reveal_ms": 0.0,
+          "due_window_s": 0.35,
+          "due_window_tics": 12,
+          "due_window_ms": 350.0,
+          "deadline_tic": 12,
+          "deadline_ms": 342.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        },
+        {
+          "id": "T2_R",
+          "anchor": {
+            "x": 4.897777478867205,
+            "y": -0.7764571353075622
+          },
+          "reveal_tic": 0,
+          "reveal_ms": 0.0,
+          "due_window_s": 0.35,
+          "due_window_tics": 12,
+          "due_window_ms": 350.0,
+          "deadline_tic": 12,
+          "deadline_ms": 342.9,
+          "service_duration_s": 0.1,
+          "service_tics": 4
+        }
+      ],
+      "canonical_schedule": {
+        "m_reveal_tics": -10,
+        "m_reveal_ms": -285.7,
+        "is_reveal_feasible": false,
+        "m_preaim_tics": -10,
+        "m_preaim_ms": -285.7,
+        "is_preaim_feasible": false,
+        "delta_m_knowledge_tics": 0,
+        "delta_m_knowledge_ms": 0.0,
+        "ell_star_tics": null,
+        "ell_star_ms": null
+      }
+    }
+  ]
+};

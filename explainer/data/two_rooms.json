@@ -1,0 +1,126 @@
+{
+  "roomA": {
+    "id": "roomA_disagreement",
+    "title": "Room A: Low Count, Unserviceable",
+    "subtitle": "Only two threats \u2014 but the fight is impossible under the model.",
+    "k_static": 2,
+    "tactical_margin_tics": -1,
+    "tactical_margin_ms": -28.6,
+    "outcome": "UNSERVICEABLE (DEAD)",
+    "is_clearable": false,
+    "route": [
+      [
+        20,
+        160
+      ],
+      [
+        480,
+        160
+      ]
+    ],
+    "walls": [
+      {
+        "x": 200,
+        "y": 0,
+        "w": 30,
+        "h": 100
+      },
+      {
+        "x": 200,
+        "y": 220,
+        "w": 30,
+        "h": 100
+      }
+    ],
+    "threats": [
+      {
+        "id": "T1",
+        "name": "Left Flank",
+        "x": 400,
+        "y": 50,
+        "angle_deg": 65.0,
+        "reveal_ms": 571.4,
+        "deadline_ms": 971.4,
+        "reveal_pos_x": 220
+      },
+      {
+        "id": "T2",
+        "name": "Right Flank",
+        "x": 400,
+        "y": 270,
+        "angle_deg": -85.0,
+        "reveal_ms": 571.4,
+        "deadline_ms": 971.4,
+        "reveal_pos_x": 220
+      }
+    ],
+    "callout": "The room does not fail because two targets are visible. It fails because they become urgent at nearly the same time and require too much reticle travel to service sequentially (150\u00b0 flip takes 417 ms)."
+  },
+  "roomB": {
+    "id": "roomB_staggered",
+    "title": "Room B: Higher Count, Serviceable",
+    "subtitle": "Three threats \u2014 but the fight is clearable.",
+    "k_static": 3,
+    "tactical_margin_tics": 23,
+    "tactical_margin_ms": 657.1,
+    "outcome": "CLEARABLE (SURVIVES)",
+    "is_clearable": true,
+    "route": [
+      [
+        20,
+        160
+      ],
+      [
+        480,
+        160
+      ]
+    ],
+    "walls": [
+      {
+        "x": 160,
+        "y": 0,
+        "w": 30,
+        "h": 90
+      },
+      {
+        "x": 290,
+        "y": 230,
+        "w": 30,
+        "h": 90
+      }
+    ],
+    "threats": [
+      {
+        "id": "T1",
+        "name": "Corner Slice 1",
+        "x": 250,
+        "y": 70,
+        "angle_deg": 35.0,
+        "reveal_ms": 285.7,
+        "deadline_ms": 1428.6,
+        "reveal_pos_x": 110
+      },
+      {
+        "id": "T2",
+        "name": "Hallway Slice 2",
+        "x": 360,
+        "y": 160,
+        "angle_deg": 0.0,
+        "reveal_ms": 800.0,
+        "deadline_ms": 2000.0,
+        "reveal_pos_x": 230
+      },
+      {
+        "id": "T3",
+        "name": "Deep Corner 3",
+        "x": 440,
+        "y": 250,
+        "angle_deg": -35.0,
+        "reveal_ms": 1371.4,
+        "deadline_ms": 2571.4,
+        "reveal_pos_x": 350
+      }
+    ],
+    "callout": "Room B reveals 3 threats sequentially along player motion. Reticle bearings form a smooth sweep rather than an abrupt cross-screen switch."
+  }
+}

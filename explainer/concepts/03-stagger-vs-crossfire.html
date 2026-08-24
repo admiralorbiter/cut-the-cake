@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>03 — Stagger vs Crossfire</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .scene-svg {
+      width: 100%;
+      height: 320px;
+      display: block;
+      background: #070b11;
+      border-radius: 12px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .status-bad {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #f85149;
+    }
+    .status-good {
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+      color: #3fb950;
+    }
+    .timeline-container {
+      margin-top: 14px;
+      background: #0a111a;
+      border: 1px solid #1f2d3d;
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .t-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .t-row:last-child { margin-bottom: 0; }
+    .t-label {
+      width: 75px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #8fa1b4;
+    }
+    .t-track {
+      flex: 1;
+      height: 24px;
+      background: #111822;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #233142;
+    }
+    .t-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <a class="back" href="index.html">← Concepts Index</a>
+      <span class="pill">Lesson 03 · Teaching Contrast</span>
+    </div>
+
+    <section class="hero">
+      <div class="eyebrow">03 · REVEAL TIMING & EXPOSURE WORKLOAD</div>
+      <h1>Why can two enemies be worse than three?</h1>
+      <p>Because danger is not determined by raw threat count. It is determined by <strong>concurrent workload</strong>—how much urgent work arrives at your crosshair at the exact same millisecond.</p>
+    </section>
+
+    <!-- Side-by-Side Comparison -->
+    <div class="grid2">
+      
+      <!-- CARD 1: CROSSFIRE -->
+      <div class="card">
+        <div class="compare-title bad">✗ 2 ENEMIES · SIMULTANEOUS CROSSFIRE</div>
+        <div class="scene">
+          <svg class="scene-svg" viewBox="0 0 500 320">
+            <defs>
+              <pattern id="grid-c3-cf" width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+              <pattern id="hatch-c3-cf" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+              </pattern>
+            </defs>
+            <rect width="500" height="320" fill="url(#grid-c3-cf)"/>
+
+            <!-- Obstacle Pillars -->
+            <rect x="220" y="20" width="26" height="95" fill="#161b22" stroke="#58a6ff" stroke-width="1.5" rx="2"/>
+            <rect x="222" y="22" width="22" height="91" fill="url(#hatch-c3-cf)" opacity="0.5"/>
+
+            <rect x="220" y="205" width="26" height="95" fill="#161b22" stroke="#58a6ff" stroke-width="1.5" rx="2"/>
+            <rect x="222" y="207" width="22" height="91" fill="url(#hatch-c3-cf)" opacity="0.5"/>
+
+            <!-- Player -->
+            <circle cx="130" cy="160" r="10" fill="#58a6ff" stroke="#fff" stroke-width="2.5"/>
+            <text x="130" y="190" fill="#58a6ff" font-size="11" font-weight="900" text-anchor="middle">YOU</text>
+
+            <!-- Enemy 1 (Upper) & Enemy 2 (Lower) -->
+            <rect x="380" y="45" width="28" height="28" fill="#f85149" stroke="#fff" stroke-width="2" rx="6"/>
+            <text x="394" y="63" fill="#fff" font-size="11" font-weight="900" text-anchor="middle">E1</text>
+
+            <rect x="380" y="245" width="28" height="28" fill="#f85149" stroke="#fff" stroke-width="2" rx="6"/>
+            <text x="394" y="263" fill="#fff" font-size="11" font-weight="900" text-anchor="middle">E2</text>
+
+            <!-- Dual Lines of Fire at same instant -->
+            <line x1="130" y1="160" x2="380" y2="59" stroke="#f85149" stroke-width="2" stroke-dasharray="4,2"/>
+            <line x1="130" y1="160" x2="380" y2="259" stroke="#f85149" stroke-width="2" stroke-dasharray="4,2"/>
+
+            <!-- Wide Conflict Arc -->
+            <path d="M 175 130 A 45 45 0 0 1 175 190" fill="none" stroke="#f85149" stroke-width="3"/>
+            <text x="240" y="165" fill="#f85149" text-anchor="middle" font-size="14" font-weight="900">110° CONFLICT</text>
+
+            <!-- HUD Title Badge -->
+            <rect x="35" y="35" width="210" height="42" fill="rgba(15, 22, 34, 0.92)" stroke="#f85149" stroke-width="1" rx="6"/>
+            <text x="44" y="52" fill="#f85149" font-size="12" font-weight="900">PEAK WORKLOAD = 2 THREATS</text>
+            <text x="44" y="67" fill="#8fa1b4" font-size="10">Both deadlines expire together</text>
+          </svg>
+        </div>
+
+        <!-- Timeline: Overlapping Urgency -->
+        <div class="timeline-container">
+          <div class="t-row">
+            <span class="t-label">E1 Window:</span>
+            <div class="t-track">
+              <div class="t-fill" style="left: 6%; width: 48%; background: #f85149;">r₁ = 0 ms (Deadline: 350 ms)</div>
+            </div>
+          </div>
+          <div class="t-row">
+            <span class="t-label">E2 Window:</span>
+            <div class="t-track">
+              <div class="t-fill" style="left: 6%; width: 48%; background: #f85149;">r₂ = 0 ms (FATAL QUEUE COLLISION)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-badge status-bad">⚠️ UNFAIR CROSSFIRE (FATAL BOTTLENECK)</div>
+        <p style="margin-top: 10px; font-size: 14px; color: #8fa1b4;">Both threats appear simultaneously at opposing 110° angles. Even with instant reaction on E1, turning to E2 takes 170ms, causing E2 to eliminate you before your reticle arrives.</p>
+      </div>
+
+      <!-- CARD 2: STAGGERED REVEALS -->
+      <div class="card">
+        <div class="compare-title good">✓ 3 ENEMIES · 1-BY-1 ISOLATION BEHIND COVER</div>
+        <div class="scene">
+          <svg class="scene-svg" viewBox="0 0 500 320">
+            <defs>
+              <pattern id="grid-c3-st" width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+              <pattern id="hatch-c3-st" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+              </pattern>
+            </defs>
+            <rect width="500" height="320" fill="url(#grid-c3-st)"/>
+
+            <!-- Staggered Baffle Pillars -->
+            <rect x="200" y="115" width="22" height="110" fill="#161b22" stroke="#3fb950" stroke-width="1.5" rx="2"/>
+            <rect x="202" y="117" width="18" height="106" fill="url(#hatch-c3-st)" opacity="0.5"/>
+
+            <rect x="320" y="35" width="22" height="120" fill="#161b22" stroke="#3fb950" stroke-width="1.5" rx="2"/>
+            <rect x="322" y="37" width="18" height="116" fill="url(#hatch-c3-st)" opacity="0.5"/>
+
+            <!-- Player -->
+            <circle cx="70" cy="75" r="10" fill="#58a6ff" stroke="#fff" stroke-width="2.5"/>
+            <text x="70" y="105" fill="#58a6ff" font-size="11" font-weight="900" text-anchor="middle">YOU</text>
+
+            <!-- Enemy 1 (Visible now) -->
+            <rect x="155" y="35" width="26" height="26" fill="#3fb950" stroke="#fff" stroke-width="2" rx="6"/>
+            <text x="168" y="52" fill="#fff" font-size="11" font-weight="900" text-anchor="middle">E1</text>
+
+            <!-- Enemy 2 (Hidden behind Pillar 1) -->
+            <rect x="270" y="190" width="26" height="26" fill="#21262d" stroke="#3fb950" stroke-width="1.5" rx="6"/>
+            <text x="283" y="207" fill="#8fa1b4" font-size="11" font-weight="900" text-anchor="middle">E2</text>
+
+            <!-- Enemy 3 (Hidden behind Pillar 2) -->
+            <rect x="410" y="90" width="26" height="26" fill="#21262d" stroke="#3fb950" stroke-width="1.5" rx="6"/>
+            <text x="423" y="107" fill="#8fa1b4" font-size="11" font-weight="900" text-anchor="middle">E3</text>
+
+            <!-- Sequential Traversal Path -->
+            <path d="M 70 75 L 160 75 Q 195 75 215 135 L 265 135 Q 305 135 340 85 L 410 85" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="5,3"/>
+
+            <!-- Active Sightline to E1 only -->
+            <line x1="70" y1="75" x2="155" y2="48" stroke="#3fb950" stroke-width="2.5"/>
+
+            <!-- HUD Title Badge -->
+            <rect x="35" y="35" width="220" height="42" fill="rgba(15, 22, 34, 0.92)" stroke="#3fb950" stroke-width="1" rx="6"/>
+            <text x="44" y="52" fill="#3fb950" font-size="12" font-weight="900">PEAK WORKLOAD = 1 THREAT</text>
+            <text x="44" y="67" fill="#8fa1b4" font-size="10">Cover isolates each fight sequentially</text>
+          </svg>
+        </div>
+
+        <!-- Timeline: Staggered Isolation -->
+        <div class="timeline-container">
+          <div class="t-row">
+            <span class="t-label">E1 Window:</span>
+            <div class="t-track">
+              <div class="t-fill" style="left: 4%; width: 29%; background: #3fb950;">r₁ = 0 ms (Fight 1)</div>
+            </div>
+          </div>
+          <div class="t-row">
+            <span class="t-label">E2 Window:</span>
+            <div class="t-track">
+              <div class="t-fill" style="left: 36%; width: 29%; background: #3fb950;">r₂ = 450 ms (Fight 2)</div>
+            </div>
+          </div>
+          <div class="t-row">
+            <span class="t-label">E3 Window:</span>
+            <div class="t-track">
+              <div class="t-fill" style="left: 68%; width: 29%; background: #3fb950;">r₃ = 900 ms (Fight 3)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-badge status-good">✓ 100% CLEARABLE (ZERO QUEUE OVERLAP)</div>
+        <p style="margin-top: 10px; font-size: 14px; color: #8fa1b4;">More total enemies, but zero concurrent overlap. The player eliminates E1, takes a step behind cover to isolate E2, and finishes E3 with comfortable tactical margins on every shot.</p>
+      </div>
+
+    </div>
+
+    <div class="takeaway">Threat count is not workload. Concurrent exposure is workload.</div>
+
+    <!-- Mathematical Details with Clean Typography -->
+    <details class="math">
+      <summary>📐 Mathematical Definition: Job Release Windows and Single-Server Queuing</summary>
+      <div class="eq">Job J<sub>j</sub> Release Time: r<sub>j</sub> = Time Threat j Becomes Visible in Line-of-Sight</div>
+      <p>In scheduling theory, the player's aim reticle is modeled as a <strong>single server</strong> that can only process one threat job at a time:</p>
+      <ul>
+        <li><strong>Simultaneous Releases (r₁ = r₂):</strong> Two jobs enter the service queue at the exact same millisecond. The server must process J₁ over time <em>A + p</em>, then perform setup transition <em>q = Δθ / ω</em>, then process J₂. If <em>r₁ + A + p + q + p &gt; D₂</em>, the schedule is mathematically infeasible regardless of player skill.</li>
+        <li><strong>Geometry-Driven Stagger (r₂ ≥ r₁ + A + p + q):</strong> Geometry buffers the second release, resetting the queue to 0 before J₂ arrives. Even with 10 sequential threats, workload remains 1 at all times.</li>
+      </ul>
+    </details>
+  </main>
+</body>
+</html>

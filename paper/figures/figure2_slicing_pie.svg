@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 450" width="1000" height="450" style="background:#0d1117; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <text x="30" y="32" fill="#f0f6fc" font-size="16" font-weight="bold">Figure 2: The Slicing-the-Pie Disagreement Gallery</text>
+  <text x="30" y="52" fill="#8b949e" font-size="12">Constructive counterexamples demonstrating why peak static visibility (K_static) fails bidirectionally.</text>
+
+  <!-- Left: Room A (Lethal Trap) -->
+  <g transform="translate(30, 75)">
+    <rect width="455" height="345" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <rect x="15" y="15" width="340" height="22" rx="4" fill="rgba(248,81,73,0.15)" stroke="rgba(248,81,73,0.3)"/>
+    <text x="22" y="30" fill="#f85149" font-size="11" font-weight="bold">ROOM A: BLIND-SPOT TRAP · K_static ≤ 2 (PASS) → UNSERVICEABLE</text>
+    
+    <!-- Floorplan -->
+    <rect x="15" y="45" width="425" height="155" rx="4" fill="#090d13" stroke="#30363d"/>
+    <rect x="180" y="45" width="25" height="55" fill="#21262d" stroke="#484f58"/>
+    <rect x="180" y="145" width="25" height="55" fill="#21262d" stroke="#484f58"/>
+    
+    <line x1="30" y1="122" x2="410" y2="122" stroke="rgba(88,166,255,0.4)" stroke-dasharray="3,3" stroke-width="1.5"/>
+    <circle cx="205" cy="122" r="6" fill="#58a6ff"/>
+
+    <!-- Dual Unocclusion Rays -->
+    <line x1="205" y1="122" x2="360" y2="65" stroke="#58a6ff" stroke-width="1.5"/>
+    <rect x="355" y="58" width="14" height="14" rx="2" fill="#f85149" stroke="#fff"/>
+    <text x="362" y="69" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">T1</text>
+
+    <line x1="205" y1="122" x2="360" y2="180" stroke="#f85149" stroke-width="1.5" stroke-dasharray="2,2"/>
+    <rect x="355" y="173" width="14" height="14" rx="2" fill="#f85149" stroke="#fff"/>
+    <text x="362" y="184" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">T2</text>
+
+    <!-- Angular Flip Arc -->
+    <path d="M 235 105 A 35 35 0 0 1 235 140" fill="none" stroke="#d29922" stroke-width="2"/>
+    <text x="248" y="126" fill="#d29922" font-size="10" font-weight="bold">Δθ = 150°</text>
+
+    <!-- Metrics Table -->
+    <g transform="translate(15, 210)">
+      <rect width="425" height="50" rx="4" fill="#090d13" stroke="#30363d"/>
+      <text x="15" y="20" fill="#8b949e" font-size="10">Static Concurrency:</text>
+      <text x="15" y="38" fill="#3fb950" font-size="11" font-weight="bold">K_static = 2 (Allowed ≤ 2)</text>
+
+      <text x="150" y="20" fill="#8b949e" font-size="10">Reticle Slew Time:</text>
+      <text x="150" y="38" fill="#d29922" font-size="11" font-weight="bold">q = 417 ms (150° flip)</text>
+
+      <text x="290" y="20" fill="#8b949e" font-size="10">Tactical Margin (M):</text>
+      <text x="290" y="38" fill="#f85149" font-size="11" font-weight="bold">-1 tic (-28 ms) [UNSERVICEABLE]</text>
+    </g>
+
+    <text x="15" y="280" fill="#8b949e" font-size="10" width="425">
+      <tspan x="15" dy="0">Reason for Model Rejection: Both threats unocclude simultaneously at the same</tspan>
+      <tspan x="15" dy="14">threshold, forcing a 150° angular slew. Slew + acquisition latency breaches T2's deadline.</tspan>
+    </text>
+  </g>
+
+  <!-- Right: Room B (Solvable Staggered Multi-Threat) -->
+  <g transform="translate(515, 75)">
+    <rect width="455" height="345" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <rect x="15" y="15" width="340" height="22" rx="4" fill="rgba(63,185,80,0.15)" stroke="rgba(63,185,80,0.3)"/>
+    <text x="22" y="30" fill="#3fb950" font-size="11" font-weight="bold">ROOM B: STAGGERED CLEAR · K_static > 2 (REJECT) → CLEARABLE</text>
+
+    <!-- Floorplan -->
+    <rect x="15" y="45" width="425" height="155" rx="4" fill="#090d13" stroke="#30363d"/>
+    <rect x="140" y="45" width="20" height="50" fill="#21262d" stroke="#484f58"/>
+    <rect x="250" y="150" width="20" height="50" fill="#21262d" stroke="#484f58"/>
+
+    <line x1="30" y1="122" x2="410" y2="122" stroke="rgba(88,166,255,0.4)" stroke-dasharray="3,3" stroke-width="1.5"/>
+    
+    <!-- Threats staggered -->
+    <rect x="230" y="60" width="14" height="14" rx="2" fill="#3fb950" stroke="#fff"/>
+    <text x="237" y="71" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">T1</text>
+    <rect x="320" y="115" width="14" height="14" rx="2" fill="#3fb950" stroke="#fff"/>
+    <text x="327" y="126" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">T2</text>
+    <rect x="390" y="170" width="14" height="14" rx="2" fill="#3fb950" stroke="#fff"/>
+    <text x="397" y="181" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">T3</text>
+
+    <!-- Player with smooth arc -->
+    <circle cx="160" cy="122" r="6" fill="#58a6ff"/>
+    <line x1="160" y1="122" x2="230" y2="67" stroke="#3fb950" stroke-width="1.5"/>
+    <path d="M 180 110 A 25 25 0 0 1 185 125" fill="none" stroke="#3fb950" stroke-width="2"/>
+    <text x="195" y="120" fill="#3fb950" font-size="9">Δθ = 35°</text>
+
+    <!-- Metrics Table -->
+    <g transform="translate(15, 210)">
+      <rect width="425" height="50" rx="4" fill="#090d13" stroke="#30363d"/>
+      <text x="15" y="20" fill="#8b949e" font-size="10">Static Concurrency:</text>
+      <text x="15" y="38" fill="#f85149" font-size="11" font-weight="bold">K_static = 3 (Rejected > 2)</text>
+
+      <text x="150" y="20" fill="#8b949e" font-size="10">Reticle Slew Time:</text>
+      <text x="150" y="38" fill="#3fb950" font-size="11" font-weight="bold">q = 97 ms (35° smooth arc)</text>
+
+      <text x="290" y="20" fill="#8b949e" font-size="10">Tactical Margin (M):</text>
+      <text x="290" y="38" fill="#3fb950" font-size="11" font-weight="bold">+23 tics (+657 ms) [CLEARABLE]</text>
+    </g>
+
+    <text x="15" y="280" fill="#8b949e" font-size="10" width="425">
+      <tspan x="15" dy="0">Reason for Model Clearance: Obstacle geometry staggers unocclusions across 1.6s.</tspan>
+      <tspan x="15" dy="14">The player slices the pie sequentially in smooth 35° steps with full margin reserve.</tspan>
+    </text>
+  </g>
+</svg>

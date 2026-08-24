@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" width="1000" height="460" style="background:#0d1117; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <text x="30" y="32" fill="#f0f6fc" font-size="16" font-weight="bold">Figure 4: The Critical Actionability Lead (ℓ*) &amp; Native ViZDoom Three-Stage Threshold Transition</text>
+  <text x="30" y="52" fill="#8b949e" font-size="12">Evaluating how advance target-direction warning a_j(ℓ) = max(0, r_j - ℓ) translates to native C++ ViZDoom execution.</text>
+
+  <!-- Left: Step Function Graph for the 4 Pivots -->
+  <g transform="translate(30, 75)">
+    <rect width="520" height="355" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <text x="20" y="25" fill="#f0f6fc" font-size="13" font-weight="bold">Knowledge Response Functions M(ℓ) Across 4 Pivots</text>
+    <text x="20" y="42" fill="#8b949e" font-size="10">M(ℓ) is provably monotone non-decreasing (Proposition 1)</text>
+
+    <!-- Chart Box -->
+    <g transform="translate(50, 60)">
+      <rect width="440" height="240" fill="#090d13" stroke="#30363d"/>
+
+      <!-- Feasible Zone -->
+      <rect x="0" y="0" width="440" height="100" fill="rgba(63,185,80,0.08)"/>
+      <rect x="0" y="100" width="440" height="140" fill="rgba(248,81,73,0.08)"/>
+
+      <!-- Zero Line -->
+      <line x1="0" y1="100" x2="440" y2="100" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <text x="-8" y="104" fill="#8b949e" font-size="10" text-anchor="end">M = 0</text>
+
+      <!-- STIM_07 Curve (Green) -->
+      <polyline points="0,180 44,180 44,160 88,160 88,140 132,140 132,120 176,120 176,100 220,100 220,80 264,80 264,60 308,60 308,40 440,40" fill="none" stroke="#3fb950" stroke-width="3"/>
+      <circle cx="176" cy="100" r="5" fill="#3fb950" stroke="#fff" stroke-width="2"/>
+      <text x="190" y="95" fill="#3fb950" font-size="10" font-weight="bold">STIM_07 (ℓ*=4t)</text>
+
+      <!-- STIM_11 Curve (Orange) -->
+      <polyline points="0,220 44,220 44,200 88,200 88,180 132,180 132,160 176,160 176,140 220,140 220,120 264,120 264,100 308,100 308,80 440,80" fill="none" stroke="#d29922" stroke-width="3"/>
+      <circle cx="264" cy="100" r="5" fill="#d29922" stroke="#fff" stroke-width="2"/>
+      <text x="278" y="95" fill="#d29922" font-size="10" font-weight="bold">STIM_11 (ℓ*=6t)</text>
+
+      <!-- STIM_06 Curve (Blue) -->
+      <polyline points="0,200 44,200 44,180 88,180 88,160 132,160 132,140 176,140 176,120 220,120 220,100 264,100 264,80 308,80 308,60 440,60" fill="none" stroke="#58a6ff" stroke-width="2" stroke-dasharray="4,2"/>
+
+      <!-- X Axis Ticks -->
+      <text x="0" y="255" fill="#8b949e" font-size="9" text-anchor="middle">0t (0ms)</text>
+      <text x="88" y="255" fill="#8b949e" font-size="9" text-anchor="middle">2t (57ms)</text>
+      <text x="176" y="255" fill="#8b949e" font-size="9" text-anchor="middle">4t (114ms)</text>
+      <text x="264" y="255" fill="#8b949e" font-size="9" text-anchor="middle">6t (171ms)</text>
+      <text x="352" y="255" fill="#8b949e" font-size="9" text-anchor="middle">8t (229ms)</text>
+      <text x="440" y="255" fill="#8b949e" font-size="9" text-anchor="middle">10t (286ms)</text>
+
+      <text x="220" y="275" fill="#f0f6fc" font-size="11" font-weight="bold" text-anchor="middle">Advance Information Lead ℓ (Doom Tics &amp; Milliseconds)</text>
+    </g>
+  </g>
+
+  <!-- Right: ViZDoom 3-Stage Threshold Table -->
+  <g transform="translate(570, 75)">
+    <rect width="400" height="355" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <text x="20" y="25" fill="#f0f6fc" font-size="13" font-weight="bold">Three-Stage Threshold Decomposition</text>
+    <text x="20" y="42" fill="#8b949e" font-size="10">ℓ*_source → ℓ*_engine-model → ℓ*_survival in native ZDoom</text>
+
+    <!-- Table Header -->
+    <g transform="translate(20, 60)">
+      <rect width="360" height="24" fill="#21262d" rx="3"/>
+      <text x="10" y="16" fill="#f0f6fc" font-size="10" font-weight="bold">Fixture</text>
+      <text x="110" y="16" fill="#f0f6fc" font-size="10" font-weight="bold">Source ℓ*</text>
+      <text x="190" y="16" fill="#f0f6fc" font-size="10" font-weight="bold">Engine ℓ*</text>
+      <text x="270" y="16" fill="#f0f6fc" font-size="10" font-weight="bold">Survives ℓ*</text>
+    </g>
+
+    <!-- Row 1: STIM_06 -->
+    <g transform="translate(20, 90)">
+      <rect width="360" height="28" fill="#090d13" stroke="#30363d" rx="3"/>
+      <text x="10" y="18" fill="#f0f6fc" font-size="10" font-weight="bold">STIM_06 (Double Baffle)</text>
+      <text x="110" y="18" fill="#58a6ff" font-size="10">5 tics (143ms)</text>
+      <text x="190" y="18" fill="#8b949e" font-size="10">4 tics</text>
+      <text x="270" y="18" fill="#3fb950" font-size="10" font-weight="bold">4 tics (114ms) ✓</text>
+    </g>
+
+    <!-- Row 2: STIM_07 -->
+    <g transform="translate(20, 124)">
+      <rect width="360" height="28" fill="#090d13" stroke="#30363d" rx="3"/>
+      <text x="10" y="18" fill="#f0f6fc" font-size="10" font-weight="bold">STIM_07 (Spaced Baffle)</text>
+      <text x="110" y="18" fill="#58a6ff" font-size="10">4 tics (114ms)</text>
+      <text x="190" y="18" fill="#8b949e" font-size="10">3 tics</text>
+      <text x="270" y="18" fill="#3fb950" font-size="10" font-weight="bold">3 tics (86ms) ✓</text>
+    </g>
+
+    <!-- Row 3: STIM_09 -->
+    <g transform="translate(20, 158)">
+      <rect width="360" height="28" fill="#090d13" stroke="#30363d" rx="3"/>
+      <text x="10" y="18" fill="#f0f6fc" font-size="10" font-weight="bold">STIM_09 (Aperture Burst)</text>
+      <text x="110" y="18" fill="#58a6ff" font-size="10">4 tics (114ms)</text>
+      <text x="190" y="18" fill="#8b949e" font-size="10">3 tics</text>
+      <text x="270" y="18" fill="#d29922" font-size="10" font-weight="bold">5 tics (143ms) ✓</text>
+    </g>
+
+    <!-- Row 4: STIM_11 -->
+    <g transform="translate(20, 192)">
+      <rect width="360" height="28" fill="#090d13" stroke="#30363d" rx="3"/>
+      <text x="10" y="18" fill="#f0f6fc" font-size="10" font-weight="bold">STIM_11 (Zigzag Flank)</text>
+      <text x="110" y="18" fill="#58a6ff" font-size="10">6 tics (171ms)</text>
+      <text x="190" y="18" fill="#8b949e" font-size="10">4 tics</text>
+      <text x="270" y="18" fill="#3fb950" font-size="10" font-weight="bold">5 tics (143ms) ✓</text>
+    </g>
+
+    <!-- Key Takeaway Box -->
+    <g transform="translate(20, 235)">
+      <rect width="360" height="95" fill="rgba(63,185,80,0.12)" stroke="#3fb950" rx="4"/>
+      <text x="15" y="20" fill="#3fb950" font-size="11" font-weight="bold">External Game Engine Boundary Tracking</text>
+      <text x="15" y="38" fill="#f0f6fc" font-size="10">• Observed survival tracks ℓ*_source within |Δ| ≤ 1 tic (28.6 ms).</text>
+      <text x="15" y="54" fill="#8b949e" font-size="10">• STIM_06 &amp; STIM_07: Perfect engine model tracking (ℓ*_eng = ℓ*_surv).</text>
+      <text x="15" y="70" fill="#8b949e" font-size="10">• STIM_09 &amp; STIM_11: Discrete motor aim tolerance adds 1-2 tics.</text>
+      <text x="15" y="86" fill="#58a6ff" font-size="10" font-weight="bold">• Observed survival thresholds remained within one tic of the source-model threshold in all four selected boundary fixtures.</text>
+    </g>
+  </g>
+</svg>

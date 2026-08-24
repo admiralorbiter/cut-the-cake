@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "version": "v2.0-provenance-grounded",
+    "description": "Tactical Readability Atlas grounded in compiler fixtures, canonical stimuli, and design archetypes.",
+    "ticrate_hz": 35,
+    "tic_duration_ms": 28.571428571428573
+  },
+  "f05": {
+    "direct_center": {
+      "is_feasible": false,
+      "tactical_margin_tics": -13,
+      "tactical_margin_ms": -371.4,
+      "k_static": 2,
+      "threats": [
+        {
+          "id": "F05_T1",
+          "angle": -20.6,
+          "reveal_tic": 0,
+          "deadline_tic": 11
+        },
+        {
+          "id": "F05_T2",
+          "angle": 7.1,
+          "reveal_tic": 0,
+          "deadline_tic": 11
+        }
+      ]
+    },
+    "upper_flank": {
+      "is_feasible": true,
+      "tactical_margin_tics": 0,
+      "tactical_margin_ms": 0.0,
+      "k_static": 0,
+      "threats": []
+    }
+  },
+  "f06": {
+    "0.70": {
+      "wall_x_m": 0.7,
+      "is_feasible": false,
+      "status": "VALID_INFEASIBLE",
+      "reveal_gap_ms": 211.1,
+      "reveal_gap_tics": 7,
+      "tactical_margin_tics": -2,
+      "tactical_margin_ms": -57.1,
+      "l_star_ms": 114,
+      "r1_tic": 0,
+      "r2_tic": 7
+    },
+    "0.75": {
+      "wall_x_m": 0.75,
+      "is_feasible": false,
+      "status": "VALID_INFEASIBLE",
+      "reveal_gap_ms": 222.2,
+      "reveal_gap_tics": 8,
+      "tactical_margin_tics": -2,
+      "tactical_margin_ms": -57.1,
+      "l_star_ms": 114,
+      "r1_tic": 0,
+      "r2_tic": 8
+    },
+    "0.80": {
+      "wall_x_m": 0.8,
+      "is_feasible": false,
+      "status": "VALID_INFEASIBLE",
+      "reveal_gap_ms": 233.3,
+      "reveal_gap_tics": 8,
+      "tactical_margin_tics": -2,
+      "tactical_margin_ms": -57.1,
+      "l_star_ms": 114,
+      "r1_tic": 0,
+      "r2_tic": 8
+    },
+    "0.85": {
+      "wall_x_m": 0.85,
+      "is_feasible": false,
+      "status": "VALID_INFEASIBLE",
+      "reveal_gap_ms": 244.4,
+      "reveal_gap_tics": 9,
+      "tactical_margin_tics": -1,
+      "tactical_margin_ms": -28.6,
+      "l_star_ms": 57,
+      "r1_tic": 0,
+      "r2_tic": 9
+    },
+    "0.90": {
+      "wall_x_m": 0.9,
+      "is_feasible": true,
+      "status": "VALID_FEASIBLE",
+      "reveal_gap_ms": 255.6,
+      "reveal_gap_tics": 9,
+      "tactical_margin_tics": 1,
+      "tactical_margin_ms": 28.6,
+      "l_star_ms": 0,
+      "r1_tic": 0,
+      "r2_tic": 9
+    },
+    "0.95": {
+      "wall_x_m": 0.95,
+      "is_feasible": true,
+      "status": "VALID_FEASIBLE",
+      "reveal_gap_ms": 266.7,
+      "reveal_gap_tics": 9,
+      "tactical_margin_tics": 1,
+      "tactical_margin_ms": 28.6,
+      "l_star_ms": 0,
+      "r1_tic": 0,
+      "r2_tic": 9
+    },
+    "1.00": {
+      "wall_x_m": 1.0,
+      "is_feasible": true,
+      "status": "VALID_FEASIBLE",
+      "reveal_gap_ms": 277.8,
+      "reveal_gap_tics": 10,
+      "tactical_margin_tics": 1,
+      "tactical_margin_ms": 28.6,
+      "l_star_ms": 0,
+      "r1_tic": 0,
+      "r2_tic": 10
+    }
+  }
+}

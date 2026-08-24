@@ -1,0 +1,110 @@
+[
+  {
+    "module_id": "STIM_06_K3_ModestPivot",
+    "l_star_tics": 5,
+    "lead_tics": 4,
+    "lead_ms": 114.3,
+    "m_predicted_tics": -1,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_06_K3_ModestPivot",
+    "l_star_tics": 5,
+    "lead_tics": 5,
+    "lead_ms": 142.9,
+    "m_predicted_tics": 0,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_06_K3_ModestPivot",
+    "l_star_tics": 5,
+    "lead_tics": 6,
+    "lead_ms": 171.4,
+    "m_predicted_tics": 1,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_07_K4_FeasibleEnhancement",
+    "l_star_tics": 4,
+    "lead_tics": 3,
+    "lead_ms": 85.7,
+    "m_predicted_tics": -1,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_07_K4_FeasibleEnhancement",
+    "l_star_tics": 4,
+    "lead_tics": 4,
+    "lead_ms": 114.3,
+    "m_predicted_tics": 0,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_07_K4_FeasibleEnhancement",
+    "l_star_tics": 4,
+    "lead_tics": 5,
+    "lead_ms": 142.9,
+    "m_predicted_tics": 1,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_09_K6_AperturePivot",
+    "l_star_tics": 4,
+    "lead_tics": 3,
+    "lead_ms": 85.7,
+    "m_predicted_tics": -1,
+    "engine_survived": false,
+    "death_tic": 70
+  },
+  {
+    "module_id": "STIM_09_K6_AperturePivot",
+    "l_star_tics": 4,
+    "lead_tics": 4,
+    "lead_ms": 114.3,
+    "m_predicted_tics": 0,
+    "engine_survived": false,
+    "death_tic": 70
+  },
+  {
+    "module_id": "STIM_09_K6_AperturePivot",
+    "l_star_tics": 4,
+    "lead_tics": 5,
+    "lead_ms": 142.9,
+    "m_predicted_tics": 1,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_11_K7_ZigzagPivot",
+    "l_star_tics": 6,
+    "lead_tics": 5,
+    "lead_ms": 142.9,
+    "m_predicted_tics": -1,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_11_K7_ZigzagPivot",
+    "l_star_tics": 6,
+    "lead_tics": 6,
+    "lead_ms": 171.4,
+    "m_predicted_tics": 0,
+    "engine_survived": true,
+    "death_tic": null
+  },
+  {
+    "module_id": "STIM_11_K7_ZigzagPivot",
+    "l_star_tics": 6,
+    "lead_tics": 7,
+    "lead_ms": 200.0,
+    "m_predicted_tics": 1,
+    "engine_survived": true,
+    "death_tic": null
+  }
+]

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>06 — Map Knowledge</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .scene-svg {
+      width: 100%;
+      height: 280px;
+      display: block;
+      background: #070b10;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <a class="back" href="index.html">← Concepts Index</a>
+      <span class="pill">Lesson 06 · Advance Information</span>
+    </div>
+
+    <section class="hero">
+      <div class="eyebrow">06 · MAP KNOWLEDGE & PRE-ALIGNMENT</div>
+      <h1>What does knowing the map buy you?</h1>
+      <p>Map knowledge does not eliminate the enemy. It allows you to execute reticle setup time <em>before</em> line-of-sight is established, so your crosshairs are already on target at the moment of reveal.</p>
+    </section>
+
+    <div class="card">
+      <div class="controls">
+        <label>Advance Warning / Lead Time (ℓ):</label>
+        <input id="l" type="range" min="0" max="200" step="14.3" value="0">
+        <span class="bigmetric" id="lv">0 ms</span>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="compare-title">1. BEFORE REVEAL (BEHIND CORNER COVER)</div>
+          <div class="scene">
+            <svg id="pre" class="scene-svg" viewBox="0 0 500 280"></svg>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="compare-title">2. AT REVEAL (STEPPING PAST CORNER)</div>
+          <div class="scene">
+            <svg id="rev" class="scene-svg" viewBox="0 0 500 280"></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top: 16px;">
+        <div class="card">
+          <div class="label">Reticle Readiness at Reveal</div>
+          <div class="bigmetric" id="ready">STILL TURNING</div>
+        </div>
+        <div class="card">
+          <div class="label">Tactical Feasibility</div>
+          <div class="bigmetric" id="status">114 ms SHORT</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="takeaway">Knowledge does not remove the enemy. It moves rotational setup time into cover.</div>
+
+    <details class="math">
+      <summary>📐 Show the research mathematics</summary>
+      <div class="eq">a_j(\ell) = \max(0, r_j - \ell)</div>
+      <div class="eq">\ell^* = \min \{ \ell : M(\ell) \ge 0 \}</div>
+      <p>This teaching control uses a $114\text{ ms}$ threshold to illustrate the intuition behind the canonical <code>STIM_07</code> critical lead time. In the complete scheduling model, advance knowledge shifts the arrival of setup work into the pre-exposure interval before the threat's response clock begins.</p>
+    </details>
+  </main>
+
+  <script>
+    const l = document.getElementById('l');
+    const TH = 114;
+
+    function scene(id, isPre, lead) {
+      const s = document.getElementById(id);
+      const pct = Math.min(1, lead / TH);
+
+      // Target angle towards enemy in room (~ -35 degrees)
+      const targetAngDeg = -38;
+      // Starting neutral angle (straight ahead along corridor, 0 deg)
+      const currentAngDeg = targetAngDeg * pct;
+      const rad = currentAngDeg * Math.PI / 180;
+
+      const cornerX = 220, cornerY = 150;
+      const px = isPre ? 140 : 235;
+      const py = isPre ? 220 : 160;
+
+      const reticleLen = 70;
+      const rx = px + Math.cos(rad) * reticleLen;
+      const ry = py + Math.sin(rad) * reticleLen;
+
+      const enemyX = 390, enemyY = 60;
+
+      s.innerHTML = `
+        <defs>
+          <pattern id="grid-${id}" width="16" height="16" patternUnits="userSpaceOnUse">
+            <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+          </pattern>
+          <pattern id="wall-${id}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+          </pattern>
+        </defs>
+
+        <rect width="500" height="280" fill="url(#grid-${id})"/>
+
+        <!-- Top-Left Solid Obstacle Wall -->
+        <rect x="0" y="0" width="${cornerX}" height="${cornerY}" fill="#161b22" stroke="#58a6ff" stroke-width="2"/>
+        <rect x="2" y="2" width="${cornerX - 4}" height="${cornerY - 4}" fill="url(#wall-${id})" opacity="0.6"/>
+        <text x="${cornerX / 2}" y="${cornerY / 2 + 5}" fill="#8fa1b4" font-size="11" font-weight="bold" text-anchor="middle">SOLID WALL</text>
+
+        <!-- Corner Apex -->
+        <circle cx="${cornerX}" cy="${cornerY}" r="4" fill="#58a6ff" stroke="#fff" stroke-width="1.5"/>
+
+        <!-- Enemy E -->
+        <rect x="${enemyX}" y="${enemyY}" width="28" height="28" fill="${isPre ? '#21262d' : '#f85149'}" stroke="${isPre ? '#484f58' : '#fff'}" stroke-width="${isPre ? 1.5 : 2}" rx="5"/>
+        <text x="${enemyX + 14}" y="${enemyY + 18}" fill="${isPre ? '#8fa1b4' : '#fff'}" font-size="11" font-weight="900" text-anchor="middle">E</text>
+        <text x="${enemyX + 36}" y="${enemyY + 18}" fill="${isPre ? '#8fa1b4' : '#f85149'}" font-size="10" font-weight="bold">${isPre ? 'OCCLUDED' : 'EXPOSED'}</text>
+
+        <!-- Player -->
+        <circle cx="${px}" cy="${py}" r="9" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+        <text x="${px}" y="${py + 20}" fill="#58a6ff" font-size="10" font-weight="bold" text-anchor="middle">${isPre ? 'BEHIND COVER' : 'ON PIVOT'}</text>
+
+        <!-- Reticle aim vector -->
+        <line x1="${px}" y1="${py}" x2="${rx}" y2="${ry}" stroke="${lead >= TH ? '#3fb950' : '#58a6ff'}" stroke-width="4"/>
+        <circle cx="${rx}" cy="${ry}" r="4" fill="${lead >= TH ? '#3fb950' : '#58a6ff'}"/>
+
+        <!-- Sightline at reveal -->
+        ${!isPre ? `
+          <line x1="${px}" y1="${py}" x2="${enemyX + 14}" y2="${enemyY + 14}" stroke="${lead >= TH ? '#3fb950' : '#f85149'}" stroke-width="2" stroke-dasharray="4,2"/>
+        ` : ''}
+
+        <text x="250" y="260" fill="#93a4b7" text-anchor="middle" font-size="13">
+          ${isPre ? (lead >= TH ? '✓ Reticle fully pre-aimed behind cover' : 'Pre-rotating aim towards expected angle...') : (lead >= TH ? '✓ Already on crosshairs at instant of reveal!' : '⚠️ Revealing while still turning reticle (vulnerable)')}
+        </text>
+      `;
+    }
+
+    function draw() {
+      const v = Math.round(+l.value);
+      document.getElementById('lv').textContent = v + ' ms';
+      scene('pre', true, v);
+      scene('rev', false, v);
+
+      const r = document.getElementById('ready');
+      const st = document.getElementById('status');
+
+      if (v >= TH) {
+        r.textContent = 'ON ANGLE';
+        r.className = 'bigmetric good';
+        st.textContent = 'FEASIBLE (0 ms DEFICIT)';
+        st.className = 'bigmetric good';
+      } else {
+        r.textContent = 'STILL TURNING';
+        r.className = 'bigmetric bad';
+        st.textContent = (TH - v) + ' ms DEFICIT';
+        st.className = 'bigmetric bad';
+      }
+    }
+
+    l.oninput = draw;
+    draw();
+  </script>
+</body>
+</html>

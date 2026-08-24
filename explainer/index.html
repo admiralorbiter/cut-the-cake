@@ -1,0 +1,762 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tactical Clearability — Interactive Visual Explainer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-container">
+
+    <!-- =====================================================================
+         SECTION 1: HERO
+         ===================================================================== -->
+    <header class="hero-section">
+      <div class="badge">VISUAL RESEARCH EXPLAINER · FIRST DRAFT</div>
+      <h1 class="hero-title">A map can be reachable and still be tactically impossible to read.</h1>
+      <p class="hero-subtitle">
+        Level geometry controls <em>when</em> threats become visible. The player's single crosshair has to rotate and service each threat before its combat deadline expires.
+      </p>
+      <div class="hero-actions">
+        <a href="#section-tworooms" class="btn btn-primary">See why counting sightlines fails ↓</a>
+        <a href="#section-pipeline" class="btn">Geometry → Schedule Pipeline ↓</a>
+        <a href="#section-knowledge" class="btn">Map Knowledge Slider (ℓ*) ↓</a>
+        <a href="#section-atlas" class="btn btn-primary">Tactical Readability Atlas ↓</a>
+        <button id="btn-export-pdf" class="btn" onclick="window.print()" style="background: #238636; color: #fff; border-color: #2ea043; cursor: pointer;">📄 Export / Print PDF</button>
+      </div>
+    </header>
+
+    <!-- =====================================================================
+         SECTION 2: VISUAL 1 — TWO ROOMS COMPARISON
+         ===================================================================== -->
+    <section id="section-tworooms" class="explainer-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Visual 1: Two Rooms — Counting Sightlines Predicts the Wrong Answer Twice</h2>
+          <p class="section-desc">Comparing two layouts where static line-of-sight count (<i>K</i><sub>static</sub>) contradicts true temporal clearability.</p>
+        </div>
+        <div class="anim-playback-controls">
+          <button class="btn btn-primary" id="btn-tworooms-play">▶ Play Simulation</button>
+          <button class="btn" id="btn-tworooms-reset">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- Split Screen Grid -->
+      <div class="two-rooms-grid">
+        
+        <!-- LEFT PANEL: ROOM A (LOW COUNT, UNSERVICEABLE) -->
+        <div class="room-panel room-lethal">
+          <div class="room-header">
+            <span class="room-tag tag-lethal">ROOM A · LOW COUNT, UNSERVICEABLE</span>
+            <h3>Only two threats — but the fight is impossible.</h3>
+          </div>
+
+          <div class="map-view-wrapper">
+            <svg id="svg-roomA" viewBox="0 0 460 260" class="room-svg"></svg>
+            <div class="hud-tag" id="hud-roomA">Time: 0.0s | Margin: -28ms</div>
+          </div>
+
+          <div class="timeline-box">
+            <div class="timeline-heading">Service Timeline & Deadlines</div>
+            <div class="timeline-rows" id="timeline-roomA"></div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-metric">
+              <span class="lbl">Visible Threats</span>
+              <span class="val">2</span>
+            </div>
+            <div class="summary-metric">
+              <span class="lbl">Static Heuristic</span>
+              <span class="val status-pass">PASS (K ≤ 2)</span>
+            </div>
+            <div class="summary-metric">
+              <span class="lbl">Tactical Margin (M)</span>
+              <span class="val status-fail">-1 tic (-28 ms)</span>
+            </div>
+            <div class="summary-metric">
+              <span class="lbl">Outcome</span>
+              <span class="val status-fail">UNSERVICEABLE 💀</span>
+            </div>
+          </div>
+
+          <p class="panel-caption">
+            The room does not fail because two targets are visible. It fails because they become urgent at nearly the same time and require a massive 150° reticle flip (417 ms) to service sequentially.
+          </p>
+        </div>
+
+        <!-- RIGHT PANEL: ROOM B (HIGHER COUNT, SERVICEABLE) -->
+        <div class="room-panel room-safe">
+          <div class="room-header">
+            <span class="room-tag tag-safe">ROOM B · HIGHER COUNT, SERVICEABLE</span>
+            <h3>Three threats — but the fight is clearable.</h3>
+          </div>
+
+          <div class="map-view-wrapper">
+            <svg id="svg-roomB" viewBox="0 0 460 260" class="room-svg"></svg>
+            <div class="hud-tag" id="hud-roomB">Time: 0.0s | Margin: +657ms</div>
+          </div>
+
+          <div class="timeline-box">
+            <div class="timeline-heading">Service Timeline & Deadlines</div>
+            <div class="timeline-rows" id="timeline-roomB"></div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-metric">
+              <span class="lbl">Visible Threats</span>
+              <span class="val">3</span>
+            </div>
+            <div class="summary-metric">
+              <span class="lbl">Static Heuristic</span>
+              <span class="val status-fail">FAIL (K > 2)</span>
+            </div>
+            <div class="summary-metric">
+              <span class="lbl">Tactical Margin (M)</span>
+              <span class="val status-pass">+23 tics (+657 ms)</span>
+            </div>
+            <div class="summary-metric">
+              <span class="lbl">Outcome</span>
+              <span class="val status-pass">CLEARABLE ✓</span>
+            </div>
+          </div>
+
+          <p class="panel-caption">
+            Room B reveals 3 threats sequentially as the player advances. Reticle bearings form a smooth 35° sweep rather than an abrupt cross-screen flip, allowing safe angle isolation.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Final Centered Punchline -->
+      <div class="punchline-banner">
+        <h3>Counting sightlines predicts the wrong answer twice. Timing and angular sequence matter.</h3>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         SECTION 3: VISUAL 2 — GEOMETRY CREATES A SCHEDULING PROBLEM
+         ===================================================================== -->
+    <section id="section-pipeline" class="explainer-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Visual 2: Geometry Creates a Scheduling Problem (The 4-Panel Pipeline)</h2>
+          <p class="section-desc">How spatial polygon layout translates into time-sensitive computational jobs on a stateful single-reticle processor.</p>
+        </div>
+        <div class="scrubber-control">
+          <label for="pipeline-time-scrubber">Time: <b id="pipe-time-display">0.00s</b></label>
+          <input type="range" id="pipeline-time-scrubber" min="0" max="2.4" step="0.02" value="0">
+          <button class="btn btn-sm btn-primary" id="btn-pipeline-play">▶ Play</button>
+        </div>
+      </div>
+
+      <div class="pipeline-four-grid">
+        
+        <!-- PANEL A: GEOMETRY -->
+        <div class="pipe-col">
+          <div class="pipe-col-header">
+            <span class="step-num">1</span>
+            <h4>Geometry</h4>
+          </div>
+          <div class="pipe-canvas-box">
+            <svg id="svg-pipe-geo" viewBox="0 0 240 180"></svg>
+          </div>
+          <p class="pipe-caption"><strong>1. Geometry decides when each threat becomes visible.</strong> Obstacle edges cast grazing rays that trigger visual unocclusion (<i>r<sub>j</sub></i>).</p>
+        </div>
+
+        <!-- PANEL B: REVEAL TIMELINE -->
+        <div class="pipe-col">
+          <div class="pipe-col-header">
+            <span class="step-num">2</span>
+            <h4>Reveal Timeline</h4>
+          </div>
+          <div class="pipe-canvas-box">
+            <svg id="svg-pipe-timeline" viewBox="0 0 240 180"></svg>
+          </div>
+          <p class="pipe-caption"><strong>2. Every reveal creates a time-sensitive job.</strong> Hostile reaction speed imposes an absolute survival deadline (<i>D<sub>j</sub></i> = <i>r<sub>j</sub></i> + <i>n<sub>j</sub></i>).</p>
+        </div>
+
+        <!-- PANEL C: SINGLE RETICLE -->
+        <div class="pipe-col">
+          <div class="pipe-col-header">
+            <span class="step-num">3</span>
+            <h4>Single Reticle</h4>
+          </div>
+          <div class="pipe-canvas-box">
+            <svg id="svg-pipe-reticle" viewBox="0 0 240 180"></svg>
+          </div>
+          <p class="pipe-caption"><strong>3. One crosshair must service those jobs.</strong> Turning farther takes longer (<i>q<sub>ij</sub></i> = Δθ / ω<sub>aim</sub>); next target depends on previous position.</p>
+        </div>
+
+        <!-- PANEL D: TACTICAL MARGIN / CONTRACT -->
+        <div class="pipe-col" id="pipe-col-contract">
+          <div class="pipe-col-header">
+            <span class="step-num">4</span>
+            <h4>Tactical Contract</h4>
+          </div>
+          <div class="pipe-canvas-box contract-box" id="pipe-contract-display">
+            <div class="contract-line"><span>Required service:</span> <b>620 ms</b></div>
+            <div class="contract-line"><span>Hostile deadline:</span> <b>700 ms</b></div>
+            <div class="contract-divider"></div>
+            <div class="contract-line margin-line"><span>Tactical Margin (M):</span> <b class="status-pass">+80 ms ✓</b></div>
+            <div class="matrix-preview">
+              <span class="mat-label">8×8 Composable Transfer Matrix (C_M)</span>
+              <div class="matrix-grid-mini">
+                <div class="m-cell">.</div><div class="m-cell">.</div><div class="m-cell">.</div>
+                <div class="m-cell">.</div><div class="m-cell active-cell">80</div><div class="m-cell">.</div>
+                <div class="m-cell">.</div><div class="m-cell">.</div><div class="m-cell">.</div>
+              </div>
+            </div>
+          </div>
+          <p class="pipe-caption"><strong>4. The result compiles into a modular contract.</strong> Level generators compose local (min, +) matrices without whole-map simulation.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         SECTION 4: VISUAL 3 — MAP KNOWLEDGE SLIDER (CRITICAL LEAD ℓ*)
+         ===================================================================== -->
+    <section id="section-knowledge" class="explainer-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Visual 3: How Much Knowledge Does This Room Require?</h2>
+          <p class="section-desc">Advance knowledge (<i>a<sub>j</sub></i>(ℓ) = max(0, <i>r<sub>j</sub></i> − ℓ)) allows anticipatory reticle setup before aperture reveal. How many milliseconds of warning makes a lethal room clearable?</p>
+        </div>
+        <div class="select-wrapper">
+          <label for="select-knowledge-stimulus">Encounter:</label>
+          <select id="select-knowledge-stimulus">
+            <option value="STIM_06">STIM_06: Double Baffle Pivot (ℓ* = 143 ms)</option>
+            <option value="STIM_07">STIM_07: Spaced Baffle Pivot (ℓ* = 114 ms)</option>
+            <option value="STIM_09">STIM_09: Aperture Burst Pivot (ℓ* = 114 ms)</option>
+            <option value="STIM_11">STIM_11: Zigzag Flank Pivot (ℓ* = 171 ms)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="knowledge-layout-grid">
+        
+        <!-- ZONE A: ENCOUNTER MAP -->
+        <div class="zone-map-box">
+          <div class="view-label">Encounter Map (Schematic Representation of Canonical Fixture)</div>
+          <svg id="svg-knowledge-map" viewBox="0 0 460 280" class="room-svg"></svg>
+          <div class="reticle-dial-widget">
+            <svg id="svg-knowledge-dial" viewBox="0 0 80 80" width="70" height="70"></svg>
+            <span>Reticle Dial</span>
+          </div>
+        </div>
+
+        <!-- ZONE B & C: CONTROLS & LIVE GAUGE -->
+        <div class="zone-controls-box">
+          
+          <!-- Slider -->
+          <div class="knowledge-slider-card">
+            <div class="slider-header-row">
+              <span class="slider-title">Advance Map Knowledge Lead (ℓ):</span>
+              <span class="slider-val-tag" id="lead-value-tag">0 ms (0 tics)</span>
+            </div>
+            <input type="range" id="slider-advance-lead" min="0" max="10" step="1" value="0">
+            <div class="slider-markers">
+              <span>0 ms (Blind Reveal)</span>
+              <span id="slider-lstar-marker" class="marker-lstar">Critical Lead ℓ* = 143 ms</span>
+              <span>300 ms (Full Pre-Aim)</span>
+            </div>
+          </div>
+
+          <!-- Tactical Margin Gauge Bar -->
+          <div class="margin-gauge-card">
+            <div class="gauge-header-row">
+              <span>Tactical Margin <i>M</i>(ℓ) = −<i>L</i>*(ℓ):</span>
+              <b id="gauge-margin-text">-5 tics (-143 ms)</b>
+            </div>
+            <div class="gauge-bar-track">
+              <div class="gauge-center-line"></div>
+              <div class="gauge-fill-bar" id="gauge-active-fill"></div>
+            </div>
+            <div class="gauge-scale-labels">
+              <span>-300 ms (Overloaded Ambush)</span>
+              <span class="zero-tick">0 ms (Feasibility Threshold)</span>
+              <span>+300 ms (Clearable Reserve)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Epistemic Status Banner -->
+          <div class="epistemic-banner" id="epistemic-banner-box">
+            <div class="banner-icon" id="banner-icon-glyph">💀</div>
+            <div class="banner-text">
+              <h4 id="banner-title-text">REVEAL-GATED REGIME (ℓ < ℓ*)</h4>
+              <p id="banner-desc-text">Player reacts only after visual unocclusion (<i>a<sub>j</sub></i> = <i>r<sub>j</sub></i>). Slew latency breaches hostile deadline (<i>L</i>* = +5 tics).</p>
+            </div>
+          </div>
+
+          
+          <!-- Interactive M(ell) Step Function Chart -->
+          <div class="margin-curve-card">
+            <div class="curve-header-row">
+              <span class="curve-title">Knowledge Response Function <i>M</i>(ℓ) = −<i>L</i>*(ℓ) (Discrete Step Staircase)</span>
+              <span class="curve-legend">
+                <span class="leg-item leg-src">── Predicted Lead (ℓ*<sub>source</sub>)</span>
+                <span class="leg-item leg-eng">··· Engine Lead (ℓ*<sub>engine</sub>)</span>
+              </span>
+            </div>
+            <svg id="svg-knowledge-curve" viewBox="0 0 460 160" class="curve-svg"></svg>
+          </div>
+
+          <!-- Dynamic Timeline -->
+          <div class="knowledge-timeline-card">
+            <div class="timeline-heading">Dynamic Service Recurrence (<i>C<sub>j</sub></i> = max(<i>r<sub>j</sub></i>, max(<i>C</i><sub><i>j</i>−1</sub>, <i>a<sub>j</sub></i>) + <i>q<sub>ij</sub></i>) + <i>A</i> + <i>p</i>)</div>
+            <div class="timeline-rows" id="knowledge-timeline-rows"></div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="knowledge-btn-row">
+            <button class="btn btn-primary" id="btn-snap-critical">⚡ Snap to Critical Lead (ℓ*)</button>
+            <button class="btn" id="btn-play-knowledge-anim">▶ Animate Traversal</button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Three-Class Taxonomy Cards -->
+      <div class="taxonomy-section">
+        <h3>The Three Canonical Epistemic Classes of Level Geometry</h3>
+        <div class="taxonomy-grid">
+          <div class="tax-card">
+            <div class="tax-header tax-blind">1. Blind-Clearable (<i>M</i>(0) ≥ 0)</div>
+            <p><strong>ℓ* = 0 ms.</strong> Geometry permits sequential angle clearance on first sight with zero advance knowledge.</p>
+          </div>
+          <div class="tax-card tax-highlight">
+            <div class="tax-header tax-rescuable">2. Knowledge-Rescuable (<i>M</i>(0) &lt; 0 ∧ <i>M</i>(∞) ≥ 0)</div>
+            <p><strong>0 &lt; ℓ* &lt; ∞.</strong> Lethal trap to unfamiliar players, but moves across the feasibility boundary with ≥ ℓ* warning.</p>
+          </div>
+          <div class="tax-card">
+            <div class="tax-header tax-overloaded">3. Structurally Overloaded (<i>M</i>(∞) &lt; 0)</div>
+            <p><strong>ℓ* = ∞.</strong> Flawed geometry. Even with perfect omniscient pre-aim knowledge, the reticle capacity is overwhelmed.</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    
+    <!-- =====================================================================
+         SECTION 4.5: VISUAL 3B — THE DECOUPLING INSIGHT (STIM_07 vs STIM_11)
+         ===================================================================== -->
+    <section id="section-decoupling" class="explainer-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Visual 3B: Decoupling Capacity Gain (Δ<i>M</i>) from Warning Urgency (ℓ*)</h2>
+          <p class="section-desc">Why the total value of full map knowledge does not tell you how early advance warning must arrive.</p>
+        </div>
+      </div>
+
+      <div class="decoupling-grid">
+        <div class="decoupling-card">
+          <div class="decoupling-header">
+            <h4>STIM_07: Spaced Baffle Pivot</h4>
+            <span class="badge-tag tag-pass">ℓ* = 114 ms (4 tics)</span>
+          </div>
+          <p class="decoupling-desc">Initial Deficit: <i>M</i><sub>reveal</sub> = −4 tics<br>Pre-Aim Margin: <i>M</i><sub>preaim</sub> = +3 tics<br>Total Capacity Gain: <strong>Δ<i>M</i> = +7 tics</strong></p>
+          <div class="decoupling-metric-box">
+            <span class="d-lbl">Advance Lead Required:</span>
+            <span class="d-val status-pass">114.3 ms (4 tics)</span>
+          </div>
+        </div>
+
+        <div class="decoupling-card">
+          <div class="decoupling-header">
+            <h4>STIM_11: Zigzag Flank Pivot</h4>
+            <span class="badge-tag tag-warn">ℓ* = 171 ms (6 tics)</span>
+          </div>
+          <p class="decoupling-desc">Initial Deficit: <i>M</i><sub>reveal</sub> = −6 tics<br>Pre-Aim Margin: <i>M</i><sub>preaim</sub> = +1 tic<br>Total Capacity Gain: <strong>Δ<i>M</i> = +7 tics</strong></p>
+          <div class="decoupling-metric-box">
+            <span class="d-lbl">Advance Lead Required:</span>
+            <span class="d-val status-warn">171.4 ms (6 tics) — +50% warning</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="decoupling-chart-box">
+        <div class="view-label">Side-by-Side Knowledge Response Functions: Identical Height (+7 tics), Different Crossing Speed</div>
+        <svg id="svg-decoupling-comparison" viewBox="0 0 940 220" class="curve-svg-wide"></svg>
+      </div>
+      
+      <p class="panel-caption" style="margin-top: 12px;">
+        <strong>The Decoupling Principle:</strong> Both encounters receive the exact same benefit from full prior knowledge (Δ<i>M</i> = +7 tics (+200 ms)). But because <code>STIM_11</code> started in a deeper deficit (−6 vs −4 tics), it requires <strong>50% more advance actionability</strong> before reaching safety.
+      </p>
+    </section>
+
+    
+    <!-- =====================================================================
+         SECTION 4.75: TACTICAL READABILITY ATLAS (9 CANONICAL CONTRASTS)
+         ===================================================================== -->
+        <!-- =====================================================================
+         SECTION 5: TACTICAL READABILITY ATLAS (12 CANONICAL CONTRASTS)
+         ===================================================================== -->
+    <section id="section-atlas" class="explainer-card">
+      <div class="card-header-row">
+        <div>
+          <span class="badge-pill">LEVEL DESIGN ARCHETYPES</span>
+          <h2>Tactical Readability Atlas: 12 Canonical Spatial Contrasts</h2>
+          <p class="section-desc">Progressive chaptered study of how geometry, timing, traversal trajectory, entry state, map knowledge, and modular boundaries govern FPS clearability.</p>
+        </div>
+      </div>
+
+      <!-- Chapter Tabs -->
+      <div class="atlas-chapter-bar">
+        <button class="atlas-tab-btn active" data-chapter="all">All Chapters (12)</button>
+        <button class="atlas-tab-btn" data-chapter="ch1">1. Counting Fails</button>
+        <button class="atlas-tab-btn" data-chapter="ch2">2. State & Trajectory</button>
+        <button class="atlas-tab-btn" data-chapter="ch3">3. Map Knowledge</button>
+        <button class="atlas-tab-btn" data-chapter="ch4">4. Composition & Taxonomy</button>
+      </div>
+
+      <!-- 12-Card Atlas Navigator Grid -->
+      <div class="atlas-grid" id="atlas-nav-grid">
+        <!-- Chapter 1: Counting Fails -->
+        <div class="atlas-nav-card active" data-card="corridor" data-ch="ch1">
+          <div class="card-top-row">
+            <span class="card-num">01</span>
+            <span class="card-prov-badge prov-pcg">PCG MODULE</span>
+          </div>
+          <div class="card-name">Straight Corridor (M01)</div>
+          <div class="card-sub">EASY BASELINE</div>
+          <span class="card-badge tag-pass">CLEARABLE</span>
+        </div>
+
+        <div class="atlas-nav-card" data-card="pie" data-ch="ch1">
+          <div class="card-top-row">
+            <span class="card-num">02</span>
+            <span class="card-prov-badge prov-pcg">PCG MODULE</span>
+          </div>
+          <div class="card-name">Staggered Pie Slicing (M04)</div>
+          <div class="card-sub">MANY ≠ BAD</div>
+          <span class="card-badge tag-pass">CLEARABLE</span>
+        </div>
+
+        <div class="atlas-nav-card" data-card="crossfire" data-ch="ch1">
+          <div class="card-top-row">
+            <span class="card-num">03</span>
+            <span class="card-prov-badge prov-pcg">PCG MODULE</span>
+          </div>
+          <div class="card-name">Doorway Crossfire (M11)</div>
+          <div class="card-sub">FEW ≠ SAFE</div>
+          <span class="card-badge tag-fail">UNSERVICEABLE</span>
+        </div>
+
+        <!-- Chapter 2: State & Trajectory -->
+        <div class="atlas-nav-card" data-card="route" data-ch="ch2">
+          <div class="card-top-row">
+            <span class="card-num">04 ⚡</span>
+            <span class="card-prov-badge prov-fixture">FROZEN FIXTURE</span>
+          </div>
+          <div class="card-name">Route Choice (F05)</div>
+          <div class="card-sub">PATH MATTERS</div>
+          <span class="card-badge tag-interactive">DIRECT vs FLANK</span>
+        </div>
+
+        <div class="atlas-nav-card" data-card="wall" data-ch="ch2">
+          <div class="card-top-row">
+            <span class="card-num">05 ⚡</span>
+            <span class="card-prov-badge prov-fixture">FROZEN SWEEP</span>
+          </div>
+          <div class="card-name">Move The Wall (F06)</div>
+          <div class="card-sub">TIMING MATTERS</div>
+          <span class="card-badge tag-interactive">EXACT SLIDER</span>
+        </div>
+
+        <div class="atlas-nav-card" data-card="tjunction" data-ch="ch2">
+          <div class="card-top-row">
+            <span class="card-num">06 ⚡</span>
+            <span class="card-prov-badge prov-archetype">ARCHETYPE</span>
+          </div>
+          <div class="card-name">The T-Junction Baffle</div>
+          <div class="card-sub">TOPOLOGY ≠ TIMING</div>
+          <span class="card-badge tag-interactive">FLUSH vs BAFFLED</span>
+        </div>
+
+        <div class="atlas-nav-card" data-card="entrydir" data-ch="ch2">
+          <div class="card-top-row">
+            <span class="card-num">07 ⚡</span>
+            <span class="card-prov-badge prov-archetype">ARCHETYPE</span>
+          </div>
+          <div class="card-name">Entry Direction</div>
+          <div class="card-sub">ENTRY STATE MATTERS</div>
+          <span class="card-badge tag-interactive">WEST vs SOUTH</span>
+        </div>
+
+        <!-- Chapter 3: Map Knowledge -->
+        <div class="atlas-nav-card" data-card="knowledge" data-ch="ch3">
+          <div class="card-top-row">
+            <span class="card-num">08</span>
+            <span class="card-prov-badge prov-stim">FROZEN STIMULUS</span>
+          </div>
+          <div class="card-name">Knowledge Rescue (STIM_07)</div>
+          <div class="card-sub">INFO MATTERS</div>
+          <span class="card-badge tag-pass">RESCUABLE (114ms)</span>
+        </div>
+
+        <div class="atlas-nav-card" data-card="decoupling" data-ch="ch3">
+          <div class="card-top-row">
+            <span class="card-num">09</span>
+            <span class="card-prov-badge prov-stim">FROZEN STIMULUS</span>
+          </div>
+          <div class="card-name">Same Gain, Different Need</div>
+          <div class="card-sub">DECOUPLING</div>
+          <span class="card-badge tag-warn">114ms vs 171ms</span>
+        </div>
+
+        <div class="atlas-nav-card" data-card="overloaded" data-ch="ch3">
+          <div class="card-top-row">
+            <span class="card-num">10</span>
+            <span class="card-prov-badge prov-stim">FROZEN STIMULUS</span>
+          </div>
+          <div class="card-name">Structurally Overloaded</div>
+          <div class="card-sub">INFO ISN'T MAGIC</div>
+          <span class="card-badge tag-fail">OVERLOADED (ℓ*=∞)</span>
+        </div>
+
+        <!-- Chapter 4: Composition & Taxonomy -->
+        <div class="atlas-nav-card" data-card="seam" data-ch="ch4">
+          <div class="card-top-row">
+            <span class="card-num">11 ⚡</span>
+            <span class="card-prov-badge prov-contract">PCG CONTRACT</span>
+          </div>
+          <div class="card-name">Modular Seam Leakage</div>
+          <div class="card-sub">COMPOSITION</div>
+          <span class="card-badge tag-interactive">NAÏVE vs CERTIFIED</span>
+        </div>
+
+        <div class="atlas-nav-card" data-card="classes" data-ch="ch4">
+          <div class="card-top-row">
+            <span class="card-num">12</span>
+            <span class="card-prov-badge prov-tax">TAXONOMY</span>
+          </div>
+          <div class="card-name">The Three Epistemic Classes</div>
+          <div class="card-sub">TAXONOMY</div>
+          <span class="card-badge tag-info">3 REGIMES</span>
+        </div>
+      </div>
+
+      <!-- Active Encounter Detail Inspector -->
+      <div class="atlas-viewer" id="atlas-active-viewer">
+        <div class="atlas-viewer-header">
+          <div class="header-left">
+            <div class="header-tag-row">
+              <span class="badge-tag tag-primary" id="atlas-active-tag">EASY BASELINE</span>
+              <span class="badge-tag prov-tag" id="atlas-active-prov">CANONICAL PCG MODULE</span>
+            </div>
+            <h3 id="atlas-active-title">01 · Straight Corridor</h3>
+          </div>
+          
+          <!-- 4 Canonical Metrics -->
+          <div class="atlas-metrics-chips">
+            <div class="atlas-metric-chip">
+              <span class="m-lbl">VISIBLE THREATS</span>
+              <span class="m-val" id="atlas-val-k">K_static = 1</span>
+            </div>
+            <div class="atlas-metric-chip">
+              <span class="m-lbl">TACTICAL MARGIN</span>
+              <span class="m-val" id="atlas-val-margin">+28 tics (+800.0 ms)</span>
+            </div>
+            <div class="atlas-metric-chip">
+              <span class="m-lbl">KNOWLEDGE NEEDED</span>
+              <span class="m-val" id="atlas-val-lstar">ℓ* = 0 ms</span>
+            </div>
+            <div class="atlas-metric-chip">
+              <span class="m-lbl">MODEL VERDICT</span>
+              <span class="m-val status-pass" id="atlas-val-verdict">CLEARABLE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Causal Callout: What Changed? -->
+        <div class="atlas-contrast-box" id="atlas-contrast-box">
+          <span class="contrast-badge">WHAT CHANGED?</span>
+          <span class="contrast-desc" id="atlas-contrast-text">Baseline reference: Single forward threat with generous reaction window and zero required angular rotation.</span>
+        </div>
+
+        <!-- Interactive Dynamic Controllers -->
+        <div class="atlas-interactive-bar" id="atlas-interactive-bar" style="display: none;">
+          <!-- Route Choice Toggle (Card 04) -->
+          <div class="atlas-ctrl-group" id="ctrl-route-toggle" style="display: none;">
+            <span class="ctrl-lbl">Select Traversal Path:</span>
+            <div class="btn-group">
+              <button class="btn btn-sm" id="btn-route-direct">Direct Kill Zone (Infeasible)</button>
+              <button class="btn btn-sm btn-primary" id="btn-route-flank">Upper Flank Bypass (Feasible)</button>
+            </div>
+          </div>
+
+          <!-- Move Wall Slider (Card 05) -->
+          <div class="atlas-ctrl-group" id="ctrl-wall-slider" style="display: none;">
+            <div class="slider-header-row">
+              <span class="ctrl-lbl">Compiler Partition Position: <strong id="wall-pos-val">0.85 m</strong> (Reveal Gap: <strong id="wall-gap-val">244.4 ms</strong>)</span>
+              <span class="wall-verdict-tag" id="wall-status-tag">FEASIBILITY BOUNDARY</span>
+            </div>
+            <input type="range" id="slider-atlas-wall" min="0.70" max="1.00" step="0.05" value="0.85" class="range-slider">
+            <div class="slider-ticks-row">
+              <span>0.70m (Infeasible)</span>
+              <span>0.75m</span>
+              <span>0.80m</span>
+              <span class="boundary-tick">0.85m (Boundary)</span>
+              <span>0.90m (Feasible)</span>
+              <span>0.95m</span>
+              <span>1.00m</span>
+            </div>
+          </div>
+
+          <!-- T-Junction Baffle Toggle (Card 06) -->
+          <div class="atlas-ctrl-group" id="ctrl-tjunction-toggle" style="display: none;">
+            <span class="ctrl-lbl">Architectural Junction Profile:</span>
+            <div class="btn-group">
+              <button class="btn btn-sm" id="btn-tjunc-flush">Flush T-Junction (Simultaneous Trap)</button>
+              <button class="btn btn-sm btn-primary" id="btn-tjunc-baffled">Baffled T-Junction (Sequential Clearance)</button>
+            </div>
+          </div>
+
+          <!-- Entry Direction Toggle (Card 07) -->
+          <div class="atlas-ctrl-group" id="ctrl-entry-toggle" style="display: none;">
+            <span class="ctrl-lbl">Approach Vector / Initial Reticle State:</span>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-primary" id="btn-entry-west">West Entrance (θ₀ = 0°)</button>
+              <button class="btn btn-sm" id="btn-entry-south">South Entrance (θ₀ = +90°)</button>
+            </div>
+          </div>
+
+          <!-- Modular Seam Toggle (Card 11) -->
+          <div class="atlas-ctrl-group" id="ctrl-seam-toggle" style="display: none;">
+            <span class="ctrl-lbl">Module Connection Interface:</span>
+            <div class="btn-group">
+              <button class="btn btn-sm" id="btn-seam-naive">Naïve Flush Join (Sightline Leakage)</button>
+              <button class="btn btn-sm btn-primary" id="btn-seam-certified">Certified Quiescent Baffle (Feasible)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-Panel Synchronized Layout Visualization -->
+        <div class="atlas-three-grid">
+          <!-- Panel 1: Top-Down Map -->
+          <div class="atlas-panel">
+            <div class="panel-head">1. Top-Down Encounter Map</div>
+            <div class="panel-body">
+              <svg id="svg-atlas-map" viewBox="0 0 460 220" class="atlas-svg"></svg>
+            </div>
+          </div>
+
+          <!-- Panel 2: Reveal & Deadline Timeline -->
+          <div class="atlas-panel">
+            <div class="panel-head">2. Reveal Timeline & Deadlines</div>
+            <div class="panel-body" id="atlas-timeline-container">
+              <!-- DOM rows generated dynamically -->
+            </div>
+          </div>
+
+          <!-- Panel 3: Reticle Heading Trace theta(t) -->
+          <div class="atlas-panel">
+            <div class="panel-head">
+              <span>3. Reticle Heading Trace θ(t)</span>
+              <span class="trace-badge" id="atlas-trace-badge">Zero Slew (0°)</span>
+            </div>
+            <div class="panel-body">
+              <svg id="svg-atlas-heading" viewBox="0 0 460 220" class="atlas-svg"></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         SECTION 5: PROCEDURAL LINTER & EVIDENCE LADDER
+         ===================================================================== -->
+    <section class="explainer-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Procedural Level Linting & Evidence Hierarchy</h2>
+          <p class="section-desc">From local module geometry contracts to global procedural level assembly.</p>
+        </div>
+      </div>
+
+      <div class="linter-evidence-grid">
+        
+        <!-- Left: Linter Module Assembly -->
+        <div class="linter-box">
+          <h4>Modular Clearability Certification</h4>
+          <p class="linter-intro">Under quiescent boundary ports, global level schedulability reduces to local module verification (<i>C</i> ≡ <i>D</i> theorem):</p>
+          
+          <div class="assembly-flow">
+            <div class="mod-tile mod-pass">Module A<br><span>+80 ms ✓</span></div>
+            <div class="connector">+</div>
+            <div class="mod-tile mod-pass">Module B<br><span>+45 ms ✓</span></div>
+            <div class="connector">+</div>
+            <div class="mod-tile mod-fail">Module C<br><span>-110 ms ✗</span></div>
+            <div class="connector">+</div>
+            <div class="mod-tile mod-pass">Module D<br><span>+120 ms ✓</span></div>
+          </div>
+
+          <div class="linter-verdict">
+            <strong>TACTICAL LINTER VERDICT:</strong> Level rejected. Module C contains an unserviceable wide crossfire. Precertified library filtering (Condition E) eliminates 100% of runtime scheduling overhead across 25,000 generated levels.
+          </div>
+        </div>
+
+        <!-- Right: Evidence Ladder -->
+        <div class="evidence-ladder-box">
+          <h4>Scientific Evidence Hierarchy</h4>
+          <table class="evidence-table">
+            <thead>
+              <tr>
+                <th>Layer</th>
+                <th>Validation Scope</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Formal</strong></td>
+                <td>Scheduling equivalence & (min, +) dioid associativity</td>
+                <td><span class="badge-status badge-done">PROVEN</span></td>
+              </tr>
+              <tr>
+                <td><strong>2. Geometry</strong></td>
+                <td>Sub-millimeter ray-vertex compilation (<i>K</i> = 8)</td>
+                <td><span class="badge-status badge-done">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>3. PCG</strong></td>
+                <td>25,000-candidate sweeps & MAP-Elites non-inferiority</td>
+                <td><span class="badge-status badge-done">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>4. Simulation</strong></td>
+                <td>60 arenas × 9,000 35Hz episodes (LOGFO-AUC = 1.0000)</td>
+                <td><span class="badge-status badge-done">FROZEN</span></td>
+              </tr>
+              <tr>
+                <td><strong>5. ViZDoom</strong></td>
+                <td>Headless C++ engine translation (ε<sub>deploy</sub> = 3 tics)</td>
+                <td><span class="badge-status badge-done">VALIDATED</span></td>
+              </tr>
+              <tr>
+                <td><strong>6. Human</strong></td>
+                <td>Cognitive familiarity transition (H1–H4)</td>
+                <td><span class="badge-status badge-next">NEXT</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="explainer-footer">
+      <p><strong>Big Brain Time Research Collective</strong> · Tactical Clearability for Procedural FPS Level Design · August 2026</p>
+      <p class="footer-sub">Standalone portable explainer. Open in any browser. No build steps or frameworks required.</p>
+    </footer>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

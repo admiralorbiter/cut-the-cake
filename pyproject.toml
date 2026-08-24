@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cut-the-cake"
+version = "1.0.0"
+description = "Composable Tactical Clearability Contracts and Automated Level Repair for Procedural First-Person Shooters"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Big Brain Time Research Collective"}
+]
+keywords = [
+    "level-design",
+    "procedural-content-generation",
+    "pcg",
+    "tactical-clearability",
+    "real-time-scheduling",
+    "computational-geometry",
+    "game-ai",
+    "vizdoom"
+]
+dependencies = [
+    "numpy>=1.22.0",
+    "scipy>=1.8.0",
+    "shapely>=2.0.0",
+    "scikit-learn>=1.0.0",
+    "vizdoom>=1.2.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

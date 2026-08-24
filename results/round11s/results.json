@@ -1,0 +1,46 @@
+{
+  "git_commit": "eb2dbcd22a0f2ddfa3665b1a0a80006fc2de710b",
+  "execution_time_s": 5.96,
+  "total_arenas": 60,
+  "total_episodes": 9000,
+  "policies": [
+    "Oracle (Optimal Integer-Tic)",
+    "FIFO",
+    "Nearest Angle",
+    "Earliest Deadline First (EDF)",
+    "Left-to-Right"
+  ],
+  "baselines": {
+    "Tactical Margin M_tic": {
+      "spearman_rho": 0.9282,
+      "in_sample_roc_auc": 0.9988,
+      "in_sample_brier": 0.0912,
+      "logfo_cv_roc_auc": 1.0,
+      "logfo_cv_brier": 0.0949
+    },
+    "Peak Physical LOS K_static (Inverted)": {
+      "spearman_rho": 0.5635,
+      "in_sample_roc_auc": 0.8493,
+      "in_sample_brier": 0.1524,
+      "logfo_cv_roc_auc": 0.8098,
+      "logfo_cv_brier": 0.1568,
+      "delta_logfo_auc_vs_margin": 0.1902
+    },
+    "Min Slack sigma_min": {
+      "spearman_rho": -0.196,
+      "in_sample_roc_auc": 0.326,
+      "in_sample_brier": 0.2178,
+      "logfo_cv_roc_auc": 0.5742,
+      "logfo_cv_brier": 0.264,
+      "delta_logfo_auc_vs_margin": 0.4258
+    },
+    "Hamiltonian Workload B_work (Inverted)": {
+      "spearman_rho": 0.665,
+      "in_sample_roc_auc": 0.8684,
+      "in_sample_brier": 0.1585,
+      "logfo_cv_roc_auc": 0.826,
+      "logfo_cv_brier": 0.1714,
+      "delta_logfo_auc_vs_margin": 0.174
+    }
+  }
+}

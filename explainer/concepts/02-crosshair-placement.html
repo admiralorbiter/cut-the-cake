@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>02 — Crosshair Placement & Pre-Aiming</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .scene-svg {
+      width: 100%;
+      height: 320px;
+      display: block;
+      background: #070b11;
+      border-radius: 12px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .status-bad {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #f85149;
+    }
+    .status-good {
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+      color: #3fb950;
+    }
+    .timeline-bar {
+      display: flex;
+      height: 28px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 12px 0 6px 0;
+      background: #111822;
+      border: 1px solid #233142;
+      position: relative;
+    }
+    .seg-react {
+      background: #8957e5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .seg-slew {
+      background: #d29922;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .seg-service {
+      background: #1f6feb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .deadline-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #f85149;
+      box-shadow: 0 0 8px #f85149;
+      z-index: 10;
+    }
+    .deadline-label {
+      position: absolute;
+      top: -18px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #f85149;
+      transform: translateX(-50%);
+    }
+    .interactive-card {
+      margin-top: 24px;
+      background: #0f1622;
+      border: 1px solid #28374d;
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 16px 0 8px 0;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      color: #8fa1b4;
+    }
+    .slider-group label span {
+      color: #58a6ff;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #58a6ff;
+      cursor: pointer;
+    }
+    .metric-callout {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      background: #080d14;
+      border: 1px solid #1f2d3d;
+      padding: 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+    }
+    .metric-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .metric-box .lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: #8fa1b4;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .metric-box .val {
+      font-size: 18px;
+      font-weight: 900;
+      font-family: monospace;
+    }
+    .anim-btn-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      background: #0a111a;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid #1f2d3d;
+    }
+    .btn-anim {
+      background: #1c2738;
+      border: 1px solid #388bfd;
+      color: #58a6ff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .btn-anim:hover {
+      background: #263852;
+      color: #fff;
+    }
+    .btn-anim.playing {
+      background: #238636;
+      border-color: #3fb950;
+      color: #fff;
+    }
+    .verdict-banner {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    @media (max-width: 760px) {
+      .metric-callout { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <a class="back" href="index.html">← Concepts Index</a>
+      <span class="pill">Lesson 02 · Setup Cost Geometry</span>
+    </div>
+
+    <section class="hero">
+      <div class="eyebrow">02 · CROSSHAIR PLACEMENT & SETUP COST</div>
+      <h1>Why does pre-aiming save lives?</h1>
+      <p>Turning your crosshair is not instant. The angular distance between where you are looking and where the enemy appears is called <strong>Setup Cost (q)</strong>. Pre-aiming removes physical aiming travel before the fight begins.</p>
+    </section>
+
+    <!-- Side-by-Side Comparison -->
+    <div class="grid2">
+      
+      <!-- CARD 1: LAZY CROSSHAIR -->
+      <div class="card">
+        <div class="compare-title bad">✗ LAZY CROSSHAIR (AIMING AT WALL)</div>
+        <div class="scene">
+          <svg class="scene-svg" viewBox="0 0 500 320">
+            <defs>
+              <pattern id="hatch-c2-bad" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+              </pattern>
+            </defs>
+
+            <!-- L-Hallway Walls -->
+            <rect x="15" y="15" width="470" height="25" fill="#161e2b" stroke="#58a6ff" stroke-width="1.5" rx="2"/>
+            <rect x="15" y="40" width="25" height="265" fill="#161e2b" stroke="#58a6ff" stroke-width="1.5" rx="2"/>
+            <rect x="180" y="120" width="305" height="185" fill="#161e2b" stroke="#58a6ff" stroke-width="1.5" rx="2"/>
+            <rect x="182" y="122" width="301" height="181" fill="url(#hatch-c2-bad)" opacity="0.5"/>
+
+            <!-- Corner Apex Pip -->
+            <circle cx="180" cy="120" r="5" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+            <text x="192" y="114" fill="#8fa1b4" font-size="9.5" font-weight="bold">CORNER APEX</text>
+
+            <!-- Enemy Contact T1 (Appears around corner) -->
+            <rect x="360" y="55" width="28" height="28" fill="#f85149" stroke="#fff" stroke-width="2" rx="6"/>
+            <text x="374" y="73" fill="#fff" font-size="11" font-weight="900" text-anchor="middle">T1</text>
+            <text x="395" y="73" fill="#f85149" font-size="10" font-weight="bold">ENEMY</text>
+
+            <!-- Player Token -->
+            <circle cx="90" cy="240" r="10" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+            <text x="90" y="265" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">YOU</text>
+
+            <!-- Lazy Aim Ray (Pointing into solid wall at 0 deg) -->
+            <line x1="90" y1="240" x2="90" y2="40" stroke="#f85149" stroke-width="2.5" stroke-dasharray="4,2"/>
+            <circle cx="90" cy="80" r="6" fill="#f85149" stroke="#fff" stroke-width="1.5"/>
+            <text x="90" y="70" fill="#f85149" font-size="10" font-weight="bold" text-anchor="middle">Crosshair (Wall)</text>
+
+            <!-- Slew Arc from Wall (90 deg) to Enemy (37 deg) -> Delta Theta = 53 deg -->
+            <path d="M 90 170 A 70 70 0 0 1 135 185" fill="none" stroke="#d29922" stroke-width="3"/>
+            <text x="145" y="180" fill="#d29922" font-size="13" font-weight="900">Δθ = 53° Slew Required</text>
+
+            <!-- Target Sightline -->
+            <line x1="90" y1="240" x2="360" y2="69" stroke="rgba(248, 81, 73, 0.4)" stroke-dasharray="2,2" stroke-width="1.5"/>
+
+            <!-- HUD Title Badge -->
+            <rect x="45" y="46" width="220" height="42" fill="rgba(15, 22, 34, 0.92)" stroke="#f85149" stroke-width="1" rx="6"/>
+            <text x="54" y="63" fill="#f85149" font-size="12" font-weight="900">LARGE SETUP COST (q = 139 ms)</text>
+            <text x="54" y="78" fill="#8fa1b4" font-size="10">Aiming travel delays your first shot</text>
+          </svg>
+        </div>
+
+        <!-- Timeline Breakdown -->
+        <div style="margin-top: 14px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #8fa1b4;">
+            <span>Total Time: 404 ms (Reaction + Slew + Fire)</span>
+            <span style="color: #f85149;">Deadline: 350 ms</span>
+          </div>
+          <div class="timeline-bar">
+            <div class="seg-react" style="width: 41%;">A = 165ms</div>
+            <div class="seg-slew" style="width: 34%;">q = 139ms</div>
+            <div class="seg-service" style="width: 25%;">p = 100ms</div>
+            <div class="deadline-marker" style="left: 86.6%;">
+              <span class="deadline-label">DEADLINE</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-badge status-bad">⚠️ DEADLINE BREACH (+54ms Too Slow)</div>
+        <p style="margin-top: 10px; font-size: 14px; color: #8fa1b4;">Because you were looking at the wall, you had to react (165ms), rotate your mouse 53° (139ms), and fire (100ms). The enemy fired at 350ms before your reticle finished traveling.</p>
+      </div>
+
+      <!-- CARD 2: PRE-AIMING -->
+      <div class="card">
+        <div class="compare-title good">✓ PRE-AIMING THE CORNER (ZERO SETUP COST)</div>
+        <div class="scene">
+          <svg class="scene-svg" viewBox="0 0 500 320">
+            <defs>
+              <pattern id="hatch-c2-good" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+              </pattern>
+            </defs>
+
+            <!-- L-Hallway Walls -->
+            <rect x="15" y="15" width="470" height="25" fill="#161e2b" stroke="#58a6ff" stroke-width="1.5" rx="2"/>
+            <rect x="15" y="40" width="25" height="265" fill="#161e2b" stroke="#58a6ff" stroke-width="1.5" rx="2"/>
+            <rect x="180" y="120" width="305" height="185" fill="#161e2b" stroke="#58a6ff" stroke-width="1.5" rx="2"/>
+            <rect x="182" y="122" width="301" height="181" fill="url(#hatch-c2-good)" opacity="0.5"/>
+
+            <!-- Corner Apex Pip -->
+            <circle cx="180" cy="120" r="5" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+            <text x="192" y="114" fill="#8fa1b4" font-size="9.5" font-weight="bold">CORNER APEX</text>
+
+            <!-- Enemy Contact T1 -->
+            <rect x="360" y="55" width="28" height="28" fill="#3fb950" stroke="#fff" stroke-width="2" rx="6"/>
+            <text x="374" y="73" fill="#fff" font-size="11" font-weight="900" text-anchor="middle">T1</text>
+            <text x="395" y="73" fill="#3fb950" font-size="10" font-weight="bold">LOCKED</text>
+
+            <!-- Player Token -->
+            <circle cx="90" cy="240" r="10" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+            <text x="90" y="265" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">YOU</text>
+
+            <!-- Pre-Aim Sightline (Directly locked on corner apex / headshot line) -->
+            <line x1="90" y1="240" x2="360" y2="69" stroke="#3fb950" stroke-width="3"/>
+            <circle cx="360" cy="69" r="8" fill="none" stroke="#3fb950" stroke-width="2"/>
+            <circle cx="360" cy="69" r="3" fill="#3fb950"/>
+
+            <!-- Zero Slew Badge -->
+            <text x="145" y="180" fill="#3fb950" font-size="13" font-weight="900">Δθ = 0° (Zero Slew)</text>
+
+            <!-- HUD Title Badge -->
+            <rect x="45" y="46" width="220" height="42" fill="rgba(15, 22, 34, 0.92)" stroke="#3fb950" stroke-width="1" rx="6"/>
+            <text x="54" y="63" fill="#3fb950" font-size="12" font-weight="900">ZERO SETUP COST (q = 0 ms)</text>
+            <text x="54" y="78" fill="#8fa1b4" font-size="10">Crosshair is already on target</text>
+          </svg>
+        </div>
+
+        <!-- Timeline Breakdown -->
+        <div style="margin-top: 14px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #8fa1b4;">
+            <span>Total Time: 265 ms (Reaction + Fire)</span>
+            <span style="color: #3fb950;">Margin: +85 ms Survived</span>
+          </div>
+          <div class="timeline-bar">
+            <div class="seg-react" style="width: 62%;">A = 165ms</div>
+            <div class="seg-service" style="width: 38%;">p = 100ms</div>
+            <div class="deadline-marker" style="left: 132%;">
+              <span class="deadline-label" style="color:#3fb950;">DEADLINE (350ms)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-badge status-good">✓ TARGET ELIMINATED (+85ms Tactical Margin)</div>
+        <p style="margin-top: 10px; font-size: 14px; color: #8fa1b4;">Because your crosshair was already resting on the corner edge, slew time was <strong>0 ms</strong>. You reacted and fired in 265 ms—beating the enemy's 350 ms trigger by 85 ms.</p>
+      </div>
+
+    </div>
+
+    <!-- Interactive Live Lab & Reticle Flick Simulator -->
+    <div class="interactive-card">
+      <div class="eyebrow">INTERACTIVE LAB · CROSSHAIR FLICK & TIME-TO-ENGAGE SIMULATOR</div>
+      <h2 style="margin: 8px 0;">Test Slew Velocity & Setup Cost Live</h2>
+      <p style="color: #8fa1b4; font-size: 14px;">Adjust where you are aiming before rounding the corner, then press <strong>Simulate Flick & Shot</strong> to watch your crosshair travel to the target in real time against the enemy deadline!</p>
+
+      <div class="scene" style="margin-top: 16px;">
+        <svg id="live-flick-svg" class="scene-svg" viewBox="0 0 500 320"></svg>
+      </div>
+
+      <!-- Verdict Banner -->
+      <div id="flick-verdict-box" class="verdict-banner status-good">
+        <span>✓ TARGET ELIMINATED: Total engagement time beats enemy reaction deadline!</span>
+      </div>
+
+      <div class="anim-btn-bar">
+        <button id="btn-run-flick" class="btn-anim">▶ Simulate Flick & Shot</button>
+        <span id="flick-status-text" style="font-size: 12px; font-weight: 700; color: #8fa1b4;">Ready to engage...</span>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-group">
+          <label><span>Initial Crosshair Angle (θ<sub>start</sub>):</span> <span id="val-theta-start">0° (Direct Pre-Aim)</span></label>
+          <input type="range" id="slider-theta-start" min="-70" max="70" step="5" value="0">
+        </div>
+        <div class="slider-group">
+          <label><span>Player Aim Velocity (ω<sub>aim</sub>):</span> <span id="val-omega">380 °/s</span></label>
+          <input type="range" id="slider-omega" min="200" max="600" step="20" value="380">
+        </div>
+      </div>
+
+      <div class="metric-callout">
+        <div class="metric-box">
+          <span class="lbl">Slew Angle (Δθ)</span>
+          <span class="val" id="m-delta-theta" style="color: #58a6ff;">0.0°</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">Setup Cost (q = Δθ / ω)</span>
+          <span class="val" id="m-setup-cost" style="color: #d29922;">0 ms</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">Total Engagement Time</span>
+          <span class="val" id="m-total-time" style="color: #8957e5;">265 ms</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">Tactical Margin (M)</span>
+          <span class="val" id="m-margin" style="color: #3fb950;">+85 ms (Pass)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="takeaway">Good crosshair placement removes work before the fight starts.</div>
+
+    <!-- Mathematical Details -->
+    <details class="math">
+      <summary>📐 Mathematical Definition: Setup Cost (q) in the Scheduling Compiler</summary>
+      <div class="eq">q = Δθ / ω<sub>aim</sub></div>
+      <p>In the scheduling compiler, every threat job <em>J<sub>j</sub></em> requires a release time <em>r<sub>j</sub></em>, sensorimotor reaction latency <em>A<sub>player</sub></em>, setup cost <em>q<sub>j</sub></em>, and service duration <em>p<sub>j</sub></em>:</p>
+      <div class="eq" style="font-size: 22px;">Completion Time C<sub>j</sub> = r<sub>j</sub> + A<sub>player</sub> + ( |θ<sub>current</sub> − θ<sub>target</sub>| / ω<sub>aim</sub> ) + p<sub>weapon</sub></div>
+      <p>When you maintain proper crosshair placement, |θ<sub>current</sub> − θ<sub>target</sub>| ≈ 0, which reduces <em>q<sub>j</sub> → 0</em>. This saves up to <strong>150–250 ms</strong>—equivalent to a professional esports player's entire reaction time—purely through spatial discipline rather than raw genetics.</p>
+    </details>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const NS = 'http://www.w3.org/2000/svg';
+    const svgEl = (tag, attrs = {}) => {
+      const n = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
+      return n;
+    };
+
+    let animFlickProgress = 0.0;
+    let isFlicking = false;
+
+    const A_REACT_MS = 165.0;
+    const P_SERVICE_MS = 100.0;
+    const ENEMY_DEADLINE_MS = 350.0;
+
+    function updateLiveLab() {
+      const startAngleDeg = parseFloat($('slider-theta-start').value);
+      const omegaDegS = parseFloat($('slider-omega').value);
+
+      $('val-theta-start').textContent = `${startAngleDeg > 0 ? '+' : ''}${startAngleDeg}° ${Math.abs(startAngleDeg) < 5 ? '(Pre-Aim)' : '(Off-Target)'}`;
+      $('val-omega').textContent = `${omegaDegS} °/s`;
+
+      const targetAngleDeg = 0.0; // Target is directly at 0 deg relative to corner line
+      const deltaTheta = Math.abs(startAngleDeg - targetAngleDeg);
+      const setupCostMs = (deltaTheta / omegaDegS) * 1000.0;
+      const totalTimeMs = A_REACT_MS + setupCostMs + P_SERVICE_MS;
+      const marginMs = ENEMY_DEADLINE_MS - totalTimeMs;
+
+      $('m-delta-theta').textContent = `${deltaTheta.toFixed(1)}°`;
+      $('m-setup-cost').textContent = `${Math.round(setupCostMs)} ms`;
+      $('m-total-time').textContent = `${Math.round(totalTimeMs)} ms`;
+
+      const mEl = $('m-margin');
+      const banner = $('flick-verdict-box');
+
+      if (marginMs >= 0) {
+        mEl.textContent = `+${Math.round(marginMs)} ms (PASS)`;
+        mEl.style.color = '#3fb950';
+        banner.className = 'verdict-banner status-good';
+        banner.innerHTML = `<span>✓ TARGET ELIMINATED (+${Math.round(marginMs)}ms Margin): You eliminate the threat before the enemy reaction deadline!</span>`;
+      } else {
+        mEl.textContent = `${Math.round(marginMs)} ms (FAIL)`;
+        mEl.style.color = '#f85149';
+        banner.className = 'verdict-banner status-bad';
+        banner.innerHTML = `<span>⚠️ DEADLINE BREACH (${Math.abs(Math.round(marginMs))}ms Too Slow): Crosshair travel took too long. Enemy eliminates you first!</span>`;
+      }
+
+      const s = $('live-flick-svg');
+      s.innerHTML = '';
+
+      // Defs
+      const defs = svgEl('defs');
+      defs.innerHTML = `
+        <pattern id="lab-c2-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+        </pattern>
+        <pattern id="lab-c2-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+        </pattern>
+      `;
+      s.append(defs);
+
+      s.append(svgEl('rect', { width: 500, height: 320, fill: 'url(#lab-c2-grid)' }));
+
+      // Walls
+      s.append(svgEl('rect', { x: 15, y: 15, width: 470, height: 25, fill: '#161e2b', stroke: '#58a6ff', 'stroke-width': 1.5, rx: 2 }));
+      s.append(svgEl('rect', { x: 15, y: 40, width: 25, height: 265, fill: '#161e2b', stroke: '#58a6ff', 'stroke-width': 1.5, rx: 2 }));
+      s.append(svgEl('rect', { x: 180, y: 120, width: 305, height: 185, fill: '#161e2b', stroke: '#58a6ff', 'stroke-width': 1.5, rx: 2 }));
+      s.append(svgEl('rect', { x: 182, y: 122, width: 301, height: 181, fill: 'url(#lab-c2-hatch)', opacity: 0.5 }));
+
+      // Corner Apex
+      s.append(svgEl('circle', { cx: 180, cy: 120, r: 5, fill: '#58a6ff', stroke: '#fff', 'stroke-width': 2 }));
+      const apexTag = svgEl('text', { x: 192, y: 114, fill: '#8fa1b4', 'font-size': 9.5, 'font-weight': 'bold' });
+      apexTag.textContent = 'CORNER APEX';
+      s.append(apexTag);
+
+      // Enemy Target T1 at (360, 65)
+      const isEliminated = animFlickProgress >= 1.0 && marginMs >= 0;
+      const enemyColor = isEliminated ? '#3fb950' : (marginMs < 0 ? '#f85149' : '#d29922');
+      s.append(svgEl('rect', { x: 360, y: 55, width: 28, height: 28, fill: enemyColor, stroke: '#fff', 'stroke-width': 2, rx: 6 }));
+      const tTxt = svgEl('text', { x: 374, y: 73, fill: '#fff', 'font-size': 11, 'font-weight': '900', 'text-anchor': 'middle' });
+      tTxt.textContent = 'T1';
+      s.append(tTxt);
+
+      // Player Token at (90, 240)
+      const px = 90, py = 240;
+      s.append(svgEl('circle', { cx: px, cy: py, r: 10, fill: '#58a6ff', stroke: '#fff', 'stroke-width': 2 }));
+      const pTag = svgEl('text', { x: px, y: py + 22, fill: '#fff', 'font-size': 9.5, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      pTag.textContent = 'YOU';
+      s.append(pTag);
+
+      // Slew Angle Ray:
+      // Base angle to enemy T1:
+      const targetAngleRad = Math.atan2(69 - py, 360 - px); // rad
+      const currentAngleDeg = startAngleDeg * (1.0 - animFlickProgress) + targetAngleDeg * (180 / Math.PI) * animFlickProgress;
+      const currentAngleRad = targetAngleRad + (startAngleDeg * (1.0 - animFlickProgress)) * (Math.PI / 180);
+
+      const rayLen = 320;
+      const reticleX = px + Math.cos(currentAngleRad) * rayLen;
+      const reticleY = py + Math.sin(currentAngleRad) * rayLen;
+
+      // Draw Reticle Sightline
+      s.append(svgEl('line', { x1: px, y1: py, x2: reticleX, y2: reticleY, stroke: animFlickProgress >= 0.95 ? '#3fb950' : '#58a6ff', 'stroke-width': 2.5 }));
+
+      // Crosshair Circle & Pip
+      s.append(svgEl('circle', { cx: reticleX, cy: reticleY, r: 10, fill: 'none', stroke: animFlickProgress >= 0.95 ? '#3fb950' : '#58a6ff', 'stroke-width': 2 }));
+      s.append(svgEl('circle', { cx: reticleX, cy: reticleY, r: 3, fill: animFlickProgress >= 0.95 ? '#3fb950' : '#58a6ff' }));
+
+      // Slew Arc Indicator
+      if (deltaTheta > 2) {
+        const startRad = targetAngleRad + startAngleDeg * (Math.PI / 180);
+        const arcR = 80;
+        const ax1 = px + Math.cos(startRad) * arcR;
+        const ay1 = py + Math.sin(startRad) * arcR;
+        const ax2 = px + Math.cos(targetAngleRad) * arcR;
+        const ay2 = py + Math.sin(targetAngleRad) * arcR;
+        
+        s.append(svgEl('path', {
+          d: `M ${ax1} ${ay1} A ${arcR} ${arcR} 0 0 ${startAngleDeg < 0 ? 1 : 0} ${ax2} ${ay2}`,
+          fill: 'none',
+          stroke: '#d29922',
+          'stroke-width': 3,
+          'stroke-dasharray': '4,2'
+        }));
+      }
+
+      // HUD Title Badge
+      s.append(svgEl('rect', { x: 45, y: 46, width: 230, height: 42, fill: 'rgba(15, 22, 34, 0.92)', stroke: marginMs >= 0 ? '#3fb950' : '#f85149', 'stroke-width': 1, rx: 6 }));
+      const hud1 = svgEl('text', { x: 54, y: 63, fill: marginMs >= 0 ? '#3fb950' : '#f85149', 'font-size': 12, 'font-weight': 900 });
+      hud1.textContent = `Setup Cost q = ${Math.round(setupCostMs)} ms (Δθ = ${deltaTheta.toFixed(0)}°)`;
+      s.append(hud1);
+
+      const hud2 = svgEl('text', { x: 54, y: 78, fill: '#8fa1b4', 'font-size': 10 });
+      hud2.textContent = `Total Engage Time: ${Math.round(totalTimeMs)} ms vs Deadline: ${ENEMY_DEADLINE_MS} ms`;
+      s.append(hud2);
+    }
+
+    function runFlickAnim() {
+      if (!isFlicking) return;
+      animFlickProgress += 0.04;
+      if (animFlickProgress >= 1.0) {
+        animFlickProgress = 1.0;
+        isFlicking = false;
+        $('btn-run-flick').classList.remove('playing');
+        $('btn-run-flick').textContent = '▶ Replay Flick';
+        $('flick-status-text').textContent = 'Engagement completed.';
+      }
+      updateLiveLab();
+      if (isFlicking) {
+        requestAnimationFrame(runFlickAnim);
+      }
+    }
+
+    $('btn-run-flick').onclick = () => {
+      if (isFlicking) return;
+      animFlickProgress = 0.0;
+      isFlicking = true;
+      $('btn-run-flick').classList.add('playing');
+      $('btn-run-flick').textContent = 'Flicking to Target...';
+      $('flick-status-text').textContent = 'Mouse slewing at calibrated aim velocity...';
+      requestAnimationFrame(runFlickAnim);
+    };
+
+    $('slider-theta-start').addEventListener('input', () => {
+      animFlickProgress = 0.0;
+      updateLiveLab();
+    });
+
+    $('slider-omega').addEventListener('input', () => {
+      animFlickProgress = 0.0;
+      updateLiveLab();
+    });
+
+    updateLiveLab();
+  </script>
+</body>
+</html>

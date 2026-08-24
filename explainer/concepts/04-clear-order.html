@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>04 — Target Clearance Order</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .scene-svg {
+      width: 100%;
+      height: 300px;
+      display: block;
+      background: #070b11;
+      border-radius: 12px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .status-bad {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #f85149;
+    }
+    .status-good {
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+      color: #3fb950;
+    }
+    .timeline-container {
+      margin-top: 12px;
+      background: #0a111a;
+      border: 1px solid #1f2d3d;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .t-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .t-row:last-child { margin-bottom: 0; }
+    .t-label {
+      width: 75px;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #8fa1b4;
+    }
+    .t-track {
+      flex: 1;
+      height: 22px;
+      background: #111822;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #233142;
+    }
+    .t-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+    @media (max-width: 1000px) {
+      .grid3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <a class="back" href="index.html">← Concepts Index</a>
+      <span class="pill">Lesson 04 · Permutation Scheduling</span>
+    </div>
+
+    <section class="hero">
+      <div class="eyebrow">04 · TARGET CLEARANCE ORDER</div>
+      <h1>Why does the order you clear angles matter?</h1>
+      <p>The enemies in the room do not change. But your <strong>clearance sequence</strong> dictates how much turning and waiting gets inserted between each shot. Even shooting the center threat first can be a fatal mistake if an urgent corner threat expires!</p>
+    </section>
+
+    <!-- 3-Way Strategy Comparison -->
+    <div class="grid3">
+      
+      <!-- CARD 1: OPTIMAL SWEEP -->
+      <div class="card">
+        <div class="compare-title good">✓ 1. URGENCY SWEEP (L → C → R)</div>
+        <div class="scene">
+          <svg class="scene-svg" viewBox="0 0 320 280">
+            <defs>
+              <pattern id="grid-c4-s1" width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="320" height="280" fill="url(#grid-c4-s1)"/>
+            <rect x="15" y="15" width="290" height="250" fill="none" stroke="#233142" stroke-width="2" rx="6"/>
+
+            <!-- Player -->
+            <circle cx="160" cy="245" r="8" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+            <text x="160" y="265" fill="#58a6ff" font-size="10" font-weight="900" text-anchor="middle">YOU</text>
+
+            <!-- Targets -->
+            <rect x="40" y="65" width="28" height="28" fill="#3fb950" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="54" y="83" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">1</text>
+            <text x="54" y="105" fill="#8fa1b4" font-size="9" font-weight="bold" text-anchor="middle">LEFT (350ms)</text>
+
+            <rect x="146" y="45" width="28" height="28" fill="#3fb950" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="160" y="63" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">2</text>
+            <text x="160" y="85" fill="#8fa1b4" font-size="9" font-weight="bold" text-anchor="middle">CENTER (800ms)</text>
+
+            <rect x="252" y="65" width="28" height="28" fill="#3fb950" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="266" y="83" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">3</text>
+            <text x="266" y="105" fill="#8fa1b4" font-size="9" font-weight="bold" text-anchor="middle">RIGHT (1000ms)</text>
+
+            <!-- Continuous Sweep Arc -->
+            <path d="M 54 79 Q 105 45 160 59 Q 215 45 266 79" fill="none" stroke="#3fb950" stroke-width="3"/>
+
+            <!-- Badge -->
+            <rect x="25" y="22" width="130" height="24" fill="rgba(15, 22, 34, 0.92)" stroke="#3fb950" stroke-width="1" rx="4"/>
+            <text x="32" y="38" fill="#3fb950" font-size="10" font-weight="900">TOTAL SLEW: 115°</text>
+          </svg>
+        </div>
+
+        <div class="timeline-container">
+          <div class="t-row"><span class="t-label">1. Left (T1):</span><div class="t-track"><div class="t-fill" style="left:2%;width:30%;background:#3fb950;">C₁ = 265ms (+85ms)</div></div></div>
+          <div class="t-row"><span class="t-label">2. Center (T2):</span><div class="t-track"><div class="t-fill" style="left:34%;width:30%;background:#3fb950;">C₂ = 523ms (+277ms)</div></div></div>
+          <div class="t-row"><span class="t-label">3. Right (T3):</span><div class="t-track"><div class="t-fill" style="left:66%;width:30%;background:#3fb950;">C₃ = 768ms (+232ms)</div></div></div>
+        </div>
+
+        <div class="status-badge status-good">✓ 100% CLEARABLE (+85ms)</div>
+        <p style="margin-top: 8px; font-size: 13px; color: #8fa1b4;">Eliminates the most urgent threat first (Left, 350ms deadline), then sweeps smoothly through Center and Right with positive margins on every target.</p>
+      </div>
+
+      <!-- CARD 2: CENTER-FIRST REFLEX -->
+      <div class="card">
+        <div class="compare-title bad">✗ 2. CENTER REFLEX (C → L → R)</div>
+        <div class="scene">
+          <svg class="scene-svg" viewBox="0 0 320 280">
+            <defs>
+              <pattern id="grid-c4-s2" width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="320" height="280" fill="url(#grid-c4-s2)"/>
+            <rect x="15" y="15" width="290" height="250" fill="none" stroke="#233142" stroke-width="2" rx="6"/>
+
+            <!-- Player -->
+            <circle cx="160" cy="245" r="8" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+            <text x="160" y="265" fill="#58a6ff" font-size="10" font-weight="900" text-anchor="middle">YOU</text>
+
+            <!-- Targets -->
+            <rect x="146" y="45" width="28" height="28" fill="#3fb950" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="160" y="63" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">1</text>
+            <text x="160" y="85" fill="#8fa1b4" font-size="9" font-weight="bold" text-anchor="middle">CENTER (800ms)</text>
+
+            <rect x="40" y="65" width="28" height="28" fill="#f85149" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="54" y="83" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">2</text>
+            <text x="54" y="105" fill="#f85149" font-size="9" font-weight="bold" text-anchor="middle">LEFT (350ms)</text>
+
+            <rect x="252" y="65" width="28" height="28" fill="#3fb950" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="266" y="83" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">3</text>
+            <text x="266" y="105" fill="#8fa1b4" font-size="9" font-weight="bold" text-anchor="middle">RIGHT (1000ms)</text>
+
+            <!-- Trajectory lines -->
+            <line x1="160" y1="245" x2="160" y2="73" stroke="#3fb950" stroke-width="2"/>
+            <path d="M 160 59 Q 105 45 54 79" fill="none" stroke="#f85149" stroke-width="2.5" stroke-dasharray="4,2"/>
+            <path d="M 54 79 Q 160 130 266 79" fill="none" stroke="#d29922" stroke-width="2.5" stroke-dasharray="4,2"/>
+
+            <!-- Badge -->
+            <rect x="25" y="22" width="130" height="24" fill="rgba(15, 22, 34, 0.92)" stroke="#f85149" stroke-width="1" rx="4"/>
+            <text x="32" y="38" fill="#f85149" font-size="10" font-weight="900">TOTAL SLEW: 175°</text>
+          </svg>
+        </div>
+
+        <div class="timeline-container">
+          <div class="t-row"><span class="t-label">1. Center (T2):</span><div class="t-track"><div class="t-fill" style="left:2%;width:30%;background:#3fb950;">C₁ = 265ms (+535ms)</div></div></div>
+          <div class="t-row"><span class="t-label">2. Left (T1):</span><div class="t-track"><div class="t-fill" style="left:34%;width:34%;background:#f85149;">C₂ = 523ms (BREACH)</div></div></div>
+          <div class="t-row"><span class="t-label">3. Right (T3):</span><div class="t-track"><div class="t-fill" style="left:70%;width:28%;background:#3fb950;">C₃ = 926ms (+74ms)</div></div></div>
+        </div>
+
+        <div class="status-badge status-bad">⚠️ DEADLINE BREACH (+173ms)</div>
+        <p style="margin-top: 8px; font-size: 13px; color: #8fa1b4;"><strong>Tunnel vision trap.</strong> Even though Center was right in front of you, Left was the imminent threat (350ms). By shooting Center first, Left shoots you at 350ms before your turn finishes.</p>
+      </div>
+
+      <!-- CARD 3: ZIG-ZAG THRASH -->
+      <div class="card">
+        <div class="compare-title bad">✗ 3. ZIG-ZAG THRASH (L → R → C)</div>
+        <div class="scene">
+          <svg class="scene-svg" viewBox="0 0 320 280">
+            <defs>
+              <pattern id="grid-c4-s3" width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="320" height="280" fill="url(#grid-c4-s3)"/>
+            <rect x="15" y="15" width="290" height="250" fill="none" stroke="#233142" stroke-width="2" rx="6"/>
+
+            <!-- Player -->
+            <circle cx="160" cy="245" r="8" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+            <text x="160" y="265" fill="#58a6ff" font-size="10" font-weight="900" text-anchor="middle">YOU</text>
+
+            <!-- Targets -->
+            <rect x="40" y="65" width="28" height="28" fill="#3fb950" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="54" y="83" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">1</text>
+            <text x="54" y="105" fill="#8fa1b4" font-size="9" font-weight="bold" text-anchor="middle">LEFT (350ms)</text>
+
+            <rect x="252" y="65" width="28" height="28" fill="#3fb950" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="266" y="83" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">2</text>
+            <text x="266" y="105" fill="#8fa1b4" font-size="9" font-weight="bold" text-anchor="middle">RIGHT (1000ms)</text>
+
+            <rect x="146" y="45" width="28" height="28" fill="#f85149" stroke="#fff" stroke-width="1.5" rx="5"/>
+            <text x="160" y="63" fill="#fff" font-size="12" font-weight="900" text-anchor="middle">3</text>
+            <text x="160" y="85" fill="#f85149" font-size="9" font-weight="bold" text-anchor="middle">CENTER (800ms)</text>
+
+            <!-- 115 deg Cross-Room Whip -->
+            <line x1="160" y1="245" x2="54" y2="93" stroke="#3fb950" stroke-width="2"/>
+            <path d="M 54 79 Q 160 140 266 79" fill="none" stroke="#d29922" stroke-width="3" stroke-dasharray="5,3"/>
+            <path d="M 266 79 Q 210 50 174 59" fill="none" stroke="#f85149" stroke-width="2.5" stroke-dasharray="4,2"/>
+
+            <!-- Badge -->
+            <rect x="25" y="22" width="130" height="24" fill="rgba(15, 22, 34, 0.92)" stroke="#f85149" stroke-width="1" rx="4"/>
+            <text x="32" y="38" fill="#f85149" font-size="10" font-weight="900">TOTAL SLEW: 170°</text>
+          </svg>
+        </div>
+
+        <div class="timeline-container">
+          <div class="t-row"><span class="t-label">1. Left (T1):</span><div class="t-track"><div class="t-fill" style="left:2%;width:30%;background:#3fb950;">C₁ = 265ms (+85ms)</div></div></div>
+          <div class="t-row"><span class="t-label">2. Right (T3):</span><div class="t-track"><div class="t-fill" style="left:34%;width:34%;background:#3fb950;">C₂ = 668ms (+332ms)</div></div></div>
+          <div class="t-row"><span class="t-label">3. Center (T2):</span><div class="t-track"><div class="t-fill" style="left:70%;width:28%;background:#f85149;">C₃ = 912ms (BREACH)</div></div></div>
+        </div>
+
+        <div class="status-badge status-bad">⚠️ DEADLINE BREACH (+112ms)</div>
+        <p style="margin-top: 8px; font-size: 13px; color: #8fa1b4;"><strong>Travel exhaustion.</strong> Whipping your mouse across the entire room from Left to Right (115°) delayed your return to Center, causing Center to eliminate you.</p>
+      </div>
+
+    </div>
+
+    <div class="takeaway">Same threats. Different sequence. Different answer.</div>
+
+    <!-- Slicing the Pie Connection -->
+    <div style="background: rgba(88, 166, 255, 0.08); border: 1px solid rgba(88, 166, 255, 0.25); border-radius: 12px; padding: 18px 20px; margin-top: 20px; display: flex; gap: 14px; align-items: flex-start;">
+      <span style="font-size: 28px; line-height: 1;">🥧</span>
+      <div>
+        <div style="font-size: 15px; font-weight: 800; color: #58a6ff; margin-bottom: 4px;">This is why we slice the pie: (Make sure you save a slice for your friend!)</div>
+        <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #8fa1b4;">
+          Slicing the pie isn't just tactical dogma—it is the physical movement that enforces optimal permutation scheduling. When you slice a corner incrementally, geometry forces threats to un-occlude in monotonic sweep order (<strong style="color: #3fb950;">Left → Center → Right</strong>). Slicing the pie prevents you from ever triggering the <strong>Center-First Reflex Trap</strong> or getting caught in a <strong>115° cross-room panic thrash</strong>.
+        </p>
+      </div>
+    </div>
+
+    <!-- Mathematical Details with Clean Typography -->
+    <details class="math">
+      <summary>📐 Mathematical Definition: The Permutation Scheduling Problem 1 | s_jk | L_max</summary>
+      <div class="eq">Completion Time: C<sub>j</sub><sup>π</sup> = C<sub>j-1</sub><sup>π</sup> + ( |θ<sub>j</sub> − θ<sub>j-1</sub>| / ω<sub>aim</sub> ) + p<sub>j</sub></div>
+      <div class="eq" style="font-size: 20px; margin-top: 10px;">Maximum Lateness: L<sup>π</sup> = max<sub>j</sub> ( C<sub>j</sub><sup>π</sup> − D<sub>j</sub> ) &nbsp;&nbsp;|&nbsp;&nbsp; Optimal Schedule: π* = arg min<sub>π</sub> L<sup>π</sup></div>
+      <p>In classical single-machine scheduling with sequence-dependent setup times (<em>1 | s<sub>jk</sub> | L<sub>max</sub></em>), the optimal sequence π* must balance two conflicting forces:</p>
+      <ul>
+        <li><strong>Earliest Deadline First (EDF):</strong> High-urgency threats with tight deadlines (such as Left at 350 ms) must be cleared before low-urgency threats (such as Center at 800 ms). Shooting Center first creates a +173 ms deadline breach on Left despite zero initial slew.</li>
+        <li><strong>Shortest Slew Path:</strong> Minimizing reticle travel between subsequent threats prevents travel exhaustion from causing a late deadline breach on the final targets.</li>
+      </ul>
+    </details>
+  </main>
+</body>
+</html>

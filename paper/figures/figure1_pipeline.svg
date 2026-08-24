@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" width="1000" height="420" style="background:#0d1117; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <!-- Title & Subtitle -->
+  <text x="30" y="32" fill="#f0f6fc" font-size="16" font-weight="bold">Figure 1: The Geometry-to-Contract Schedulability Pipeline</text>
+  <text x="30" y="52" fill="#8b949e" font-size="12">Compilation from 2D polygonal geometry to provably composable min-plus Dioid transfer contracts.</text>
+
+  <!-- Panel A: Geometry & Traversal -->
+  <g transform="translate(30, 70)">
+    <rect width="215" height="300" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <text x="15" y="25" fill="#58a6ff" font-size="12" font-weight="bold">(A) Continuous Geometry</text>
+    <text x="15" y="42" fill="#8b949e" font-size="10">Polygonal floorplan &amp; route γ(s)</text>
+    
+    <!-- Floorplan Box -->
+    <rect x="15" y="55" width="185" height="175" rx="4" fill="#090d13" stroke="#30363d"/>
+    <!-- Obstacles -->
+    <rect x="75" y="55" width="20" height="75" fill="#21262d" stroke="#484f58"/>
+    <rect x="135" y="155" width="20" height="75" fill="#21262d" stroke="#484f58"/>
+    <!-- Traversal Route -->
+    <line x1="25" y1="142" x2="190" y2="142" stroke="#58a6ff" stroke-dasharray="4,4" stroke-width="2"/>
+    <circle cx="25" cy="142" r="5" fill="#3fb950"/>
+    <circle cx="190" cy="142" r="5" fill="#58a6ff"/>
+    <!-- Threats -->
+    <rect x="155" y="70" width="14" height="14" rx="2" fill="#f85149" stroke="#fff"/>
+    <text x="162" y="81" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">T1</text>
+    <rect x="85" y="180" width="14" height="14" rx="2" fill="#f85149" stroke="#fff"/>
+    <text x="92" y="191" fill="#fff" font-size="8" font-weight="bold" text-anchor="middle">T2</text>
+    
+    <text x="15" y="255" fill="#8b949e" font-size="10">• Forward velocity: v = 4.5 m/s</text>
+    <text x="15" y="272" fill="#8b949e" font-size="10">• Authored threats: T_1, T_2 ∈ F</text>
+    <text x="15" y="289" fill="#8b949e" font-size="10">• Route polyline: γ: [0, S] → F</text>
+  </g>
+
+  <!-- Arrow A -> B -->
+  <path d="M 255 220 L 275 220" stroke="#58a6ff" stroke-width="2"/>
+
+  <!-- Panel B: Critical LOS Event Candidate Generator -->
+  <g transform="translate(280, 70)">
+    <rect width="215" height="300" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <text x="15" y="25" fill="#58a6ff" font-size="12" font-weight="bold">(B) Critical-LOS Raycaster</text>
+    <text x="15" y="42" fill="#8b949e" font-size="10">Release timestamps &amp; deadlines</text>
+
+    <!-- Ray Diagram Box -->
+    <rect x="15" y="55" width="185" height="175" rx="4" fill="#090d13" stroke="#30363d"/>
+    <line x1="25" y1="142" x2="190" y2="142" stroke="rgba(88,166,255,0.3)" stroke-dasharray="3,3"/>
+    
+    <!-- Player raycast points -->
+    <circle cx="85" cy="142" r="4" fill="#58a6ff"/>
+    <line x1="85" y1="142" x2="155" y2="77" stroke="#58a6ff" stroke-width="1.5"/>
+    <text x="90" y="132" fill="#58a6ff" font-size="9">r_1 = 0.60s</text>
+
+    <circle cx="125" cy="142" r="4" fill="#58a6ff"/>
+    <line x1="125" y1="142" x2="92" y2="180" stroke="#d29922" stroke-width="1.5"/>
+    <text x="110" y="160" fill="#d29922" font-size="9">r_2 = 1.10s</text>
+
+    <text x="15" y="255" fill="#8b949e" font-size="10">• Releases: r_j = inf {t | LOS(p(t), q_j)}</text>
+    <text x="15" y="272" fill="#8b949e" font-size="10">• Deadlines: D_j = r_j + n_j</text>
+    <text x="15" y="289" fill="#8b949e" font-size="10">• Bearings: θ_j(t) = ∠(p(t), q_j)</text>
+  </g>
+
+  <!-- Arrow B -> C -->
+  <path d="M 505 220 L 525 220" stroke="#58a6ff" stroke-width="2"/>
+
+  <!-- Panel C: Single-Machine Scheduling Solver -->
+  <g transform="translate(530, 70)">
+    <rect width="215" height="300" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <text x="15" y="25" fill="#58a6ff" font-size="12" font-weight="bold">(C) Real-Time Solver</text>
+    <text x="15" y="42" fill="#8b949e" font-size="10">1 | r_j, s_ij | L_max stateful reticle</text>
+
+    <!-- Schedule Box -->
+    <rect x="15" y="55" width="185" height="175" rx="4" fill="#090d13" stroke="#30363d"/>
+    
+    <!-- Timeline 1 -->
+    <text x="25" y="80" fill="#8b949e" font-size="9" font-weight="bold">T1</text>
+    <rect x="45" y="70" width="30" height="12" fill="#58a6ff" rx="2"/>
+    <rect x="75" y="70" width="20" height="12" fill="#d29922" rx="2"/>
+    <rect x="95" y="70" width="35" height="12" fill="#3fb950" rx="2"/>
+    <line x1="145" y1="65" x2="145" y2="88" stroke="#f85149" stroke-width="2"/>
+
+    <!-- Timeline 2 -->
+    <text x="25" y="115" fill="#8b949e" font-size="9" font-weight="bold">T2</text>
+    <rect x="130" y="105" width="25" height="12" fill="#58a6ff" rx="2"/>
+    <rect x="155" y="105" width="20" height="12" fill="#d29922" rx="2"/>
+    <line x1="170" y1="100" x2="170" y2="123" stroke="#f85149" stroke-width="2"/>
+
+    <!-- Legend -->
+    <rect x="25" y="145" width="10" height="8" fill="#58a6ff" rx="1"/>
+    <text x="40" y="152" fill="#8b949e" font-size="8">Slew (q_ij)</text>
+    <rect x="95" y="145" width="10" height="8" fill="#d29922" rx="1"/>
+    <text x="110" y="152" fill="#8b949e" font-size="8">Acquire (A)</text>
+    <rect x="25" y="162" width="10" height="8" fill="#3fb950" rx="1"/>
+    <text x="40" y="169" fill="#8b949e" font-size="8">Service (p)</text>
+    <line x1="95" y1="166" x2="105" y2="166" stroke="#f85149" stroke-width="2"/>
+    <text x="110" y="169" fill="#8b949e" font-size="8">Deadline (D)</text>
+
+    <text x="15" y="255" fill="#8b949e" font-size="10">• Slew speed: ω = 360°/s (10.3°/tic)</text>
+    <text x="15" y="272" fill="#8b949e" font-size="10">• Optimal Permutation: π* ∈ Π</text>
+    <text x="15" y="289" fill="#f0f6fc" font-size="10" font-weight="bold">• Tactical Margin: M = -L* = +80ms</text>
+  </g>
+
+  <!-- Arrow C -> D -->
+  <path d="M 755 220 L 775 220" stroke="#58a6ff" stroke-width="2"/>
+
+  <!-- Panel D: Composable Transfer Contract -->
+  <g transform="translate(780, 70)">
+    <rect width="190" height="300" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <text x="15" y="25" fill="#58a6ff" font-size="12" font-weight="bold">(D) Transfer Contract</text>
+    <text x="15" y="42" fill="#8b949e" font-size="10">K=8 Min-Plus Matrix C_M</text>
+
+    <!-- Matrix Box -->
+    <rect x="15" y="55" width="160" height="175" rx="4" fill="#090d13" stroke="#30363d"/>
+    
+    <!-- 4x4 Grid Representation -->
+    <g transform="translate(30, 70)">
+      <rect x="0" y="0" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="13" y="17" fill="#3fb950" font-size="9" text-anchor="middle">.42</text>
+      <rect x="30" y="0" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="43" y="17" fill="#3fb950" font-size="9" text-anchor="middle">.55</text>
+      <rect x="60" y="0" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="73" y="17" fill="#f85149" font-size="9" text-anchor="middle">+∞</text>
+      <rect x="90" y="0" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="103" y="17" fill="#3fb950" font-size="9" text-anchor="middle">.61</text>
+
+      <rect x="0" y="30" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="13" y="47" fill="#3fb950" font-size="9" text-anchor="middle">.38</text>
+      <rect x="30" y="30" width="26" height="26" fill="rgba(88,166,255,0.2)" stroke="#58a6ff"/>
+      <text x="43" y="47" fill="#58a6ff" font-size="9" font-weight="bold" text-anchor="middle">.49</text>
+      <rect x="60" y="30" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="73" y="47" fill="#3fb950" font-size="9" text-anchor="middle">.52</text>
+      <rect x="90" y="30" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="103" y="47" fill="#f85149" font-size="9" text-anchor="middle">+∞</text>
+
+      <rect x="0" y="60" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="13" y="77" fill="#f85149" font-size="9" text-anchor="middle">+∞</text>
+      <rect x="30" y="60" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="43" y="77" fill="#3fb950" font-size="9" text-anchor="middle">.64</text>
+      <rect x="60" y="60" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="73" y="77" fill="#3fb950" font-size="9" text-anchor="middle">.48</text>
+      <rect x="90" y="60" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="103" y="77" fill="#3fb950" font-size="9" text-anchor="middle">.59</text>
+
+      <rect x="0" y="90" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="13" y="107" fill="#3fb950" font-size="9" text-anchor="middle">.45</text>
+      <rect x="30" y="90" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="43" y="107" fill="#f85149" font-size="9" text-anchor="middle">+∞</text>
+      <rect x="60" y="90" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="73" y="107" fill="#3fb950" font-size="9" text-anchor="middle">.71</text>
+      <rect x="90" y="90" width="26" height="26" fill="#161b22" stroke="#30363d"/>
+      <text x="103" y="107" fill="#3fb950" font-size="9" text-anchor="middle">.50</text>
+    </g>
+
+    <text x="15" y="255" fill="#8b949e" font-size="10">• Associative Min-Plus Dioid</text>
+    <text x="15" y="272" fill="#8b949e" font-size="10">• C_(M1 ⊗ M2) = C_M1 ⊗ C_M2</text>
+    <text x="15" y="289" fill="#8b949e" font-size="10">• Zero runtime simulation</text>
+  </g>
+</svg>
