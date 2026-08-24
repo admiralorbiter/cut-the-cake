@@ -27,6 +27,8 @@ import math
 import pytest
 from shapely.geometry import Polygon
 
+pytestmark = [pytest.mark.cad]
+
 from cut_the_cake.cad_document import (
     CADDocument,
     CADObstacle,

@@ -29,6 +29,8 @@ except Exception:
 
 from jsonschema.validators import Draft7Validator
 
+pytestmark = [pytest.mark.cad]
+
 from cut_the_cake.cad_export import export_scene_manifest
 from cut_the_cake.repair_benchmark import build_unserviceable_population
 from cut_the_cake.repair import MinimalRepairOptimizer

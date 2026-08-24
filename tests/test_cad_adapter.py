@@ -15,6 +15,8 @@ Verifies:
 import json
 import pytest
 
+pytestmark = [pytest.mark.cad]
+
 from cut_the_cake.cad_adapter import analyze_candidate_geometry
 from cut_the_cake.cad_server import create_cad_app
 

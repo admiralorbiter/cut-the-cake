@@ -13,6 +13,8 @@ import pytest
 import math
 import json
 import numpy as np
+
+pytestmark = [pytest.mark.cad]
 from pathlib import Path
 import sys
 from shapely.geometry import Polygon, LineString

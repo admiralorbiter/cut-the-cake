@@ -192,8 +192,12 @@ Audited benchmark evidence (`round11.4a-freeze`):
   - Interactive time-indexed playback scrubbing with synchronized player cone and authoritative LOS visibility rays.
   - Fast path vs full simulation dual-mode analysis dispatch.
   - Safe Exact-Solver Envelope ($J \le 6$ `EXACT_INTERACTIVE`, $J=7$ `EXACT_SLOW`, $J \ge 8$ `EXACT_LIMIT_EXCEEDED` fail-closed dispatch).
-  - 4-Tier verification system: Tiered state-machine fuzzer, metamorphic property suite, Playwright browser E2E, and decoupled scaling benchmark matrix.
-- **Milestone 2E (M2E — Next / Planned):** "Auto-Fix" integration invoking `MinimalRepairOptimizer` to suggest compliant obstacle placements in authored layouts within certified $J \le 6$ envelope.
+- **Milestone 2E (M2E — Completed & Accepted):** Mixed-Initiative "Auto-Fix" Integration & Closed-Loop Repair:
+  - Adapter bridge `auto_fix_cad_document` coupling `CADDocument` representation to `diagnose_clearability` and minimal translation perturbation search.
+  - Strict tri-state candidate classification: `EXACT_EVALUATED` ($J \le 6$), `UNSUPPORTED_ENVELOPE` ($J \ge 7$), `INVALID_GEOMETRY` (clearance/boundary violation).
+  - REST endpoint `POST /api/document/auto_fix` supporting both preview (`commit: false`) and atomic commit (`commit: true`) with snapshot history.
+  - Web CAD workbench integration: interactive "Auto-Fix" button, keyboard shortcut [A], proposal banner with target margin badges, ghost obstacle rendering, and full undo/redo stack.
+  - Full closed-loop verification: Canonical F1 baffle stagger repaired ($\mathcal{M}_0 = -6 \to \mathcal{M}_1 = +2\text{ tics}$), 100% pass across deterministic unit tests, metamorphic invariants, and Playwright browser E2E workflows.
 - **Milestone 2F (M2F — Planned):** Live spatial heatmaps of tactical margin deficits along authored patrol routes.
 
 ---

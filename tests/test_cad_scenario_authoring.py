@@ -5,6 +5,9 @@ causal analysis recomputation, and Undo/Redo history stack preservation.
 """
 
 import pytest
+
+pytestmark = [pytest.mark.cad]
+
 from cut_the_cake.cad_server import create_cad_app
 from cut_the_cake.cad_document import CADDocument, CADRoute, CADThreat, validate_cad_document
 from cut_the_cake.cad_adapter import (

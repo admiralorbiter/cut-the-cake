@@ -40,6 +40,11 @@ from .vizdoom_engine import (
     ControllerPolicy,
     SimulationEpisodeLog
 )
+from .repair import (
+    diagnose_clearability,
+    TacticalDiagnostic,
+    validate_repair_preservation
+)
 
 
 # Cached canonical documents for fast zero-overhead analysis
@@ -1557,3 +1562,413 @@ def analyze_candidate_geometry(
         ]
     }
     return res
+# =============================================================================
+# AUTO-FIX MIXED-INITIATIVE REPAIR OPTIMIZER (M2E)
+# =============================================================================
+ 
+def auto_fix_cad_document(
+    doc: CADDocument,
+    target_margin_tics: int = 2,
+    max_perturbation_m: float = 2.0,
+    search_resolution_m: float = 0.05,
+    max_exact_jobs: int = 6,
+    route_id: Optional[str] = None,
+    params: Optional[TicCombatParameters] = None
+) -> Dict[str, Any]:
+    """Execute grid-minimal Auto-Fix repair optimization on a CADDocument.
+ 
+    M2E Candidate Evaluation Tri-State Policy:
+    - EXACT_EVALUATED (J <= max_exact_jobs): Exact schedule evaluated, L*, M computed.
+    - UNSUPPORTED_ENVELOPE (J > max_exact_jobs): Candidate excluded from consideration without penalty.
+    - INVALID_GEOMETRY: Boundary or clearance violation rejected.
+    """
+    t_start = time.perf_counter()
+ 
+    # Route resolution & combat parameter extraction (identically to analyze_cad_document)
+    if not doc.routes:
+        runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+        return {
+            "success": False,
+            "status": "INVALID_INITIAL_DOCUMENT",
+            "error_reason": "Document has no authored routes.",
+            "initial_margin_tics": None,
+            "repaired_margin_tics": None,
+            "edit_distance_m": 0.0,
+            "target_margin_tics": target_margin_tics,
+            "controlling_obstacle_id": None,
+            "controlling_obstacle_name": None,
+            "translation_vector": [0.0, 0.0],
+            "repair_description": "Document has no authored routes.",
+            "repaired_document": None,
+            "evaluations_count": 0,
+            "evaluations_breakdown": {"exact_evaluated": 0, "unsupported_envelope": 0, "invalid_geometry": 1},
+            "runtime_ms": runtime_ms,
+            "no_repair_needed": False,
+            "initial_analysis": None,
+            "repaired_analysis": None
+        }
+
+    route_idx = 0
+    if route_id is not None:
+        found = False
+        for idx, r in enumerate(doc.routes):
+            if r.id == route_id:
+                route_idx = idx
+                found = True
+                break
+        if not found:
+            runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+            return {
+                "success": False,
+                "status": "INVALID_ROUTE",
+                "error_reason": f"Route ID '{route_id}' not found in document '{doc.document_id}'.",
+                "initial_margin_tics": None,
+                "repaired_margin_tics": None,
+                "edit_distance_m": 0.0,
+                "target_margin_tics": target_margin_tics,
+                "controlling_obstacle_id": None,
+                "controlling_obstacle_name": None,
+                "translation_vector": [0.0, 0.0],
+                "repair_description": f"Route ID '{route_id}' not found in document.",
+                "repaired_document": None,
+                "evaluations_count": 0,
+                "evaluations_breakdown": {"exact_evaluated": 0, "unsupported_envelope": 0, "invalid_geometry": 1},
+                "runtime_ms": runtime_ms,
+                "no_repair_needed": False,
+                "initial_analysis": None,
+                "repaired_analysis": None
+            }
+
+    selected_route = doc.routes[route_idx]
+    if params is None:
+        effective_v_move = float(selected_route.v_move_mps) if (selected_route.v_move_mps and selected_route.v_move_mps > 0) else float(doc.player_model.v_move_mps)
+        combat_params = TicCombatParameters(
+            v_move_mps=effective_v_move,
+            aim_velocity_deg_s=float(doc.player_model.omega_slew_deg_per_s),
+            acquisition_latency_s=float(doc.player_model.acquisition_latency_s),
+            inspect_duration_s=float(doc.player_model.service_duration_s)
+        )
+    else:
+        combat_params = params
+
+    initial_reticle_deg = float(doc.player_model.initial_reticle_deg)
+
+    # Initial authoritative analysis
+    initial_analysis = analyze_cad_document(
+        doc,
+        route_id=selected_route.id,
+        params=combat_params,
+        include_telemetry=False,
+        max_exact_jobs=max_exact_jobs
+    )
+ 
+    if not initial_analysis.get("is_valid", False):
+        runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+        return {
+            "success": False,
+            "status": "INVALID_INITIAL_DOCUMENT",
+            "error_reason": initial_analysis.get("error_reason", "Document validation failed."),
+            "initial_margin_tics": None,
+            "repaired_margin_tics": None,
+            "edit_distance_m": 0.0,
+            "target_margin_tics": target_margin_tics,
+            "controlling_obstacle_id": None,
+            "controlling_obstacle_name": None,
+            "translation_vector": [0.0, 0.0],
+            "repair_description": "Initial document failed validation.",
+            "repaired_document": None,
+            "evaluations_count": 1,
+            "evaluations_breakdown": {
+                "exact_evaluated": 0,
+                "unsupported_envelope": 0,
+                "invalid_geometry": 1
+            },
+            "runtime_ms": runtime_ms,
+            "no_repair_needed": False,
+            "initial_analysis": initial_analysis,
+            "repaired_analysis": None
+        }
+ 
+    initial_margin = initial_analysis.get("tactical_margin_tics")
+    solver_mode = initial_analysis.get("solver_mode")
+    compiled_jobs = initial_analysis.get("compiled_job_count", 0)
+ 
+    # Check if over initial solver envelope (M2D.1 fail-closed boundary)
+    if solver_mode == "EXACT_LIMIT_EXCEEDED" or initial_margin is None or compiled_jobs > max_exact_jobs:
+        runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+        return {
+            "success": False,
+            "status": "UNSUPPORTED_BASELINE_ENVELOPE",
+            "error_reason": f"Initial document has {compiled_jobs} threats, exceeding exact envelope J <= {max_exact_jobs}.",
+            "initial_margin_tics": None,
+            "repaired_margin_tics": None,
+            "edit_distance_m": 0.0,
+            "target_margin_tics": target_margin_tics,
+            "controlling_obstacle_id": None,
+            "controlling_obstacle_name": None,
+            "translation_vector": [0.0, 0.0],
+            "repair_description": f"Initial encounter exceeds exact analysis envelope (J={compiled_jobs} > {max_exact_jobs}).",
+            "repaired_document": None,
+            "evaluations_count": 1,
+            "evaluations_breakdown": {
+                "exact_evaluated": 0,
+                "unsupported_envelope": 1,
+                "invalid_geometry": 0
+            },
+            "runtime_ms": runtime_ms,
+            "no_repair_needed": False,
+            "initial_analysis": initial_analysis,
+            "repaired_analysis": None
+        }
+ 
+    # Check if already serviceable
+    if initial_margin >= target_margin_tics:
+        runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+        return {
+            "success": False,
+            "status": "ALREADY_SERVICEABLE",
+            "error_reason": None,
+            "initial_margin_tics": initial_margin,
+            "repaired_margin_tics": initial_margin,
+            "edit_distance_m": 0.0,
+            "target_margin_tics": target_margin_tics,
+            "controlling_obstacle_id": None,
+            "controlling_obstacle_name": None,
+            "translation_vector": [0.0, 0.0],
+            "repair_description": f"Document already meets target margin (M = {initial_margin} tics >= {target_margin_tics} tics). No repair needed.",
+            "repaired_document": doc.to_dict(),
+            "evaluations_count": 1,
+            "evaluations_breakdown": {
+                "exact_evaluated": 1,
+                "unsupported_envelope": 0,
+                "invalid_geometry": 0
+            },
+            "runtime_ms": runtime_ms,
+            "no_repair_needed": True,
+            "initial_analysis": initial_analysis,
+            "repaired_analysis": initial_analysis
+        }
+ 
+    # If no obstacles to move
+    if not doc.obstacles:
+        runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+        return {
+            "success": False,
+            "status": "NO_CONTROLLING_OBSTACLES",
+            "error_reason": "No obstacles found in document to perturb.",
+            "initial_margin_tics": initial_margin,
+            "repaired_margin_tics": initial_margin,
+            "edit_distance_m": 0.0,
+            "target_margin_tics": target_margin_tics,
+            "controlling_obstacle_id": None,
+            "controlling_obstacle_name": None,
+            "translation_vector": [0.0, 0.0],
+            "repair_description": "Failed: Document has no obstacles available to reposition.",
+            "repaired_document": doc.to_dict(),
+            "evaluations_count": 1,
+            "evaluations_breakdown": {
+                "exact_evaluated": 1,
+                "unsupported_envelope": 0,
+                "invalid_geometry": 0
+            },
+            "runtime_ms": runtime_ms,
+            "no_repair_needed": False,
+            "initial_analysis": initial_analysis,
+            "repaired_analysis": None
+        }
+ 
+    referee = DeterministicSimulationReferee(combat_params)
+    scheduler = DiscreteTicScheduler(combat_params)
+ 
+    geo_base = doc.to_geometric_module()
+    diag = diagnose_clearability(
+        geo_base,
+        target_margin_tics=target_margin_tics,
+        params=combat_params,
+        route_index=route_idx,
+        initial_reticle_deg=initial_reticle_deg
+    )
+ 
+    norm_x, norm_y = diag.suggested_perturbation_normal or (1.0, 0.0)
+    candidate_directions = [
+        (norm_x, norm_y),
+        (-norm_x, -norm_y),
+        (1.0, 0.0), (-1.0, 0.0),
+        (0.0, 1.0), (0.0, -1.0)
+    ]
+ 
+    # Deduplicate directions
+    unique_dirs = []
+    for dx, dy in candidate_directions:
+        l = math.hypot(dx, dy)
+        if l < 1e-4:
+            continue
+        ndx, ndy = round(dx / l, 4), round(dy / l, 4)
+        if (ndx, ndy) not in unique_dirs:
+            unique_dirs.append((ndx, ndy))
+ 
+    # Prioritize controlling obstacle index if found
+    candidate_obs_indices = list(range(len(doc.obstacles)))
+    if diag.controlling_obstacle_idx is not None and 0 <= diag.controlling_obstacle_idx < len(doc.obstacles):
+        # Move controlling obstacle to front of search
+        candidate_obs_indices.remove(diag.controlling_obstacle_idx)
+        candidate_obs_indices.insert(0, diag.controlling_obstacle_idx)
+ 
+    best_repaired_doc: Optional[CADDocument] = None
+    best_edit_dist = float('inf')
+    best_margin = initial_margin
+    best_obs_id = None
+    best_obs_name = None
+    best_trans_vec = [0.0, 0.0]
+    best_desc = ""
+ 
+    eval_breakdown = {
+        "exact_evaluated": 1,  # initial run
+        "unsupported_envelope": 0,
+        "invalid_geometry": 0
+    }
+ 
+    displacements = np.arange(search_resolution_m, max_perturbation_m + 1e-6, search_resolution_m)
+ 
+    for obs_idx in candidate_obs_indices:
+        target_obs = doc.obstacles[obs_idx]
+        obs_id = target_obs.id
+        obs_name = target_obs.name
+ 
+        for dir_x, dir_y in unique_dirs:
+            for d in displacements:
+                d_float = round(float(d), 4)
+                if d_float >= best_edit_dist:
+                    break
+ 
+                shift_x = round(float(d_float * dir_x), 4)
+                shift_y = round(float(d_float * dir_y), 4)
+ 
+                cand_doc, is_valid, err_msg = translate_obstacle_in_document(doc, obs_id, shift_x, shift_y)
+                if not is_valid:
+                    eval_breakdown["invalid_geometry"] += 1
+                    continue
+ 
+                # Compile threat jobs on candidate
+                cand_geo = cand_doc.to_geometric_module()
+                pres_errs = validate_repair_preservation(geo_base, cand_geo)
+                if pres_errs:
+                    eval_breakdown["invalid_geometry"] += 1
+                    continue
+ 
+                cand_jobs = referee.extract_tic_jobs(cand_geo, route_index=route_idx)
+                cand_num_jobs = len(cand_jobs)
+ 
+                if cand_num_jobs > max_exact_jobs:
+                    eval_breakdown["unsupported_envelope"] += 1
+                    continue
+ 
+                eval_breakdown["exact_evaluated"] += 1
+                try:
+                    cand_sched = scheduler.solve(
+                        cand_jobs,
+                        initial_reticle_deg=initial_reticle_deg,
+                        max_exact_jobs=max_exact_jobs,
+                        allow_slow_solver=False
+                    )
+                    cand_margin = cand_sched.tactical_margin_tics
+                except ValueError:
+                    eval_breakdown["unsupported_envelope"] += 1
+                    continue
+ 
+                if cand_margin >= target_margin_tics:
+                    if d_float < best_edit_dist or (abs(d_float - best_edit_dist) < 1e-6 and cand_margin > best_margin):
+                        best_edit_dist = d_float
+                        best_repaired_doc = cand_doc
+                        best_margin = cand_margin
+                        best_obs_id = obs_id
+                        best_obs_name = obs_name
+                        best_trans_vec = [shift_x, shift_y]
+                        best_desc = (
+                            f"Shift '{obs_name}' by {d_float:.2f}m along vector ({dir_x:+.2f}, {dir_y:+.2f}) "
+                            f"(dx={shift_x:+.2f}m, dy={shift_y:+.2f}m) -> Margin M = {cand_margin} tics."
+                        )
+                    # Found minimal perturbation along this specific ray
+                    break
+ 
+    total_evals = sum(eval_breakdown.values())
+    runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+ 
+    if best_repaired_doc is not None:
+        # Authoritative independent re-certification via analyze_cad_document
+        cert_analysis = analyze_cad_document(
+            best_repaired_doc,
+            route_id=selected_route.id,
+            params=combat_params,
+            include_telemetry=True,
+            max_exact_jobs=max_exact_jobs
+        )
+        cert_margin = cert_analysis.get("tactical_margin_tics")
+ 
+        if not cert_analysis.get("is_valid", False) or cert_margin is None or cert_margin < target_margin_tics:
+            # Certification rejected candidate
+            return {
+                "success": False,
+                "status": "CERTIFICATION_FAILED",
+                "error_reason": (
+                    f"Optimizer candidate L* achieved M = {best_margin}, but authoritative "
+                    f"certification analysis returned M = {cert_margin} (< target {target_margin_tics} tics)."
+                ),
+                "initial_margin_tics": initial_margin,
+                "repaired_margin_tics": cert_margin,
+                "edit_distance_m": best_edit_dist,
+                "target_margin_tics": target_margin_tics,
+                "controlling_obstacle_id": best_obs_id,
+                "controlling_obstacle_name": best_obs_name,
+                "translation_vector": best_trans_vec,
+                "repair_description": f"Certification rejected candidate: M={cert_margin} < target {target_margin_tics}.",
+                "repaired_document": best_repaired_doc.to_dict(),
+                "evaluations_count": total_evals,
+                "evaluations_breakdown": eval_breakdown,
+                "runtime_ms": runtime_ms,
+                "no_repair_needed": False,
+                "initial_analysis": initial_analysis,
+                "repaired_analysis": cert_analysis
+            }
+ 
+        return {
+            "success": True,
+            "status": "REPAIR_FOUND",
+            "error_reason": None,
+            "initial_margin_tics": initial_margin,
+            "repaired_margin_tics": cert_margin,
+            "edit_distance_m": best_edit_dist,
+            "target_margin_tics": target_margin_tics,
+            "controlling_obstacle_id": best_obs_id,
+            "controlling_obstacle_name": best_obs_name,
+            "translation_vector": best_trans_vec,
+            "repair_description": best_desc,
+            "repaired_document": best_repaired_doc.to_dict(),
+            "evaluations_count": total_evals,
+            "evaluations_breakdown": eval_breakdown,
+            "runtime_ms": runtime_ms,
+            "no_repair_needed": False,
+            "initial_analysis": initial_analysis,
+            "repaired_analysis": cert_analysis
+        }
+    else:
+        return {
+            "success": False,
+            "status": "REPAIR_NOT_FOUND",
+            "error_reason": f"Could not achieve M >= {target_margin_tics} tics within {max_perturbation_m}m budget.",
+            "initial_margin_tics": initial_margin,
+            "repaired_margin_tics": initial_margin,
+            "edit_distance_m": 0.0,
+            "target_margin_tics": target_margin_tics,
+            "controlling_obstacle_id": None,
+            "controlling_obstacle_name": None,
+            "translation_vector": [0.0, 0.0],
+            "repair_description": f"Repair failed: Could not achieve M >= {target_margin_tics} tics within {max_perturbation_m}m perturbation budget across {total_evals} candidate evaluations.",
+            "repaired_document": doc.to_dict(),
+            "evaluations_count": total_evals,
+            "evaluations_breakdown": eval_breakdown,
+            "runtime_ms": runtime_ms,
+            "no_repair_needed": False,
+            "initial_analysis": initial_analysis,
+            "repaired_analysis": None
+        }

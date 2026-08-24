@@ -15,6 +15,8 @@ import copy
 import math
 import pytest
 
+pytestmark = [pytest.mark.cad]
+
 from cut_the_cake.cad_document import (
     CADDocument,
     CADObstacle,

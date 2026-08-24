@@ -31,6 +31,8 @@ except Exception:
 
 from jsonschema.validators import Draft7Validator
 
+pytestmark = [pytest.mark.cad]
+
 from cut_the_cake.cad_document import (
     CADDocument,
     CADObstacle,

@@ -81,6 +81,12 @@
           <span class="tool-label">Delete</span>
           <span class="tool-key">Del</span>
         </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn auto-fix" id="btnAutoFix" title="Auto-Fix / Suggest Repair (A)">
+          <span class="tool-icon">✨</span>
+          <span class="tool-label">Auto-Fix</span>
+          <span class="tool-key">A</span>
+        </button>
       </div>
 
       <canvas id="mapCanvas"></canvas>
@@ -89,6 +95,23 @@
         <div class="overlay-tag" id="tagPlayerPos">POS: (0.00m, 0.00m)</div>
         <div class="overlay-tag" id="tagReticle">RETICLE: 0.0°</div>
         <div class="overlay-tag" id="tagSelectedObs">SELECTED: wall_0 (Central Baffle)</div>
+      </div>
+
+      <!-- Auto-Fix Proposal Banner (M2E) -->
+      <div class="repair-proposal-banner" id="repairProposalBanner" style="display: none;">
+        <div class="repair-banner-content">
+          <div class="repair-banner-title">
+            <span>✨ <strong>AUTO-FIX REPAIR PROPOSAL</strong></span>
+            <span class="badge" id="repairMarginBadge" style="background: rgba(46, 160, 67, 0.2); color: #3fb950; border-color: rgba(46, 160, 67, 0.4);">M = +2 tics</span>
+          </div>
+          <div class="repair-banner-desc" id="repairBannerDesc">
+            Shift 'Central Baffle' +1.10m along X-axis
+          </div>
+        </div>
+        <div class="repair-banner-actions">
+          <button class="btn primary" id="btnApplyRepair">✓ Apply Fix</button>
+          <button class="btn" id="btnDismissRepair">✕ Dismiss</button>
+        </div>
       </div>
 
       <!-- Live Drag Status Banner -->
@@ -261,6 +284,7 @@
             Loading diagnostic explanation...
           </div>
         </div>
+        <button class="btn auto-fix-btn" id="btnCardAutoFix" style="width: 100%; margin-top: 10px;">✨ Suggest Auto-Fix Repair</button>
       </div>
     </div>
   </div>

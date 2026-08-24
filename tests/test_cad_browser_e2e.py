@@ -14,6 +14,8 @@ import pytest
 from werkzeug.serving import make_server
 from playwright.sync_api import sync_playwright
 
+pytestmark = [pytest.mark.cad, pytest.mark.browser]
+
 from cut_the_cake.cad_server import create_cad_app
 
 
@@ -187,3 +189,82 @@ def test_cad_e2e_scenario_authoring_and_telemetry(cad_server_url):
             page.screenshot(path=os.path.join(brain_dir, "e2e_scenario_authoring.png"))
 
         browser.close()
+
+
+def test_cad_e2e_auto_fix_interactive_flow(cad_server_url):
+    """E2E Test: Auto-Fix repair workflow on unserviceable Canonical F1 document:
+    1. Verify initial unserviceable margin (M = -6 tics).
+    2. Click 'Auto-Fix' -> verify repair proposal banner and ghost overlay appear.
+    3. Click 'Apply Fix' -> assert margin flips to +2 tics (Target Met).
+    4. Verify Undo/Redo cycles and HUD metrics fidelity.
+    """
+    artifacts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "artifacts"))
+    brain_dir = r"C:\Users\admir\畅gemini\antigravity\brain\24682a79-57e4-435b-bdc5-0a0c8d4150f6".replace("畅", "")
+    os.makedirs(artifacts_dir, exist_ok=True)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1440, "height": 900})
+        page = context.new_page()
+        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+
+        # 1. Load Canonical F1
+        page.goto(cad_server_url, wait_until="networkidle")
+        page.wait_for_selector("#fixtureBadge")
+        
+        # 2. Verify initial unserviceable margin
+        val_m = page.inner_text("#valMargin")
+        assert "-6" in val_m
+        assert "UNSERVICEABLE" in page.inner_text("#statusBandBadge")
+
+        # 3. Click Auto-Fix button
+        page.click("#btnAutoFix")
+        page.wait_for_selector("#repairProposalBanner", state="visible", timeout=5000)
+
+        # 4. Verify repair proposal details
+        badge_text = page.inner_text("#repairMarginBadge")
+        assert "+2" in badge_text or "2" in badge_text
+        desc_text = page.inner_text("#repairBannerDesc")
+        assert "Central Baffle" in desc_text or "Shift" in desc_text
+
+        # Capture Proposal Screenshot
+        screenshot_prop = os.path.join(artifacts_dir, "e2e_auto_fix_proposal.png")
+        page.screenshot(path=screenshot_prop)
+        if os.path.exists(brain_dir):
+            page.screenshot(path=os.path.join(brain_dir, "e2e_auto_fix_proposal.png"))
+
+        # 5. Apply Repair
+        page.click("#btnApplyRepair")
+        page.wait_for_selector("#repairProposalBanner", state="hidden", timeout=10000)
+        page.wait_for_function("() => !document.getElementById('btnUndo').disabled", timeout=10000)
+
+        # 6. Verify repaired state
+        repaired_margin = page.inner_text("#valMargin")
+        assert "2" in repaired_margin and "-" not in repaired_margin
+        assert "RESERVE" in page.inner_text("#statusBandBadge") or "FEASIBLE" in page.inner_text("#statusBandBadge")
+        assert page.is_enabled("#btnUndo")
+
+        # 7. Undo -> revert to -6 tics
+        page.click("#btnUndo")
+        page.wait_for_function("() => !document.getElementById('btnRedo').disabled", timeout=10000)
+        undone_margin = page.inner_text("#valMargin")
+        assert "-6" in undone_margin
+        assert "UNSERVICEABLE" in page.inner_text("#statusBandBadge")
+        assert page.is_enabled("#btnRedo")
+
+        # 8. Redo -> restore +2 tics
+        page.click("#btnRedo")
+        page.wait_for_function("() => !document.getElementById('btnUndo').disabled", timeout=10000)
+        page.wait_for_timeout(400)
+        redone_margin = page.inner_text("#valMargin")
+        assert "2" in redone_margin and "-" not in redone_margin
+
+        # Capture Repaired Screenshot
+        screenshot_rep = os.path.join(artifacts_dir, "e2e_auto_fix_repaired.png")
+        page.screenshot(path=screenshot_rep)
+        if os.path.exists(brain_dir):
+            page.screenshot(path=os.path.join(brain_dir, "e2e_auto_fix_repaired.png"))
+
+        browser.close()
+

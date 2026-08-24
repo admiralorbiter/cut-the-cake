@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 import pytest
 
+pytestmark = [pytest.mark.cad]
+
 from cut_the_cake.importers.mw4_trace import (
     MapTraceDraft,
     MapTraceRegion,

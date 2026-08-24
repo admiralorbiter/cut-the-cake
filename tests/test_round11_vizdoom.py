@@ -147,7 +147,9 @@ def test_gate_11d_noise_robustness_smoke():
     assert 0.0 <= p_surv <= 1.0
 
 
+@pytest.mark.population
 @pytest.mark.slow
+@pytest.mark.scientific
 def test_gate_11d_noise_robustness_and_calibration_curve():
     """Gate 11D: Verify empirical survival probability varies monotonically with tactical margin M_tic."""
     harness = NoiseSimulationHarness(sigma_acq_s=0.02, sigma_aim_deg_s=30.0)
@@ -234,6 +236,7 @@ def test_round11_1_population_benchmark_smoke():
     assert not np.isnan(m_metrics.roc_auc)
 
 
+@pytest.mark.population
 @pytest.mark.scientific
 @pytest.mark.slow
 def test_round11_1_population_benchmark_and_logfo_baseline_shootout():
@@ -298,6 +301,7 @@ def test_timing_truth_table_single_target_boundary():
     assert log_safe.threat_clear_tics["T_Safe"] == 9
 
 
+@pytest.mark.vizdoom
 @pytest.mark.engine
 @pytest.mark.scientific
 @pytest.mark.slow
@@ -322,6 +326,7 @@ def test_round11_2_real_vizdoom_c_engine_bridge_12_arenas():
         bridge.close()
 
 
+@pytest.mark.vizdoom
 @pytest.mark.engine
 @pytest.mark.scientific
 @pytest.mark.slow
@@ -344,6 +349,7 @@ def test_round11_3_engine_residual_decomposition_and_guard_band():
             assert not rec.engine_player_survived, f"Lethal arena {rec.scenario_id} (M={rec.tactical_margin_pred}) unexpectedly survived in native Doom!"
 
 
+@pytest.mark.vizdoom
 @pytest.mark.engine
 @pytest.mark.slow
 def test_f3_preaim_vs_revealgated_in_real_vizdoom():

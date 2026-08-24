@@ -9,6 +9,8 @@ Usage:
 
 from __future__ import annotations
 import argparse
+import hashlib
+import json
 import os
 import sys
 from typing import Dict, Any, Optional
@@ -44,7 +46,8 @@ from .cad_adapter import (
     update_threat_due_window,
     update_threat_service_duration,
     delete_threat_in_document,
-    update_player_model
+    update_player_model,
+    auto_fix_cad_document
 )
 from .cad_export import export_scene_manifest
 
@@ -1032,6 +1035,65 @@ def create_cad_app() -> Flask:
             client_revision=client_revision
         )
         return jsonify(res), (200 if res.get("is_valid", False) else 422)
+
+    def compute_document_hash(doc: CADDocument) -> str:
+        serialized = json.dumps(doc.to_dict(), sort_keys=True)
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:16]
+
+    @app.route("/api/document/auto_fix", methods=["POST"])
+    def auto_fix_document():
+        """Compute grid-minimal Auto-Fix repair for the active working document (M2E).
+        
+        Optional request parameters:
+        - target_margin_tics: int = 2
+        - max_perturbation_m: float = 2.0
+        - search_resolution_m: float = 0.05
+        - route_id: Optional[str]
+        - commit: bool = False (if True and repair succeeds, applies to working_document with undo snapshot)
+        - expected_doc_hash: Optional[str] (if provided on commit, fails closed with 409 if document was modified)
+        """
+        req_data = request.get_json(force=True, silent=True) or {}
+        target_margin = int(req_data.get("target_margin_tics", 2))
+        max_perturbation = float(req_data.get("max_perturbation_m", 2.0))
+        search_res = float(req_data.get("search_resolution_m", 0.05))
+        route_id = req_data.get("route_id")
+        commit = bool(req_data.get("commit", False))
+        expected_doc_hash = req_data.get("expected_doc_hash")
+
+        current_hash = compute_document_hash(active_state["working_document"])
+
+        # Fail-closed stale proposal check on commit
+        if commit and expected_doc_hash is not None and expected_doc_hash != current_hash:
+            return jsonify({
+                "success": False,
+                "status": "STALE_REPAIR_PROPOSAL",
+                "error_reason": (
+                    f"Document has changed (current hash {current_hash}) since proposal was generated "
+                    f"(expected hash {expected_doc_hash}). Repair proposal is stale and cannot be applied."
+                ),
+                "source_doc_hash": current_hash,
+                "can_undo": len(active_state["undo_stack"]) > 0,
+                "can_redo": len(active_state["redo_stack"]) > 0
+            }), 409
+
+        doc = active_state["working_document"]
+        res = auto_fix_cad_document(
+            doc=doc,
+            target_margin_tics=target_margin,
+            max_perturbation_m=max_perturbation,
+            search_resolution_m=search_res,
+            max_exact_jobs=6,
+            route_id=route_id
+        )
+
+        if commit and res.get("success", False) and res.get("repaired_document") is not None:
+            push_undo_state()
+            active_state["working_document"] = CADDocument.from_dict(res["repaired_document"])
+
+        res["source_doc_hash"] = compute_document_hash(active_state["working_document"])
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
 
     # =========================================================================
     # BACKWARD COMPATIBILITY ENDPOINTS (M2A / M1)

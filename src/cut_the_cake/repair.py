@@ -140,7 +140,8 @@ def diagnose_clearability(
     geo_module: GeometricModule,
     target_margin_tics: int = 2,
     params: Optional[TicCombatParameters] = None,
-    route_index: int = 0
+    route_index: int = 0,
+    initial_reticle_deg: float = 0.0
 ) -> TacticalDiagnostic:
     """Analyze an unserviceable encounter to identify the critical threat and controlling occluder edge."""
     combat_params = params or TicCombatParameters()
@@ -163,7 +164,7 @@ def diagnose_clearability(
             diagnosis_message="No threats in module; encounter is trivially clearable."
         )
 
-    sched_res = scheduler.solve(jobs, initial_reticle_deg=0.0)
+    sched_res = scheduler.solve(jobs, initial_reticle_deg=initial_reticle_deg)
     current_margin = sched_res.tactical_margin_tics
     is_serv = (current_margin >= target_margin_tics)
 
@@ -385,7 +386,8 @@ class MinimalRepairOptimizer:
         target_margin_tics: int = 2,
         max_perturbation_m: float = 1.80,
         search_resolution_m: float = 0.05,
-        route_index: int = 0
+        route_index: int = 0,
+        initial_reticle_deg: float = 0.0
     ) -> RepairResult:
         """Find the grid-minimal perturbation in declared translation operator set achieving M(G*) >= target_margin."""
         t_start = time.perf_counter()
@@ -394,7 +396,8 @@ class MinimalRepairOptimizer:
             geo_module,
             target_margin_tics=target_margin_tics,
             params=self.params,
-            route_index=route_index
+            route_index=route_index,
+            initial_reticle_deg=initial_reticle_deg
         )
 
         if diag.is_serviceable:
@@ -490,7 +493,7 @@ class MinimalRepairOptimizer:
 
                     # Compile and check tactical margin
                     jobs = self.referee.extract_tic_jobs(candidate_mod, route_index=route_index)
-                    sched_res = self.scheduler.solve(jobs, initial_reticle_deg=0.0)
+                    sched_res = self.scheduler.solve(jobs, initial_reticle_deg=initial_reticle_deg)
                     cand_margin = sched_res.tactical_margin_tics
 
                     if cand_margin >= target_margin_tics:

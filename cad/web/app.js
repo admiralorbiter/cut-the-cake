@@ -38,6 +38,7 @@ let previewDx = 0.00;
 let previewDy = 0.00;
 let previewAngleDeg = 0.00;
 let previewRect = null; // { x1, y1, x2, y2 } in meters
+let activeRepairPreview = null; // Auto-Fix proposed repair result (M2E)
 
 let clientRevision = 0;
 let latestRequestedRevision = 0;
@@ -66,6 +67,13 @@ const toolThreat = document.getElementById('toolThreat');
 const btnUndo = document.getElementById('btnUndo');
 const btnRedo = document.getElementById('btnRedo');
 const btnDelete = document.getElementById('btnDelete');
+const btnAutoFix = document.getElementById('btnAutoFix');
+const btnCardAutoFix = document.getElementById('btnCardAutoFix');
+const repairProposalBanner = document.getElementById('repairProposalBanner');
+const repairMarginBadge = document.getElementById('repairMarginBadge');
+const repairBannerDesc = document.getElementById('repairBannerDesc');
+const btnApplyRepair = document.getElementById('btnApplyRepair');
+const btnDismissRepair = document.getElementById('btnDismissRepair');
 const dragHintText = document.getElementById('dragHintText');
 
 // Hero Card
@@ -209,7 +217,7 @@ function setupUI() {
           if (resp.ok) {
             const data = await resp.json();
             activeDoc = data.candidate_document;
-            applyAuthoritativeAnalysis(data);
+            applyAnalysisResponse(data, true);
             updateUndoRedoButtons(data.can_undo, data.can_redo);
             drawMap();
           }
@@ -234,7 +242,7 @@ function setupUI() {
           if (resp.ok) {
             const data = await resp.json();
             activeDoc = data.candidate_document;
-            applyAuthoritativeAnalysis(data);
+            applyAnalysisResponse(data, true);
             updateUndoRedoButtons(data.can_undo, data.can_redo);
             drawMap();
           }
@@ -259,7 +267,7 @@ function setupUI() {
           if (resp.ok) {
             const data = await resp.json();
             activeDoc = data.candidate_document;
-            applyAuthoritativeAnalysis(data);
+            applyAnalysisResponse(data, true);
             updateUndoRedoButtons(data.can_undo, data.can_redo);
             drawMap();
           }
@@ -275,6 +283,12 @@ function setupUI() {
   if (btnRedo) btnRedo.addEventListener('click', handleRedo);
   if (btnDelete) btnDelete.addEventListener('click', handleDeleteSelected);
 
+  // Auto-Fix Mixed-Initiative Repair (M2E)
+  if (btnAutoFix) btnAutoFix.addEventListener('click', handleSuggestAutoFix);
+  if (btnCardAutoFix) btnCardAutoFix.addEventListener('click', handleSuggestAutoFix);
+  if (btnApplyRepair) btnApplyRepair.addEventListener('click', handleApplyRepair);
+  if (btnDismissRepair) btnDismissRepair.addEventListener('click', handleDismissRepair);
+
   // Document Reset
   btnResetDoc.addEventListener('click', async () => {
     try {
@@ -282,6 +296,8 @@ function setupUI() {
       if (resp.ok) {
         const data = await resp.json();
         activeDoc = data.document;
+        activeRepairPreview = null;
+        if (repairProposalBanner) repairProposalBanner.style.display = 'none';
         selectedObstacleId = getObstacles().length > 0 ? getObstacles()[0].id : null;
         updateUndoRedoButtons(data.can_undo, data.can_redo);
         resetTransformState();
@@ -328,6 +344,78 @@ function setupUI() {
   window.addEventListener('resize', resizeCanvas);
 }
 
+async function handleSuggestAutoFix() {
+  if (!activeDoc) return;
+  try {
+    const resp = await fetch('/api/document/auto_fix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target_margin_tics: 2, commit: false })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.success && data.repaired_document) {
+        activeRepairPreview = data;
+        if (repairProposalBanner) {
+          repairProposalBanner.style.display = 'flex';
+          if (repairMarginBadge) {
+            repairMarginBadge.textContent = `M = +${data.repaired_margin_tics} tics`;
+          }
+          if (repairBannerDesc) {
+            repairBannerDesc.textContent = data.repair_description;
+          }
+        }
+        drawMap();
+      } else if (data.no_repair_needed) {
+        alert(data.repair_description || 'Encounter already meets tactical margin target.');
+      } else {
+        alert(data.repair_description || data.error_reason || 'Could not find viable repair within budget.');
+      }
+    }
+  } catch (err) {
+    console.warn('Auto-Fix error:', err);
+  }
+}
+
+async function handleApplyRepair() {
+  if (!activeRepairPreview) return;
+  try {
+    const resp = await fetch('/api/document/auto_fix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target_margin_tics: 2,
+        commit: true,
+        expected_doc_hash: activeRepairPreview.source_doc_hash
+      })
+    });
+    const data = await resp.json();
+    if (resp.status === 409 || data.status === 'STALE_REPAIR_PROPOSAL') {
+      alert('⚠️ Stale Repair Proposal: Document was modified after proposal was generated. Please re-run Auto-Fix.');
+      handleDismissRepair();
+      return;
+    }
+    if (resp.ok && data.success && data.repaired_document) {
+      activeDoc = data.repaired_document;
+      activeRepairPreview = null;
+      if (repairProposalBanner) repairProposalBanner.style.display = 'none';
+      if (data.repaired_analysis) {
+        applyAnalysisResponse(data.repaired_analysis, true);
+      }
+      updateUndoRedoButtons(data.can_undo, data.can_redo);
+      drawMap();
+    }
+  } catch (err) {
+    console.warn('Apply repair error:', err);
+  }
+}
+
+function handleDismissRepair() {
+  activeRepairPreview = null;
+  if (repairProposalBanner) repairProposalBanner.style.display = 'none';
+  drawMap();
+}
+
 function setupKeyboardShortcuts() {
   window.addEventListener('keydown', (e) => {
     // Avoid triggering when focused in an input field
@@ -342,6 +430,8 @@ function setupKeyboardShortcuts() {
       setTool('route');
     } else if (e.key === 't' || e.key === 'T') {
       setTool('threat');
+    } else if (e.key === 'a' || e.key === 'A') {
+      handleSuggestAutoFix();
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
       if (selectedObstacleId) {
         e.preventDefault();
@@ -1194,9 +1284,14 @@ function updateView(tic) {
     }
 
     valActiveTarget.textContent = frame.active_target_id || 'None';
-    valRouteDist.textContent = `${frame.route_distance_traversed_m.toFixed(2)} m / ${(frames[frames.length - 1].route_distance_traversed_m).toFixed(2)} m`;
-    valMoveSpeed.textContent = `${frame.movement_speed_mps.toFixed(1)} m/s`;
-    valSlewSpeed.textContent = `${frame.reticle_slew_velocity_deg_s.toFixed(1)}°/s`;
+    const curDist = frame.route_dist_m ?? frame.route_distance_traversed_m ?? 0.0;
+    const lastFrame = frames && frames.length > 0 ? frames[frames.length - 1] : null;
+    const totalDist = lastFrame ? (lastFrame.route_dist_m ?? lastFrame.route_distance_traversed_m ?? 0.0) : 0.0;
+    valRouteDist.textContent = `${curDist.toFixed(2)} m / ${totalDist.toFixed(2)} m`;
+    const moveSpd = frame.movement_speed_mps ?? (activeDoc?.routes?.[0]?.v_move_mps ?? 4.5);
+    valMoveSpeed.textContent = `${moveSpd.toFixed(1)} m/s`;
+    const slewSpd = frame.reticle_slew_velocity_deg_s ?? (activeDoc?.player_model?.v_slew_deg_s ?? 360.0);
+    valSlewSpeed.textContent = `${slewSpd.toFixed(1)}°/s`;
 
     tagPlayerPos.textContent = `POS: (${frame.player_pos[0].toFixed(2)}m, ${frame.player_pos[1].toFixed(2)}m)`;
     tagReticle.textContent = `RETICLE: ${frame.reticle_heading_deg.toFixed(1)}°`;
@@ -1348,6 +1443,33 @@ function drawMap() {
       }
     }
   });
+
+  // 4.5 Auto-Fix Ghost Repair Preview (M2E)
+  if (activeRepairPreview && activeRepairPreview.repaired_document) {
+    const repObs = activeRepairPreview.repaired_document.geometry?.obstacles?.find(o => o.id === activeRepairPreview.controlling_obstacle_id);
+    if (repObs && repObs.vertices) {
+      ctx.fillStyle = 'rgba(188, 140, 255, 0.25)';
+      ctx.strokeStyle = '#bc8cff';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      repObs.vertices.forEach(([x, y], idx) => {
+        if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
+        else ctx.lineTo(toCanvasX(x), toCanvasY(y));
+      });
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Ghost label
+      const cx = repObs.vertices.reduce((sum, v) => sum + v[0], 0) / repObs.vertices.length;
+      const cy = repObs.vertices.reduce((sum, v) => sum + v[1], 0) / repObs.vertices.length;
+      ctx.fillStyle = '#d2a8ff';
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText('✨ ' + (repObs.name || repObs.id) + ' (Proposed)', toCanvasX(cx) - 30, toCanvasY(cy) - 8);
+    }
+  }
 
   // 5. Rectangle Creation Preview Box
   if (interactionMode === 'create_rect' && previewRect) {

@@ -23,6 +23,8 @@ import pytest
 from hypothesis import strategies as st, settings, Phase
 from hypothesis.stateful import RuleBasedStateMachine, rule, invariant, initialize
 
+pytestmark = [pytest.mark.cad]
+
 from cut_the_cake.cad_document import (
     CADDocument,
     CADObstacle,
