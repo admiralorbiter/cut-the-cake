@@ -39,7 +39,8 @@ from cut_the_cake.cad_document import (
     CADPort,
     CADPlayerModel,
     get_canonical_f1_document,
-    get_custom_asymmetric_corridor_document
+    get_custom_asymmetric_corridor_document,
+    validate_cad_document
 )
 from cut_the_cake.cad_adapter import (
     analyze_cad_document,
@@ -238,3 +239,120 @@ def test_document_session_server_endpoints():
     resp_reset = client.post("/api/document/reset")
     assert resp_reset.status_code == 200
     assert resp_reset.get_json()["status"] == "reset"
+
+
+def test_cumulative_obstacle_edits_persist():
+    """Sequential edits to distinct obstacles must accumulate in the working document upon commit."""
+    app = create_cad_app()
+    client = app.test_client()
+
+    # Load multi-obstacle document
+    client.post("/api/document/load", json={"name": "custom_corridor"})
+    initial_doc = client.get("/api/document").get_json()
+    init_alpha_v0 = initial_doc["geometry"]["obstacles"][0]["vertices"][0]
+    init_beta_v0 = initial_doc["geometry"]["obstacles"][1]["vertices"][0]
+
+    # 1. Move Pillar Alpha by dx = +0.50m (clear of sniper nest), commit = True
+    resp1 = client.post("/api/document/translate_obstacle", json={
+        "obstacle_id": "pillar_alpha",
+        "dx": 0.50,
+        "dy": 0.0,
+        "commit": True,
+        "include_telemetry": False
+    })
+    assert resp1.status_code == 200
+    doc_after_1 = client.get("/api/document").get_json()
+    assert abs(doc_after_1["geometry"]["obstacles"][0]["vertices"][0][0] - (init_alpha_v0[0] + 0.50)) < 1e-3
+    assert doc_after_1["geometry"]["obstacles"][1]["vertices"][0] == init_beta_v0
+
+    # 2. Move Pillar Beta by dx = +0.50m (clear of flanker alcove), commit = True
+    resp2 = client.post("/api/document/translate_obstacle", json={
+        "obstacle_id": "pillar_beta",
+        "dx": 0.50,
+        "dy": 0.0,
+        "commit": True,
+        "include_telemetry": False
+    })
+    assert resp2.status_code == 200
+    doc_after_2 = client.get("/api/document").get_json()
+
+    # Both edits must be present simultaneously!
+    assert abs(doc_after_2["geometry"]["obstacles"][0]["vertices"][0][0] - (init_alpha_v0[0] + 0.50)) < 1e-3
+    assert abs(doc_after_2["geometry"]["obstacles"][1]["vertices"][0][0] - (init_beta_v0[0] + 0.50)) < 1e-3
+
+    # 3. Reset document -> Both return to baseline
+    resp_reset = client.post("/api/document/reset")
+    assert resp_reset.status_code == 200
+    doc_reset = client.get("/api/document").get_json()
+    assert doc_reset["geometry"]["obstacles"][0]["vertices"][0] == init_alpha_v0
+    assert doc_reset["geometry"]["obstacles"][1]["vertices"][0] == init_beta_v0
+
+
+def test_route_and_initial_reticle_telemetry_parity():
+    """Fast source analysis and full committed playback must evaluate the exact same route and initial aim."""
+    doc = get_custom_asymmetric_corridor_document()
+    
+    # Add a second alternative route
+    doc.routes.append(CADRoute(
+        id="route_flank",
+        name="Flank Bypass",
+        waypoints=[[0.0, -1.0], [6.0, -1.0], [12.0, -1.0]],
+        v_move_mps=3.0
+    ))
+    doc.player_model.initial_reticle_deg = 45.0
+
+    # Run fast analysis on route_flank
+    fast_res = analyze_cad_document(doc, route_id="route_flank", include_telemetry=False)
+    assert fast_res["is_valid"] is True
+
+    # Run full committed telemetry on route_flank
+    full_res = analyze_cad_document(doc, route_id="route_flank", include_telemetry=True)
+    assert full_res["is_valid"] is True
+
+    # Metrics and timing must match exactly
+    assert fast_res["tactical_margin_tics"] == full_res["tactical_margin_tics"]
+    assert fast_res["l_star_tics"] == full_res["l_star_tics"]
+    assert len(full_res["telemetry_frames"]) > 0
+    # First telemetry frame must reflect the 45 degree initial aim
+    assert full_res["telemetry_frames"][0]["reticle_heading_deg"] == 45.0
+
+
+def test_validate_cad_document_rejection():
+    """validate_cad_document must reject duplicates, degenerate geometry, and unauthorized fields."""
+    # 1. Valid document passes
+    doc = get_custom_asymmetric_corridor_document()
+    is_valid, errors = validate_cad_document(doc.to_dict())
+    assert is_valid is True
+    assert len(errors) == 0
+
+    # 2. Reject duplicate obstacle IDs
+    bad_dict = doc.to_dict()
+    bad_dict["geometry"]["obstacles"].append(dict(bad_dict["geometry"]["obstacles"][0]))
+    is_valid, errors = validate_cad_document(bad_dict)
+    assert is_valid is False
+    assert any("duplicate" in e.lower() for e in errors)
+
+    # 3. Reject unauthorized calculated/evidence fields in authoring document
+    bad_dict2 = doc.to_dict()
+    bad_dict2["tactical_margin_tics"] = 2  # Not allowed in authoring document
+    is_valid, errors = validate_cad_document(bad_dict2)
+    assert is_valid is False
+    assert any("schema error" in e.lower() for e in errors)
+
+
+def test_parameter_authority_semantics():
+    """threat.service_duration_s controls service requirement; route.v_move_mps controls route velocity."""
+    doc = get_custom_asymmetric_corridor_document()
+    doc.threats[0].service_duration_s = 0.20  # Double service duration
+    
+    geo = doc.to_geometric_module()
+    assert geo.threats[0].service_duration_s == 0.20
+
+    from cut_the_cake.vizdoom_engine import DeterministicSimulationReferee, TicCombatParameters
+    params = doc.player_model.to_combat_params()
+    referee = DeterministicSimulationReferee(params)
+    jobs = referee.extract_tic_jobs(geo, route_index=0)
+    
+    # 0.20s at dt=0.02857s is 7 tics
+    assert jobs[0].service_duration_tics == 7
+

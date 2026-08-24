@@ -119,19 +119,21 @@ def _load_frozen_engine_record(fixture_id: str) -> Optional[Dict[str, Any]]:
 def _generate_telemetry_and_events(
     geo_module: GeometricModule,
     params: TicCombatParameters,
-    policy: ControllerPolicy = ControllerPolicy.ORACLE
+    policy: ControllerPolicy = ControllerPolicy.ORACLE,
+    route_index: int = 0,
+    initial_reticle_deg: float = 0.0
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Dict[str, Any]]:
     """Generate per-tic telemetry frames and discrete scheduling events from authoritative physics."""
-    route = geo_module.routes[0]
+    route = geo_module.routes[route_index]
     total_tics = int(math.ceil(route.total_length_m / params.move_m_per_tic))
     obs_segs = extract_polygon_segments(geo_module.obstacles)
     dt_s = params.tic_duration_s
     
     # 1. Authoritative job extraction & scheduler solve
     referee = DeterministicSimulationReferee(params)
-    jobs = referee.extract_tic_jobs(geo_module, route_index=0)
+    jobs = referee.extract_tic_jobs(geo_module, route_index=route_index)
     scheduler = DiscreteTicScheduler(params)
-    sched_res = scheduler.solve(jobs, initial_reticle_deg=0.0)
+    sched_res = scheduler.solve(jobs, initial_reticle_deg=initial_reticle_deg)
     job_map = {j.id: j for j in jobs}
     threat_idx_map = {t.id: idx for idx, t in enumerate(geo_module.threats)}
     
@@ -155,7 +157,7 @@ def _generate_telemetry_and_events(
         })
 
     # 2. Simulate with authoritative SimulationController
-    controller = SimulationController(policy, params)
+    controller = SimulationController(policy, params, initial_reticle_deg=initial_reticle_deg)
     visible_threats: Dict[str, TicThreatJob] = {}
     player_survived = True
     death_tic: Optional[int] = None

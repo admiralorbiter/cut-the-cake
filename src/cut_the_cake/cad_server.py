@@ -40,8 +40,9 @@ def create_cad_app() -> Flask:
     app = Flask(__name__, static_folder=web_dir)
 
     # In-memory working document session
+    import copy
     active_state = {
-        "document": get_canonical_f1_document(),
+        "working_document": get_canonical_f1_document(),
         "baseline_document": get_canonical_f1_document(),
         "document_type": "canonical_f1"
     }
@@ -70,21 +71,21 @@ def create_cad_app() -> Flask:
         return jsonify({
             "status": "ok",
             "service": "Cut the Cake Tactical CAD Server",
-            "version": "2.0-M2B"
+            "version": "2.0-M2B.1"
         })
 
     # =========================================================================
-    # DOCUMENT SESSION ENDPOINTS (M2B)
+    # DOCUMENT SESSION ENDPOINTS (M2B.1)
     # =========================================================================
 
     @app.route("/api/document", methods=["GET"])
     def get_document():
         """Retrieve active working CADDocument."""
-        return jsonify(active_state["document"].to_dict())
+        return jsonify(active_state["working_document"].to_dict())
 
     @app.route("/api/document/load", methods=["POST"])
     def load_document():
-        """Load a named document template or a raw CADDocument JSON."""
+        """Load a named document template or a validated raw CADDocument JSON."""
         req_data = request.get_json(force=True, silent=True) or {}
         name = req_data.get("name", "").lower()
         
@@ -95,13 +96,20 @@ def create_cad_app() -> Flask:
             doc = get_custom_asymmetric_corridor_document()
             active_state["document_type"] = "custom_corridor"
         elif "document" in req_data:
-            doc = CADDocument.from_dict(req_data["document"])
+            doc_dict = req_data["document"]
+            is_valid, errors = validate_cad_document(doc_dict)
+            if not is_valid:
+                return jsonify({
+                    "error": "Document validation failed.",
+                    "details": errors
+                }), 422
+            doc = CADDocument.from_dict(doc_dict)
             active_state["document_type"] = "custom_upload"
         else:
             return jsonify({"error": f"Unknown document name '{name}'"}), 400
 
-        active_state["document"] = doc
-        active_state["baseline_document"] = doc
+        active_state["baseline_document"] = copy.deepcopy(doc)
+        active_state["working_document"] = copy.deepcopy(doc)
         return jsonify({
             "status": "loaded",
             "document_type": active_state["document_type"],
@@ -110,22 +118,24 @@ def create_cad_app() -> Flask:
 
     @app.route("/api/document/reset", methods=["POST"])
     def reset_document():
-        """Reset active document to its baseline state."""
-        active_state["document"] = active_state["baseline_document"]
+        """Reset active working document to its baseline state."""
+        active_state["working_document"] = copy.deepcopy(active_state["baseline_document"])
         return jsonify({
             "status": "reset",
-            "document": active_state["document"].to_dict()
+            "document": active_state["working_document"].to_dict()
         })
 
     @app.route("/api/document/translate_obstacle", methods=["POST"])
     def translate_obstacle():
-        """Generic 2D translation of any obstacle in the active document."""
+        """Generic 2D translation of any obstacle in the active document with cumulative commit support."""
         req_data = request.get_json(force=True, silent=True) or {}
         obstacle_id = req_data.get("obstacle_id")
         dx = float(req_data.get("dx", 0.0))
         dy = float(req_data.get("dy", 0.0))
         client_revision = int(req_data.get("client_revision", 0))
         include_telemetry = bool(req_data.get("include_telemetry", False))
+        commit = bool(req_data.get("commit", False))
+        route_id = req_data.get("route_id")
 
         if not obstacle_id:
             return jsonify({
@@ -134,8 +144,9 @@ def create_cad_app() -> Flask:
                 "client_revision": client_revision
             }), 400
 
-        base_doc = active_state["baseline_document"]
-        cand_doc, is_valid, error_reason = translate_obstacle_in_document(base_doc, obstacle_id, dx, dy)
+        # Translate relative to current working document
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = translate_obstacle_in_document(working_doc, obstacle_id, dx, dy)
         if not is_valid:
             return jsonify({
                 "is_valid": False,
@@ -143,20 +154,21 @@ def create_cad_app() -> Flask:
                 "client_revision": client_revision,
                 "dx": dx,
                 "dy": dy,
-                "obstacle_id": obstacle_id
+                "runtime_ms": 0.0
             }), 422
+
+        if commit:
+            active_state["working_document"] = cand_doc
 
         res = analyze_cad_document(
             doc=cand_doc,
-            include_telemetry=include_telemetry,
-            client_revision=client_revision
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
         )
         res["dx"] = dx
         res["dy"] = dy
-        res["obstacle_id"] = obstacle_id
-
-        # Update active document on successful analysis
-        active_state["document"] = cand_doc
+        res["is_committed"] = commit
         return jsonify(res), 200
 
     @app.route("/api/document/analyze", methods=["POST"])

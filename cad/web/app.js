@@ -349,10 +349,10 @@ function setupDragging() {
       isDragging = true;
       dragStartX = pt.x;
       dragStartY = pt.y;
-      dragStartDx = currentDx;
-      dragStartDy = currentDy;
-      previewDx = currentDx;
-      previewDy = currentDy;
+      dragStartDx = 0.00;
+      dragStartDy = 0.00;
+      previewDx = 0.00;
+      previewDy = 0.00;
       canvas.style.cursor = 'grabbing';
       drawMap();
     }
@@ -366,13 +366,13 @@ function setupDragging() {
       footerEl.classList.remove('disabled');
 
       // Commit final position with full telemetry
-      requestAnalysis(previewDx, previewDy, true);
+      requestAnalysis(previewDx, previewDy, true, true);
     }
   });
 }
 
 // Authoritative Python CAD Document Re-analysis
-async function requestAnalysis(dx, dy, includeTelemetry = false) {
+async function requestAnalysis(dx, dy, includeTelemetry = false, commit = false) {
   clientRevision++;
   latestRequestedRevision = clientRevision;
   const thisRevision = clientRevision;
@@ -394,7 +394,8 @@ async function requestAnalysis(dx, dy, includeTelemetry = false) {
         dx: dx,
         dy: dy,
         client_revision: thisRevision,
-        include_telemetry: includeTelemetry
+        include_telemetry: includeTelemetry,
+        commit: commit
       }),
       signal: activeAbortController.signal
     });
@@ -422,8 +423,12 @@ async function requestAnalysis(dx, dy, includeTelemetry = false) {
     }
 
     invalidCandidateReason = null;
-    currentDx = data.dx !== undefined ? data.dx : dx;
-    currentDy = data.dy !== undefined ? data.dy : dy;
+    currentDx = commit ? 0.00 : (data.dx !== undefined ? data.dx : dx);
+    currentDy = commit ? 0.00 : (data.dy !== undefined ? data.dy : dy);
+    if (commit) {
+      previewDx = 0.00;
+      previewDy = 0.00;
+    }
     currentAnalysis = data;
     if (data.candidate_document) {
       activeDoc = data.candidate_document;

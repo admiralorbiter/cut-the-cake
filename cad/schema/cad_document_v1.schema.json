@@ -3,6 +3,7 @@
   "title": "CADDocumentV1",
   "description": "Tactical CAD Authoring Document Schema (v1.0) defining designer-authored geometry, routes, threats, and parameters with zero calculated metrics.",
   "type": "object",
+  "additionalProperties": false,
   "required": [
     "schema_version",
     "document_id",
@@ -28,6 +29,7 @@
     },
     "metadata": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "author": { "type": "string" },
         "created_at": { "type": "string" },
@@ -35,11 +37,14 @@
         "tags": {
           "type": "array",
           "items": { "type": "string" }
-        }
+        },
+        "family": { "type": "string" },
+        "fixture_id": { "type": "string" }
       }
     },
     "units": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["coordinates", "angles", "time"],
       "properties": {
         "coordinates": { "type": "string" },
@@ -49,6 +54,7 @@
     },
     "player_model": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "v_move_mps",
         "omega_slew_deg_per_s",
@@ -66,6 +72,7 @@
     },
     "geometry": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["boundary", "obstacles", "routes", "threats", "ports"],
       "properties": {
         "boundary": {
@@ -82,6 +89,7 @@
           "type": "array",
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["id", "name", "vertices"],
             "properties": {
               "id": { "type": "string" },
@@ -103,6 +111,7 @@
           "type": "array",
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["id", "name", "waypoints", "v_move_mps"],
             "properties": {
               "id": { "type": "string" },
@@ -126,6 +135,7 @@
           "type": "array",
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["id", "name", "polygon", "anchor", "due_window_s", "service_duration_s"],
             "properties": {
               "id": { "type": "string" },
@@ -155,6 +165,7 @@
           "type": "array",
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["id", "segment", "port_type"],
             "properties": {
               "id": { "type": "string" },

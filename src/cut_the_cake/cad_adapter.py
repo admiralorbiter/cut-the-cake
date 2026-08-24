@@ -234,7 +234,9 @@ def analyze_cad_document(
         telemetry_frames, events, stats = _generate_telemetry_and_events(
             geo_module=geo_module,
             params=params,
-            policy=ControllerPolicy.ORACLE
+            policy=ControllerPolicy.ORACLE,
+            route_index=route_idx,
+            initial_reticle_deg=doc.player_model.initial_reticle_deg
         )
         model_episode_survived = stats.get("model_episode_survived", False)
         model_death_tic = stats.get("model_death_tic")
@@ -276,9 +278,9 @@ def analyze_cad_document(
     
     if m_tics < 0:
         diagnostic = {
-            "type": "STAGGER_DEFICIT",
+            "type": "DEADLINE_OVERLOAD",
             "critical_threat_id": crit_id,
-            "explanation": f"Tactical bottleneck at '{crit_label}': deadline is breached by {-m_tics} tics. Insufficient inter-threat reveal separation."
+            "explanation": f"Deadline overload detected at '{crit_label}' (id: '{crit_id}'): deadline is breached by {-m_tics} tics (L* = {sched_res.lateness_optimal_l_star_tics} tics). Schedulability infeasible under current geometry."
         }
     else:
         diagnostic = {

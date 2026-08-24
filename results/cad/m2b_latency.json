@@ -1,0 +1,35 @@
+{
+  "benchmark_name": "Tactical CAD Latency Benchmark",
+  "milestone": "M2B.1",
+  "timestamp_utc": "2026-08-24T03:28:32Z",
+  "sample_size": 150,
+  "layers": {
+    "source_analysis_compute_fast_path": {
+      "unit": "milliseconds",
+      "samples": 150,
+      "p50_ms": 0.322,
+      "p95_ms": 0.423,
+      "p99_ms": 0.485,
+      "min_ms": 0.24,
+      "max_ms": 1.091
+    },
+    "local_http_rest_round_trip": {
+      "unit": "milliseconds",
+      "samples": 150,
+      "p50_ms": 0.929,
+      "p95_ms": 1.344,
+      "p99_ms": 1.551,
+      "min_ms": 0.843,
+      "max_ms": 3.78
+    },
+    "full_telemetry_commit_35hz_sim": {
+      "unit": "milliseconds",
+      "samples": 100,
+      "p50_ms": 1.49,
+      "p95_ms": 2.107,
+      "p99_ms": 2.263,
+      "min_ms": 1.32,
+      "max_ms": 2.668
+    }
+  }
+}
