@@ -1353,7 +1353,14 @@ def analyze_cad_document(
     events_output: Optional[List[Dict[str, Any]]] = None
 
     # 8. Full Simulated Execution (Only when requested on commit)
-    has_elevation = any(abs(j.elevation_deg) > 1e-4 for j in jobs) or abs(doc.player_model.initial_reticle_elevation_deg) > 1e-4
+    has_elevation = (
+        any(abs(j.elevation_deg) > 1e-4 for j in jobs)
+        or abs(doc.player_model.initial_reticle_elevation_deg) > 1e-4
+        or getattr(selected_route, "_is_3d", False)
+        or any(len(pt) > 2 for pt in selected_route.waypoints)
+        or any(t.z_m is not None or abs(t.elevation_deg) > 1e-4 for t in doc.threats)
+        or any(o.z_min_m is not None or (o.z_max_m is not None and not math.isinf(o.z_max_m)) for o in doc.obstacles)
+    )
     telemetry_status = "not_run"
 
     if include_telemetry:
@@ -1362,7 +1369,7 @@ def analyze_cad_document(
             model_death_tic = None
             telemetry_frames_output = None
             events_output = None
-            telemetry_status = "ELEVATED_EXECUTION_UNSUPPORTED_M6A"
+            telemetry_status = "HEIGHT_AWARE_EXECUTION_UNSUPPORTED_M6B"
         else:
             from .cad_export import _generate_telemetry_and_events
             telemetry_frames, events, stats = _generate_telemetry_and_events(

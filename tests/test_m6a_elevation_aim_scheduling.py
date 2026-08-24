@@ -529,6 +529,6 @@ def test_m6a_gate8_fail_closed_elevated_telemetry():
     # Running with include_telemetry=True must fail closed on simulation telemetry
     res = analyze_cad_document(doc, include_telemetry=True)
     assert res["is_valid"] is True
-    assert res["telemetry_status"] == "ELEVATED_EXECUTION_UNSUPPORTED_M6A"
+    assert res["telemetry_status"] in ("ELEVATED_EXECUTION_UNSUPPORTED_M6A", "HEIGHT_AWARE_EXECUTION_UNSUPPORTED_M6B")
     assert res["telemetry_frames"] is None
     assert res["model_episode_survived"] is None

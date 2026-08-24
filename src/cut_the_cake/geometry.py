@@ -134,7 +134,7 @@ def ray_intersects_prism_25d(
     z_min: float = 0.0,
     z_max: float = float("inf")
 ) -> bool:
-    """Check if 3D segment [p1, p2] intersects an extruded 2.5D closed prism volume."""
+    """Check if 3D segment [p1, p2] intersects an extruded 2.5D closed prism volume P x [z_min, z_max]."""
     x1, y1, z1 = p1
     x2, y2, z2 = p2
 
@@ -147,39 +147,63 @@ def ray_intersects_prism_25d(
     if (z_min - 1e-6) <= z2 <= (z_max + 1e-6) and (polygon.contains(pt2_2d) or polygon.touches(pt2_2d)):
         return True
 
-    # 2. Horizontal ray within vertical height interval
-    if abs(z2 - z1) < 1e-6:
-        if (z_min - 1e-6) <= z1 <= (z_max + 1e-6):
-            seg_2d = LineString([(x1, y1), (x2, y2)])
-            if polygon.intersects(seg_2d):
-                return True
+    # 2. 2D Segment vs Polygon Intersection
+    seg_2d = LineString([(x1, y1), (x2, y2)])
+    if not polygon.intersects(seg_2d):
         return False
 
-    # 3. Test vertical wall faces
-    coords = list(polygon.exterior.coords)
-    for i in range(len(coords) - 1):
-        if segment_crosses_prism_face_25d(p1, p2, coords[i], coords[i + 1], z_min, z_max):
-            return True
-    for interior in polygon.interiors:
-        icoords = list(interior.coords)
-        for i in range(len(icoords) - 1):
-            if segment_crosses_prism_face_25d(p1, p2, icoords[i], icoords[i + 1], z_min, z_max):
-                return True
+    inter = polygon.intersection(seg_2d)
+    if inter.is_empty:
+        return False
 
-    # 4. Test top cap plane if finite
-    if not math.isinf(z_max):
-        t_top = (z_max - z1) / (z2 - z1)
-        if 0.0 <= t_top <= 1.0:
-            pt_top = Point(x1 + t_top * (x2 - x1), y1 + t_top * (y2 - y1))
-            if polygon.contains(pt_top) or polygon.touches(pt_top):
-                return True
+    d_xy_total = math.hypot(x2 - x1, y2 - y1)
+    if d_xy_total < 1e-9:
+        # Pure vertical segment at fixed (x, y)
+        if polygon.contains(pt1_2d) or polygon.touches(pt1_2d):
+            z_low, z_high = min(z1, z2), max(z1, z2)
+            return z_high >= (z_min - 1e-6) and z_low <= (z_max + 1e-6)
+        return False
 
-    # 5. Test bottom cap plane if finite and non-ground
-    if not math.isinf(z_min):
-        t_bot = (z_min - z1) / (z2 - z1)
-        if 0.0 <= t_bot <= 1.0:
-            pt_bot = Point(x1 + t_bot * (x2 - x1), y1 + t_bot * (y2 - y1))
-            if polygon.contains(pt_bot) or polygon.touches(pt_bot):
+    # Extract all geometric sub-components (Points and LineStrings)
+    geoms = []
+    if inter.geom_type in ("Point", "LineString"):
+        geoms = [inter]
+    elif inter.geom_type in ("MultiPoint", "MultiLineString", "GeometryCollection"):
+        geoms = list(inter.geoms)
+
+    for g in geoms:
+        if g.geom_type == "Point":
+            gx, gy = g.x, g.y
+            if abs(x2 - x1) > abs(y2 - y1):
+                t = (gx - x1) / (x2 - x1)
+            else:
+                t = (gy - y1) / (y2 - y1)
+            t = max(0.0, min(1.0, t))
+            z_val = z1 + t * (z2 - z1)
+            if (z_min - 1e-6) <= z_val <= (z_max + 1e-6):
+                return True
+        elif g.geom_type == "LineString":
+            coords = list(g.coords)
+            for c in coords:
+                cx, cy = c[0], c[1]
+                if abs(x2 - x1) > abs(y2 - y1):
+                    t = (cx - x1) / (x2 - x1)
+                else:
+                    t = (cy - y1) / (y2 - y1)
+                t = max(0.0, min(1.0, t))
+                z_val = z1 + t * (z2 - z1)
+                if (z_min - 1e-6) <= z_val <= (z_max + 1e-6):
+                    return True
+            # Check if z-range of the sub-segment overlaps [z_min, z_max]
+            t_vals = []
+            for c in (coords[0], coords[-1]):
+                if abs(x2 - x1) > abs(y2 - y1):
+                    t_vals.append(max(0.0, min(1.0, (c[0] - x1) / (x2 - x1))))
+                else:
+                    t_vals.append(max(0.0, min(1.0, (c[1] - y1) / (y2 - y1))))
+            z_sub_min = min(z1 + t_vals[0] * (z2 - z1), z1 + t_vals[1] * (z2 - z1))
+            z_sub_max = max(z1 + t_vals[0] * (z2 - z1), z1 + t_vals[1] * (z2 - z1))
+            if z_sub_max >= (z_min - 1e-6) and z_sub_min <= (z_max + 1e-6):
                 return True
 
     return False

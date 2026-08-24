@@ -421,18 +421,18 @@ def test_m6b_gate7_rigid_vertical_translation_invariance():
 
 
 # =============================================================================
-# GATE 6B-8: ASCENT HEAVEN VERTICAL ELEVATION & EXPLICIT SCHEDULE DIFFERENTIAL
+# GATE 6B-8: ASCENT HEAVEN COMPILATION & QUANTIZATION BOUNDARY RESULT
 # =============================================================================
 
-def test_m6b_gate8_ascent_heaven_vertical_elevation_and_schedule_differential():
-    """Gate 6B-8: Verify that elevating Heaven / Deep Site threat in Ascent A-Main increases 3D slew distance and lateness."""
+def test_m6b_gate8_ascent_heaven_compilation_and_quantization_boundary():
+    """Gate 6B-8: Verify Ascent Heaven target derives positive pitch (~5.35 deg) while demonstrating discrete quantization invariance."""
     # 1. Ground Plane Analysis (Threats at ground level z_m = None -> derived phi = 0.0)
     doc_ground = get_ascent_a_main_document()
     doc_ground.player_model.elevation_mode = ElevationMode.GEOMETRIC
     analysis_ground = analyze_cad_document(doc_ground, route_id="route_A", include_telemetry=False)
     assert analysis_ground["is_valid"] is True
 
-    # 2. Elevated Heaven Analysis (Deep Site / Heaven elevated by 3.0m to z = 4.65m)
+    # 2. Elevated Heaven Analysis (Deep Site elevated by 3.0m to z = 4.65m)
     doc_elevated = get_ascent_a_main_document()
     doc_elevated.player_model.elevation_mode = ElevationMode.GEOMETRIC
     heaven_threat = next((t for t in doc_elevated.threats if t.id == "threat_site_deep"), None)
@@ -445,14 +445,18 @@ def test_m6b_gate8_ascent_heaven_vertical_elevation_and_schedule_differential():
     job_ground = next(j for j in analysis_ground["threat_jobs"] if j["id"] == "threat_site_deep")
     job_elevated = next(j for j in analysis_elevated["threat_jobs"] if j["id"] == "threat_site_deep")
 
-    # Assert derived pitch elevation difference
+    # Assert derived pitch: anchor (32, -1), eye at (0,0,1.65) -> dz=3.0, dxy=sqrt(32^2 + (-1)^2) ~ 32.016 -> phi = 5.35 deg
     assert job_ground["elevation_deg"] == 0.0
-    assert job_elevated["elevation_deg"] > 0.0, f"Expected positive pitch for Heaven, got {job_elevated['elevation_deg']}"
+    expected_pitch = round(math.degrees(math.atan2(3.0, math.hypot(32.0, -1.0))), 2)
+    assert math.isclose(job_elevated["elevation_deg"], expected_pitch, abs_tol=0.05)
 
-    # Assert exact schedule metrics: Heaven elevation adds 3D slew latency to the schedule
+    # Scientific Finding: Elevation produces non-zero pitch (5.35 deg), but the spherical transition
+    # from Generator to Deep Site (6.1 deg) remains within one 35-Hz aim tic (omega*dt = 10.29 deg).
+    # Thus, discretization absorbs the perturbation, preserving identical schedule metrics:
     assert analysis_ground["tactical_margin_tics"] == -1
     assert analysis_ground["l_star_tics"] == 1
-    assert analysis_elevated["l_star_tics"] >= analysis_ground["l_star_tics"]
+    assert analysis_elevated["tactical_margin_tics"] == analysis_ground["tactical_margin_tics"]
+    assert analysis_elevated["l_star_tics"] == analysis_ground["l_star_tics"]
 
 
 # =============================================================================
@@ -491,7 +495,7 @@ def test_m6b_gate9_schema_and_elevation_mode_end_to_end_authority():
 # =============================================================================
 
 def test_m6b_gate10_prism_raycaster_volumetric_occupancy_and_boundaries():
-    """Gate 6B-10: Verify prism raycaster handles interior segments, penetrating rays, and boundary grazing."""
+    """Gate 6B-10: Verify prism raycaster handles interior segments, penetrating rays, and collinear boundary grazing."""
     poly = Polygon([(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)])
     z_min = 0.0
     z_max = 5.0
@@ -515,3 +519,29 @@ def test_m6b_gate10_prism_raycaster_volumetric_occupancy_and_boundaries():
     # 5. Ray starting on boundary face
     ray_on_boundary = ((0.0, 5.0, 2.5), (5.0, 5.0, 2.5))
     assert ray_intersects_prism_25d(ray_on_boundary[0], ray_on_boundary[1], poly, z_min, z_max) is True
+
+    # 6. Sloped ray traveling collinear along side face (y=0, z in [1, 2] inside [0, 5]) -> OCCLUDED (closed solid)
+    ray_collinear_side = ((-5.0, 0.0, 1.0), (15.0, 0.0, 2.0))
+    assert ray_intersects_prism_25d(ray_collinear_side[0], ray_collinear_side[1], poly, z_min, z_max) is True
+
+    # 7. Sloped ray collinear along side face in xy but strictly above z_max (z in [7, 8]) -> CLEAR
+    ray_collinear_above = ((-5.0, 0.0, 7.0), (15.0, 0.0, 8.0))
+    assert ray_intersects_prism_25d(ray_collinear_above[0], ray_collinear_above[1], poly, z_min, z_max) is False
+
+
+# =============================================================================
+# GATE 6B-11: TELEMETRY FAIL-CLOSED ON ALL 2.5D GEOMETRY FEATURES
+# =============================================================================
+
+def test_m6b_gate11_telemetry_fails_closed_on_all_25d_geometry():
+    """Gate 6B-11: Verify that simulation telemetry fails closed when ANY 2.5D geometry is active, even if pitch is 0."""
+    # Flat route, target at eye height (phi = 0), but finite-height wall (z_max = 1.0m)
+    doc = get_canonical_f1_document()
+    doc.obstacles[0].z_min_m = 0.0
+    doc.obstacles[0].z_max_m = 1.0
+
+    res = analyze_cad_document(doc, include_telemetry=True)
+    assert res["is_valid"] is True
+    assert res["telemetry_status"] == "HEIGHT_AWARE_EXECUTION_UNSUPPORTED_M6B"
+    assert res["telemetry_frames"] is None
+    assert res["model_episode_survived"] is None
