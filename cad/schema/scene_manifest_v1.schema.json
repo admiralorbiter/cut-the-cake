@@ -136,23 +136,24 @@
           "type": "string",
           "enum": ["source_model", "engine_conditioned", "native_engine_verified"]
         },
-        "broken_engine_survived": { "type": "boolean" },
-        "repaired_engine_survived": { "type": "boolean" },
-        "survival_flip": { "type": "boolean" },
-        "source_repair_success": { "type": "boolean" },
-        "native_engine_rescued": { "type": "boolean" },
+        "broken_engine_survived": { "type": ["boolean", "null"] },
+        "repaired_engine_survived": { "type": ["boolean", "null"] },
+        "survival_flip": { "type": ["boolean", "null"] },
+        "source_repair_success": { "type": ["boolean", "null"] },
+        "native_engine_rescued": { "type": ["boolean", "null"] },
         "transfer_status": {
           "type": "string",
           "enum": [
             "source_success_engine_rescued",
             "source_success_engine_dead",
             "source_fail_engine_dead",
-            "source_fail_engine_survived"
+            "source_fail_engine_survived",
+            "not_run"
           ]
         },
-        "delta_export_tics": { "type": "integer" },
-        "delta_execution_tics": { "type": "integer" },
-        "delta_total_tics": { "type": "integer" }
+        "delta_export_tics": { "type": ["integer", "null"] },
+        "delta_execution_tics": { "type": ["integer", "null"] },
+        "delta_total_tics": { "type": ["integer", "null"] }
       }
     }
   },
@@ -304,7 +305,8 @@
               "angle_deg",
               "service_duration_tics",
               "completion_tic",
-              "service_complete_tic",
+              "scheduled_service_end_tic",
+              "realized_service_complete_tic",
               "completion_s",
               "lateness_tics"
             ],
@@ -320,7 +322,8 @@
               "angle_deg": { "type": "number" },
               "service_duration_tics": { "type": "integer" },
               "completion_tic": { "type": "integer" },
-              "service_complete_tic": { "type": "integer" },
+              "scheduled_service_end_tic": { "type": "integer" },
+              "realized_service_complete_tic": { "type": ["integer", "null"] },
               "completion_s": { "type": "number" },
               "lateness_tics": { "type": "integer" }
             }

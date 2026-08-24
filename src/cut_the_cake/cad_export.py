@@ -285,6 +285,12 @@ def _generate_telemetry_and_events(
         c_tic = sched_res.completion_tics.get(tid, 0)
         lat_tic = sched_res.lateness_per_threat.get(tid, 0)
         lbl = _threat_label(j.id, threat_idx_map.get(j.id, 0))
+        sched_end_tic = max(0, c_tic - 1)
+        if player_survived:
+            realized_comp_tic = sched_end_tic
+        else:
+            realized_comp_tic = sched_end_tic if (death_tic is not None and sched_end_tic < death_tic) else None
+
         threat_job_records.append({
             "id": j.id,
             "label": lbl,
@@ -297,7 +303,8 @@ def _generate_telemetry_and_events(
             "angle_deg": round(j.angle_deg, 2),
             "service_duration_tics": j.service_duration_tics,
             "completion_tic": c_tic,
-            "service_complete_tic": max(0, c_tic - 1),
+            "scheduled_service_end_tic": sched_end_tic,
+            "realized_service_complete_tic": realized_comp_tic,
             "completion_s": round(c_tic * dt_s, 4),
             "lateness_tics": lat_tic
         })
@@ -423,17 +430,17 @@ def export_scene_manifest(
         evidence_tier = "native_engine_verified"
         evidence_source = "results/repair/results.json"
     else:
-        # Fallback if standalone/unindexed
-        broken_engine_survived = False
-        repaired_engine_survived = True
-        survival_flip = True
-        source_succ = True
-        delta_export = 0
-        delta_exec = 0
-        delta_tot = 0
-        transfer_status = "source_success_engine_rescued"
+        # Fail-closed fallback if unindexed / candidate geometry
+        broken_engine_survived = None
+        repaired_engine_survived = None
+        survival_flip = None
+        source_succ = None
+        delta_export = None
+        delta_exec = None
+        delta_tot = None
+        transfer_status = "not_run"
         evidence_tier = "source_model"
-        evidence_source = "unindexed"
+        evidence_source = "none"
 
     # 7. Assemble Full Scene Manifest
     manifest: Dict[str, Any] = {

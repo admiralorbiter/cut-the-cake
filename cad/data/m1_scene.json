@@ -365,7 +365,8 @@
         "angle_deg": -29.41,
         "service_duration_tics": 4,
         "completion_tic": 13,
-        "service_complete_tic": 12,
+        "scheduled_service_end_tic": 12,
+        "realized_service_complete_tic": 12,
         "completion_s": 0.3714,
         "lateness_tics": -9
       },
@@ -381,7 +382,8 @@
         "angle_deg": 48.7,
         "service_duration_tics": 4,
         "completion_tic": 31,
-        "service_complete_tic": 30,
+        "scheduled_service_end_tic": 30,
+        "realized_service_complete_tic": null,
         "completion_s": 0.8857,
         "lateness_tics": 6
       }
@@ -3101,7 +3103,8 @@
         "angle_deg": -29.41,
         "service_duration_tics": 4,
         "completion_tic": 13,
-        "service_complete_tic": 12,
+        "scheduled_service_end_tic": 12,
+        "realized_service_complete_tic": 12,
         "completion_s": 0.3714,
         "lateness_tics": -9
       },
@@ -3117,7 +3120,8 @@
         "angle_deg": 71.67,
         "service_duration_tics": 4,
         "completion_tic": 33,
-        "service_complete_tic": 32,
+        "scheduled_service_end_tic": 32,
+        "realized_service_complete_tic": 32,
         "completion_s": 0.9429,
         "lateness_tics": -2
       }

@@ -1,4 +1,4 @@
-﻿# Cut the Cake — Tactical CAD Product Roadmap
+# Cut the Cake — Tactical CAD Product Roadmap
 
 **Document type:** Living strategic roadmap  
 **North star:** A Tactical CAD platform for competitive first-person shooters  
@@ -98,13 +98,12 @@ Cut the Cake combines:
 | Transfer contracts / composition | **Strong** | Finite angular-state compositional abstraction |
 | PCG certification (Condition E) | **Strong** | Large automated candidate / generation work |
 | Population simulation (Round 11S) | **Strong** | 9,000 episodes, LOGFO-AUC = 1.0000 |
-| External ViZDoom translation | **Strong** | Three-layer residual decomposition established |
 | Actionability / map knowledge ($\ell^*$) | **Strong** | Model-level information threshold |
 | Inverse tactical repair | **Strong** | Grid-minimal over declared operator set $\mathcal{T}_{\text{obs}}$ |
 | External engine transfer | **Validated** | 75% transfer efficiency among source repairs |
 | Visual explanation | **Active** | Interactive concept pages |
-| Tactical CAD editor | **Planning (H2)** | North-star product layer |
-| Top-down tactical playback | **Next (H1/M1)** | Immediate product opportunity |
+| Top-down tactical playback | **Completed (H1)** | Authoritative 35 Hz telemetry player |
+| Tactical CAD editor (M2A) | **Active (H2/M2A)** | Drag One Wall interactive source re-analysis |
 | Multi-agent team execution | **Horizon 4** | Existing controller concepts, team simulator |
 | Real commercial-map import | **Horizon 5** | Gray-box ingestion workflow |
 | 2.5D / multi-level tactical geometry | **Horizon 6** | Planar/extruded now; layered next |
@@ -140,18 +139,19 @@ Audited benchmark evidence (`round11.4a-freeze`):
                   │ - ViZDoom Engine Bridge     │
                   └──────────────┬──────────────┘
                                  │
-                 versioned scene manifest API
-                 (scene_manifest_v1.json)
+                  versioned scene manifest & REST API
+                  (scene_manifest_v1.json / POST /api/analyze)
                                  │
              ┌───────────────────┴───────────────────┐
              │                                       │
    ┌─────────▼──────────────┐             ┌──────────▼─────────┐
    │ Tactical CAD Client    │             │ Engine Validation  │
    │ (cad/web/)             │             │                    │
-   │ - Phaser.js 2D canvas  │             │ - ViZDoom (now)    │
+   │ - Canvas 2D telemetry  │             │ - ViZDoom (now)    │
    │ - Top-down map view    │             │ - Unreal adapter   │
    │ - Interactive timeline │             │   (future)         │
-   │ - Diagnostic inspector │             └────────────────────┘
+   │ - Drag One Wall (M2A)  │             └────────────────────┘
+   │ - Diagnostic inspector │
    │ - Broken/Repaired diff │
    └────────────────────────┘
 ```
@@ -167,20 +167,23 @@ Audited benchmark evidence (`round11.4a-freeze`):
 
 ---
 
-## Horizon 1: Tactical Debugger Vertical Slice (M1) — 🚀 ACTIVE
+## Horizon 1: Tactical Debugger Vertical Slice (M1) — ✅ COMPLETED
 - **Milestone 1A (M1A):** Frozen Scene Contract + Single-Arena Playback (`cad_export.py` → `scene_manifest_v1.json` → `cad/web/`).
-- **Milestone 1B (M1B):** Interactive diagnostic review and usability refinement.
+- **Milestone 1B (M1B / M1B.1):** Hardened provenance boundaries, fail-closed external evidence, What Changed causal card, exact timing audit parity, and 88 passing verification tests.
 - **Fixture:** Canonical Family 1 Stagger Deficit (`RepairPop_F1_StaggerDeficit_00`).
-- **Features:** 2D top-down canvas, play/pause/step/scrub timeline, authoritative LOS lines, Tactical Margin badge, "Why?" bottleneck card, Broken/Repaired toggle.
+- **Features:** 2D top-down canvas, play/pause/step/scrub timeline, authoritative LOS rays, Tactical Margin badge, What Changed causal table, Frozen Broken / Frozen Repair toggles.
 
 ---
 
-## Horizon 2: Tactical CAD Editor Foundation (M2)
-- Interactive web-based 2D map authoring.
-- Drag-and-drop wall/obstacle translation and rotation.
-- Real-time background compilation of clearability contracts (< 10 ms).
-- Live heatmaps of tactical margin deficits along authored patrol paths.
-- "Auto-Fix" button invoking `MinimalRepairOptimizer` to suggest compliant placements.
+## Horizon 2: Tactical CAD Editor Foundation (M2) — 🚀 ACTIVE
+- **Milestone 2A (M2A — Active):** Drag One Wall / Interactive Source Re-analysis:
+  - Constrained X-axis horizontal dragging of Obstacle #0 with $0.05\,\text{m}$ grid snapping.
+  - Real-time local Python Flask service (`POST /api/analyze`) serving authoritative geometry validation, raycasts, discrete scheduling, and Tactical Margin calculations.
+  - Fail-closed external engine evidence (`transfer_status: "not_run"`).
+  - 3 status bands (`UNSERVICEABLE`, `FEASIBLE — BELOW TARGET RESERVE`, `TARGET RESERVE MET`).
+- **Milestone 2B (M2B — Planned):** Multi-obstacle translation, rotation, and custom corridor clearance validation.
+- **Milestone 2C (M2C — Planned):** Live heatmaps of tactical margin deficits along authored patrol paths.
+- **Milestone 2D (M2D — Planned):** "Auto-Fix" button invoking `MinimalRepairOptimizer` to suggest compliant placements.
 
 ---
 

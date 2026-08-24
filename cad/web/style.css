@@ -1,4 +1,4 @@
-/* Tactical CAD (Cut the Cake) - Milestone 1B Telemetry Debugger Style */
+/* Tactical CAD (Cut the Cake) - Milestone 2A Interactive Workbench Style */
 
 :root {
   --bg: #090d14;
@@ -113,6 +113,12 @@ header {
   gap: 6px;
 }
 
+.toggle-btn.active.working {
+  background: rgba(210, 153, 34, 0.2);
+  color: var(--amber);
+  border: 1px solid rgba(210, 153, 34, 0.5);
+}
+
 .toggle-btn.active.broken {
   background: rgba(248, 81, 73, 0.2);
   color: var(--red);
@@ -129,7 +135,7 @@ header {
 .workbench {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 390px;
   overflow: hidden;
 }
 
@@ -148,6 +154,7 @@ canvas#mapCanvas {
   display: block;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.6);
   border-radius: 6px;
+  cursor: default;
 }
 
 .viewport-overlay {
@@ -168,6 +175,21 @@ canvas#mapCanvas {
   padding: 6px 10px;
   font-size: 0.8rem;
   font-family: monospace;
+}
+
+.drag-hint-banner {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17, 23, 34, 0.92);
+  border: 1px solid rgba(210, 153, 34, 0.4);
+  color: #f0f6fc;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .viewport-bottleneck-btn {
@@ -211,6 +233,7 @@ canvas#mapCanvas {
   border-radius: 8px;
   background: #0d131d;
   border: 1px solid var(--border);
+  transition: all 0.15s ease;
 }
 
 .margin-val {
@@ -228,6 +251,10 @@ canvas#mapCanvas {
 
 .status-unserviceable {
   color: var(--red);
+}
+
+.status-below-target {
+  color: var(--amber);
 }
 
 .status-serviceable {
@@ -319,25 +346,6 @@ canvas#mapCanvas {
   font-size: 0.8rem;
   line-height: 1.45;
   color: #c9d1d9;
-}
-
-/* Repair Summary Card */
-.repair-summary-card {
-  background: rgba(63, 185, 80, 0.08);
-  border: 1px solid rgba(63, 185, 80, 0.3);
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: 8px;
-}
-
-.repair-header {
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: var(--green);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
 }
 
 /* Threat Table */

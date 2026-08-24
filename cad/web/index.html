@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tactical CAD — Single-Arena Tactical Debugger (Cut the Cake)</title>
+  <title>Tactical CAD — Interactive Tactical Workbench (Cut the Cake)</title>
   <link rel="stylesheet" href="style.css">
   <!-- Load Scene Manifest JavaScript Bundle for local file:// execution -->
   <script src="../data/m1_scene.js"></script>
@@ -15,19 +15,23 @@
       <div class="logo-title">
         <span>🍰 Cut the Cake</span>
         <span style="color: var(--text-dim);">/</span>
-        <span style="color: var(--blue);">Tactical CAD Debugger</span>
+        <span style="color: var(--blue);">Tactical CAD Workbench</span>
       </div>
       <span class="badge" id="fixtureBadge">RepairPop_F1_StaggerDeficit_00</span>
-      <span class="badge source-tag">PLAYBACK: SOURCE MODEL (35 Hz)</span>
+      <span class="badge source-tag" id="playbackTag">PLAYBACK: SOURCE MODEL (35 Hz)</span>
       <span class="badge verified" id="evidenceBadge">EXTERNAL: NATIVE VIZDOOM VERIFIED</span>
+      <span class="badge" id="latencyBadge" style="display: none; background: rgba(88, 166, 255, 0.15); color: #58a6ff;">⚡ Analysis: 0.0 ms</span>
     </div>
 
     <div class="mode-toggle-area">
-      <button class="toggle-btn active broken" id="btnModeBroken">
-        <span>🔴 Broken Encounter</span>
+      <button class="toggle-btn active working" id="btnModeWorking">
+        <span>🟡 Working Copy (Drag Wall)</span>
+      </button>
+      <button class="toggle-btn broken" id="btnModeBroken">
+        <span>🔴 Frozen Broken (0.00m)</span>
       </button>
       <button class="toggle-btn repaired" id="btnModeRepaired">
-        <span>🟢 Repaired Encounter</span>
+        <span>🟢 Frozen Repair (+1.10m)</span>
       </button>
     </div>
   </header>
@@ -44,6 +48,11 @@
         <div class="overlay-tag" id="tagLOS">VISIBLE TARGETS: 0</div>
       </div>
 
+      <!-- Drag Prompt Banner -->
+      <div class="drag-hint-banner" id="dragHintBanner">
+        <span>↔️ <strong>Interactive CAD:</strong> Drag Obstacle #0 (baffle) horizontally to re-analyze Tactical Margin</span>
+      </div>
+
       <div class="viewport-bottleneck-btn">
         <button class="btn jump-btn" id="btnJumpBottleneck">⚡ Jump to Critical Bottleneck (Tic 3)</button>
       </div>
@@ -51,82 +60,88 @@
 
     <!-- Inspector Sidebar -->
     <div class="inspector">
-      <!-- What Changed Hero Card -->
+      <!-- Live Working Copy Hero Card -->
       <div class="card">
         <div class="card-title">
-          <span>What the Repair Changed</span>
-          <span class="badge verified" style="font-size: 0.65rem;">CAUSAL DELTA</span>
+          <span>Authoritative Source Analysis</span>
+          <span class="badge" id="statusBandBadge" style="background: rgba(248, 81, 73, 0.2); color: var(--red); border-color: rgba(248, 81, 73, 0.4);">UNSERVICEABLE</span>
         </div>
-        <div class="what-changed-card">
-          <table class="what-changed-table" id="whatChangedTable">
-            <thead>
-              <tr>
-                <th>Mechanism</th>
-                <th>Broken</th>
-                <th>Repaired</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Threat 1 Reveal (r<sub>1</sub>)</td>
-                <td id="wcT1Broken">Tic 0 (0.00s)</td>
-                <td id="wcT1Repaired">Tic 0 (0.00s)</td>
-              </tr>
-              <tr class="highlight">
-                <td>Threat 2 Reveal (r<sub>2</sub>)</td>
-                <td id="wcT2Broken" style="color: var(--red);">Tic 3 (0.09s)</td>
-                <td id="wcT2Repaired" class="shift-positive">Tic 13 (0.37s)</td>
-              </tr>
-              <tr>
-                <td>Reveal Stagger Gap (&Delta;r)</td>
-                <td id="wcGapBroken">86 ms</td>
-                <td id="wcGapRepaired" class="shift-positive">371 ms (+286ms)</td>
-              </tr>
-              <tr class="highlight">
-                <td>Tactical Margin (M)</td>
-                <td id="wcMarginBroken" style="color: var(--red);">-6 tics (-171ms)</td>
-                <td id="wcMarginRepaired" class="shift-positive">+2 tics (+57ms)</td>
-              </tr>
-              <tr>
-                <td>Obstacle #0 Shift (d*)</td>
-                <td>0.00 m</td>
-                <td class="shift-positive" id="wcShift">+1.10 m (+x)</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Tactical Schedulability Card -->
-      <div class="card">
-        <div class="card-title">
-          <span>Tactical Schedulability</span>
-          <span class="badge" id="verdictBadge">UNSERVICEABLE</span>
-        </div>
-        <div class="margin-banner">
+        
+        <div class="margin-banner" id="marginBanner">
           <div>
             <div class="data-label">Tactical Margin (M)</div>
             <div class="margin-val status-unserviceable" id="valMargin">-6 tics</div>
           </div>
           <div class="margin-status status-unserviceable" id="valMarginMs">-171.4 ms</div>
         </div>
+
         <div style="margin-top: 10px;">
           <div class="data-row">
-            <span class="data-label">Required Margin Reserve (&epsilon;)</span>
-            <span class="data-value">+2 tics (+57.1 ms)</span>
+            <span class="data-label">Obstacle #0 Displacement (d*)</span>
+            <span class="data-value" id="valDisp" style="color: var(--amber); font-weight: 700;">+0.00 m (0.05m snap)</span>
           </div>
           <div class="data-row">
             <span class="data-label">Optimal Max Lateness (L*)</span>
             <span class="data-value" id="valLStar">+6 tics (Late)</span>
           </div>
           <div class="data-row">
-            <span class="data-label">Native ViZDoom Verification</span>
-            <span class="data-value" id="valEngineStatus" style="color: var(--red);">Fatal Death (0 HP)</span>
+            <span class="data-label">Threat 2 Reveal (r<sub>2</sub>)</span>
+            <span class="data-value" id="valT2Reveal">Tic 3 (0.09s)</span>
           </div>
           <div class="data-row">
-            <span class="data-label">Engine Residual (&Delta;<sub>total</sub> L)</span>
-            <span class="data-value" id="valEngineResidual">0 tics (Zero Drift)</span>
+            <span class="data-label">Reveal Stagger Gap (&Delta;r)</span>
+            <span class="data-value" id="valStaggerGap">85.7 ms</span>
           </div>
+          <div class="data-row">
+            <span class="data-label">External Engine Evidence</span>
+            <span class="data-value" id="valEngineStatus" style="color: var(--text-muted);">SOURCE MODEL ONLY — EXTERNAL ENGINE NOT RUN</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- What the Geometry Changed Comparison Table -->
+      <div class="card">
+        <div class="card-title">
+          <span>Geometry vs Reference Benchmarks</span>
+          <span class="badge verified" style="font-size: 0.65rem;">REAL-TIME DELTA</span>
+        </div>
+        <div class="what-changed-card">
+          <table class="what-changed-table" id="whatChangedTable">
+            <thead>
+              <tr>
+                <th>Mechanism</th>
+                <th>Working Copy</th>
+                <th>Frozen Target</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Obstacle #0 Shift (d*)</td>
+                <td id="tblWorkingShift" style="color: var(--amber); font-weight: 700;">+0.00 m</td>
+                <td>+1.10 m</td>
+              </tr>
+              <tr>
+                <td>Threat 1 Reveal (r<sub>1</sub>)</td>
+                <td id="tblWorkingT1">Tic 0 (0.00s)</td>
+                <td>Tic 0 (0.00s)</td>
+              </tr>
+              <tr class="highlight">
+                <td>Threat 2 Reveal (r<sub>2</sub>)</td>
+                <td id="tblWorkingT2">Tic 3 (0.09s)</td>
+                <td class="shift-positive">Tic 13 (0.37s)</td>
+              </tr>
+              <tr>
+                <td>Reveal Stagger Gap (&Delta;r)</td>
+                <td id="tblWorkingGap">86 ms</td>
+                <td class="shift-positive">371 ms</td>
+              </tr>
+              <tr class="highlight">
+                <td>Tactical Margin (M)</td>
+                <td id="tblWorkingMargin" style="color: var(--red); font-weight: 700;">-6 tics</td>
+                <td class="shift-positive">+2 tics</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -167,19 +182,10 @@
         <div class="card-title">Bottleneck Attribution</div>
         <div class="why-card" id="whyCard">
           <div class="why-header">
-            <span>⚠️ Scheduling Bottleneck (Why?)</span>
+            <span>⚠️ Scheduling Diagnostic</span>
           </div>
           <div class="why-text" id="whyText">
             Loading diagnostic explanation...
-          </div>
-        </div>
-
-        <div class="repair-summary-card" id="repairCard" style="display: none;">
-          <div class="repair-header">
-            <span>✨ Geometric Intervention</span>
-          </div>
-          <div class="why-text" id="repairText">
-            Loading repair details...
           </div>
         </div>
       </div>

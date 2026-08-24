@@ -136,14 +136,16 @@ def test_frozen_deadline_and_window_arithmetic(canonical_manifest):
     assert t1_b["due_window_tics"] == 22
     assert t1_b["deadline_tic"] == 22
     assert t1_b["completion_tic"] == 13
-    assert t1_b["service_complete_tic"] == 12
+    assert t1_b["scheduled_service_end_tic"] == 12
+    assert t1_b["realized_service_complete_tic"] == 12
 
     t2_b = b_jobs["F1_T2_R00"]
     assert t2_b["reveal_tic"] == 3
     assert t2_b["due_window_tics"] == 22
     assert t2_b["deadline_tic"] == 25
     assert t2_b["completion_tic"] == 31
-    assert t2_b["service_complete_tic"] == 30
+    assert t2_b["scheduled_service_end_tic"] == 30
+    assert t2_b["realized_service_complete_tic"] is None  # Died at tic 25 before tic 30!
 
     assert b_data["model_death_tic"] == 25
     assert b_data["tactical_margin_tics"] == -6
@@ -161,14 +163,16 @@ def test_frozen_deadline_and_window_arithmetic(canonical_manifest):
     assert t1_r["due_window_tics"] == 22
     assert t1_r["deadline_tic"] == 22
     assert t1_r["completion_tic"] == 13
-    assert t1_r["service_complete_tic"] == 12
+    assert t1_r["scheduled_service_end_tic"] == 12
+    assert t1_r["realized_service_complete_tic"] == 12
 
     t2_r = r_jobs["F1_T2_R00"]
     assert t2_r["reveal_tic"] == 13
     assert t2_r["due_window_tics"] == 22
     assert t2_r["deadline_tic"] == 35
     assert t2_r["completion_tic"] == 33
-    assert t2_r["service_complete_tic"] == 32
+    assert t2_r["scheduled_service_end_tic"] == 32
+    assert t2_r["realized_service_complete_tic"] == 32
 
     assert r_data["model_death_tic"] is None
     assert r_data["tactical_margin_tics"] == 2
@@ -196,7 +200,7 @@ def test_post_death_telemetry_freeze(canonical_manifest):
 
 
 def test_discrete_service_completion_event_parity(canonical_manifest):
-    """SERVICE_COMPLETE event tics must match controller service_complete_tic and scheduler completion_tic."""
+    """SERVICE_COMPLETE event tics must match realized_service_complete_tic and scheduler completion_tic."""
     repaired_data = canonical_manifest["repaired_scenario"]
     events = [e for e in repaired_data["events"] if e["type"] == "SERVICE_COMPLETE"]
     
@@ -205,8 +209,8 @@ def test_discrete_service_completion_event_parity(canonical_manifest):
     assert len(events) == len(repaired_data["threat_jobs"])
     for ev in events:
         job = job_map[ev["threat_id"]]
-        # Event is emitted on the final service tic (service_complete_tic)
-        assert ev["tic"] == job["service_complete_tic"], f"Event tic {ev['tic']} != service_complete_tic {job['service_complete_tic']}"
+        # Event is emitted on the final service tic (realized_service_complete_tic)
+        assert ev["tic"] == job["realized_service_complete_tic"], f"Event tic {ev['tic']} != realized_service_complete_tic {job['realized_service_complete_tic']}"
         # Scheduler completion boundary C_j marks the next operation start tic
         assert job["completion_tic"] == ev["tic"] + 1, f"Completion tic {job['completion_tic']} != event tic {ev['tic']} + 1"
 

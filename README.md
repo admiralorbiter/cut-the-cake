@@ -40,18 +40,25 @@ In competitive first-person shooter (FPS) level design, procedural generation fa
 git clone https://github.com/admiralorbiter/cut-the-cake.git
 cd cut-the-cake
 
-# Install package in editable mode
-pip install -e .
+# Install package in editable mode (with optional CAD server dependencies)
+pip install -e ".[cad]"
 ```
 
 ### Running the Test Suite
 
 ```bash
-# Run full test suite (88 tests at current HEAD)
+# Run full test suite (96 tests at current HEAD)
 pytest -v
 ```
 
-> **Note on Verification**: The frozen scientific core contains **80 tests** tagged at `round11.4a-freeze`. Current HEAD contains **88 tests** including Tactical CAD scene manifest schemas, geometry parity, post-death telemetry freeze, deadline regression audits, and frozen results contract tests.
+> **Note on Verification**: The frozen scientific core contains **80 tests** tagged at `round11.4a-freeze`. Current HEAD contains **96 tests** including Tactical CAD scene manifest schemas, adapter parity, live X-axis wall drag sweeps, deadline regression audits, and Flask CAD server endpoints.
+
+### Launching the Tactical CAD Workbench (Milestone 2A)
+
+```bash
+python -m cut_the_cake.cad_server --port 5000
+```
+Open `http://127.0.0.1:5000/` in any modern web browser to interactively drag arena obstacles and inspect real-time authoritative Tactical Margin calculations.
 
 ### Running the Canonical Inverse Repair Benchmark (Round 11.4A)
 
@@ -67,8 +74,8 @@ See [**ROUND_11_4A_FREEZE.md**](results/repair/ROUND_11_4A_FREEZE.md) for the fr
 
 ```
 cut-the-cake/
-├── src/cut_the_cake/           # Core Python engine, compiler, schedulers, and repair optimizer
-├── tests/                      # 88 comprehensive unit, PCG, ViZDoom, and CAD manifest tests
+├── src/cut_the_cake/           # Core Python engine, compiler, schedulers, adapter, and CAD server
+├── tests/                      # 96 comprehensive unit, PCG, ViZDoom, and CAD adapter tests
 ├── cad/                        # Tactical CAD schemas, exports, and top-down 2D playback client
 ├── paper/                      # Academic manuscript, SVGs, and BibTeX references
 │   ├── manuscript.md
