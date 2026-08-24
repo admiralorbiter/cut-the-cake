@@ -1,93 +1,77 @@
-# Tactical CAD & Scientific Core Walkthrough
+# Tactical CAD M2C.1 & MW4 Import Spike 2 Walkthrough
 
 ---
 
-## 1. Tactical CAD Milestone 2C (M2C) — Gray-Box Obstacle Authoring & Document History
+## 1. Track A: Milestone 2C.1 — Transform Semantics Closeout
 
-### Milestone 2C Summary
-Milestone 2C establishes **Cut the Cake** as an interactive gray-box level editor where geometric authoring directly drives real-time downstream tactical analysis while maintaining authoritative server-side snapshot history:
-
-1. **Authoritative Python Geometry Engine (`src/cut_the_cake/cad_adapter.py`)**:
-   - `create_rectangle_obstacle`: Monotonic stable unique ID generation (`wall_001`, `wall_002`...), enforces minimum dimension ($\ge 0.10\,\text{m}$), runs fail-closed boundary and clearance validation against routes, threats, and ports.
-   - `resize_rectangle_obstacle`: Corner handle resizing (`nw`, `ne`, `se`, `sw`) with pinned opposite anchor and dimension bounds checking.
-   - `rotate_obstacle_in_document`: Centroid-anchored affine polygon rotation preserving exact obstacle centroid and area.
-   - `delete_obstacle_in_document`: Obstacle removal permitting valid 0-obstacle environments.
-2. **Server-Side Snapshot History Stack (`src/cut_the_cake/cad_server.py`)**:
-   - `undo_stack` & `redo_stack` (capped at 100 snapshots).
-   - Every committed mutation pushes the prior working document to `undo_stack` and clears `redo_stack`.
-   - Dedicated REST endpoints:
-     - `POST /api/document/create_obstacle`
-     - `POST /api/document/translate_obstacle`
-     - `POST /api/document/resize_obstacle`
-     - `POST /api/document/rotate_obstacle`
-     - `POST /api/document/delete_obstacle`
-     - `POST /api/document/undo`
-     - `POST /api/document/redo`
-3. **Interactive Workbench UI (`cad/web/`)**:
-   - **Left Authoring Toolbar**:
-     - `↖ Select` (`V` / `Escape`)
-     - `▭ Wall` (`R`)
-     - `↶ Undo` (`Ctrl+Z`)
-     - `↷ Redo` (`Ctrl+Y` / `Ctrl+Shift+Z`)
-     - `🗑 Delete` (`Delete` / `Backspace`)
-   - **Visual Transform Handles**:
-     - 4 Corner Resize handles ($\square$) with live width $\times$ height dimension labels.
-     - 1 Top Rotation handle ($\circlearrowright$ on stem) with $5^\circ$ snap (continuous with Shift).
-     - Live rubber-band rectangle drag preview in Wall mode.
-   - **Obstacle Inspector Sidebar Card**:
-     - Real-time Center $(X, Y)$, Dimensions $(W \times H)$, and Rotation Angle ($\theta^\circ$).
+### Changes Implemented
+1. **Monotonic Session Wall ID Allocation (`src/cut_the_cake/cad_adapter.py`, `src/cut_the_cake/cad_server.py`)**:
+   - `active_state["next_wall_sequence"]` maintains a monotonic sequence counter across the entire editor session.
+   - Deleting an obstacle and creating a new one advances the sequence (e.g. `wall_001` deleted $\to$ next wall allocated is `wall_002`, never reusing `wall_001`).
+   - Undo/Redo operations traverse history without decrementing or corrupting the allocation counter.
+2. **Explicit Rotation Semantics**:
+   - `rotate_obstacle_in_document` supports both `target_angle_deg` (absolute orientation from initial heading) and `angle_delta_deg`.
+   - Repeated absolute orientation requests (e.g. rotating $20^\circ$ then setting $35^\circ$) land exactly at $35^\circ$ rather than compounding.
+3. **Local Oriented Rectangle Resizing**:
+   - `resize_rectangle_obstacle` projects handle displacements onto the local orthogonal basis vectors $(\mathbf{u}_1, \mathbf{u}_2)$ of the rotated polygon.
+   - Resizing a rotated obstacle preserves its exact orientation angle and keeps the opposite anchor corner pinned.
+   - Browser client (`cad/web/app.js`) positions resize handles directly on the 4 actual oriented vertices rather than on an axis-aligned bounding box.
 
 ---
 
-## 2. MW4 Beta Map Import Spike (Transit 213)
+## 2. Track B: MW4 Import Spike 2 — Real Transit 213 Source & Vector Overlay
 
-### Automated Pipeline Architecture (`src/cut_the_cake/importers/mw4_trace.py`)
-- **Official Layout Inset Acquisition**: Automated extraction from official top-down minimap diagrams.
-- **Classical CV Segmentation**: Color segmentation, morphological cleanup, contour extraction, and Douglas–Peucker polygon simplification (no LLM-fabricated coordinate hallucinations).
-- **`MapTraceDraft` Intermediate Schema**: Preserves region classification, confidence scores, and explicitly flagged uncertain/elevated areas before human CAD review.
-- **Traversal-Time Scale Calibration**: Explicitly documents provenance (`uncalibrated_pixels` or `traversal_time_calibrated` based on recorded player traversal seconds).
+### Real-Image Extraction & Hierarchy Filtering (`src/cut_the_cake/importers/mw4_trace.py`)
+- **Contour Tree Hierarchy Isolation**:
+  - The outer yard perimeter is detected and categorized as `boundary_px`.
+  - Nested boundary perimeter shells are filtered out, preventing outer walls from being emitted as giant duplicate `solid_structure` obstacles.
+  - Exactly **7 discrete interior obstacles** extracted: West Repair Shop, East Gas Station Canopy, 4 Derelict Buses, and Central Crate.
+- **Truthful Intermediate Schema (`MapTraceDraft`)**:
+  - Classification: `"solid_structure"` / `"occluder"`.
+  - Confidence: `null` with `review_status: "unreviewed"` (no arbitrary made-up confidence percentages).
+  - Explicit uncertain region tracking.
+- **Strict CADDocument Promotion Boundary**:
+  - Magic `20 px/m` default removed.
+  - `project_trace_draft_to_cad_document` raises `ValueError` if `draft` is uncalibrated or if zero routes are provided.
+- **Audited 6-Map Metadata (`imports/mw4_beta/*/source.json`)**:
+  - Separates official Activision factual descriptions from Cut the Cake 2D suitability inferences.
+  - Lotus corrected to battle-scarred Korean fishing village with tanks, docks, and water.
 
-### Beta 6v6 Map Complexity & 2D Applicability Matrix
+### Primary Review Artifact: Real Transit 213 Vector Overlay
+![Transit 213 Classical CV Vector Overlay](C:\Users\admir\.gemini\antigravity\brain\24682a79-57e4-435b-bdc5-0a0c8d4150f6\vector_overlay.png)
 
-| Map | Complexity | 2D Planar Confidence | Geometry Character |
-| :--- | :---: | :---: | :--- |
-| **Transit 213** | ★ | **HIGH** | Planar bus depot; 4 rectangular buses, perimeter yard, gas station, repair shop. |
-| **Silkworm** | ★★ | **HIGH** | Ground-level shopping district, tight alleys, storefront interiors. |
-| **Lithium** | ★★–★★★ | **MEDIUM** | Industrial refinery with catwalks, heavy tanks, and interactive doors. |
-| **Cachette** | ★★★ | **MEDIUM** | Rail terminal with wine warehouse, stacked containers, modest roof access. |
-| **Lotus** | ★★★★ | **LOW-MEDIUM** | Lakeside hotel with second-floor balconies, courtyards, shallow water canals. |
-| **Rooftops** | ★★★★★ | **LOW** | Skyscraper rooftops with high vertical disparity; benchmark case for M6 (2.5D). |
-
-### Transit 213 Extraction Results (`imports/mw4_beta/transit_213/trace_draft.json`)
 ```
-[1] Processed reference overhead diagram: imports/mw4_beta/transit_213/overhead_crop.png
-[2] Emitted MapTraceDraft with 9 segmented regions -> imports/mw4_beta/transit_213/trace_draft.json
-    - Region obs_001: solid_structure (confidence: 0.85, vertices: 5)
-    - Region obs_002: solid_structure (confidence: 0.85, vertices: 5)
-    - Region obs_003: solid_structure (confidence: 0.85, vertices: 5)
-    - Region obs_004: solid_structure (confidence: 0.85, vertices: 5)
-    - Region obs_005: solid_structure (confidence: 0.85, vertices: 5)
-    - Region obs_006: solid_structure (confidence: 0.85, vertices: 5)
-    - Region obs_007: solid_structure (confidence: 0.85, vertices: 5)
-    - Region obs_008: solid_structure (confidence: 0.85, vertices: 5)
-    - Region obs_009: solid_structure (confidence: 0.85, vertices: 5)
-[3] Projected to CADDocument draft:
-    - Document ID: mw4_draft_transit_213
-    - Obstacles: 9
-    - Boundary: 5 vertices
+[1] Saved Transit 213 layout crop: imports/mw4_beta/transit_213/transit_minimap_crop.png (SHA-256: 4ccbdf6f7c36cc07...)
+[2] Emitted MapTraceDraft (Real) with 7 segmented obstacles -> imports/mw4_beta/transit_213/trace_draft_real.json
+    - Boundary polygon vertices: 5
+    - Obstacle obs_001: solid_structure (vertices: 5, review_status: unreviewed)
+    - Obstacle obs_002: solid_structure (vertices: 5, review_status: unreviewed)
+    - Obstacle obs_003: solid_structure (vertices: 5, review_status: unreviewed)
+    - Obstacle obs_004: solid_structure (vertices: 5, review_status: unreviewed)
+    - Obstacle obs_005: solid_structure (vertices: 5, review_status: unreviewed)
+    - Obstacle obs_006: solid_structure (vertices: 5, review_status: unreviewed)
+    - Obstacle obs_007: solid_structure (vertices: 5, review_status: unreviewed)
+[3] Generated primary review artifact: imports/mw4_beta/transit_213/vector_overlay.png
 ```
 
 ---
 
-## 3. Full Verification Suite (120 / 120 Passed)
+## 3. Verification Suite (124 / 124 Passed)
 
 ```powershell
 pytest tests/ -v
-======================= 120 passed in 63.23s (0:01:03) ========================
+======================= 124 passed in 63.35s (0:01:03) ========================
 ```
 - **80 / 80** Frozen Scientific Core & ViZDoom Tests (`round11.4a-freeze`)
 - **17 / 17** `CADDocument` Schema, Upload/Analyze Endpoints, Route Speed Overrides, Structured Diagnostics, and Fail-Closed Validation Tests (`tests/test_cad_document.py`)
 - **8 / 8** Tactical CAD Adapter & Server Session Tests (`tests/test_cad_adapter.py`)
 - **8 / 8** Scene Manifest Timing & Provenance Parity Tests (`tests/test_cad_manifest.py`)
-- **5 / 5** Gray-Box Obstacle Authoring & Server History Tests (`tests/test_cad_authoring.py`)
-- **2 / 2** MW4 Beta Importer & Vectorization Pipeline Tests (`tests/test_mw4_importer.py`)
+- **8 / 8** Gray-Box Obstacle Authoring & Transform Tests (`tests/test_cad_authoring.py`)
+  - `test_monotonic_wall_id_allocation_no_reuse` (PASS)
+  - `test_rotation_target_angle_and_delta_composition` (PASS)
+  - `test_rotate_then_resize_preserves_orientation` (PASS)
+  - `test_undo_redo_history_stack` (PASS)
+- **3 / 3** MW4 Beta Importer, Overlay & Boundary Gate Tests (`tests/test_mw4_importer.py`)
+  - `test_map_trace_draft_serialization_roundtrip` (PASS)
+  - `test_transit_213_real_crop_segmentation_and_overlay` (PASS)
+  - `test_uncalibrated_map_trace_draft_cannot_become_cad_document` (PASS)
