@@ -42,3 +42,7 @@ temp_wads/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Cached Raw Official Assets
+**/raw_map_card.png
+

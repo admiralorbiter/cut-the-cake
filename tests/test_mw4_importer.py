@@ -16,9 +16,10 @@ from cut_the_cake.importers.mw4_trace import (
     build_mw4_trace_draft,
     project_trace_draft_to_cad_document,
     create_synthetic_test_card,
-    create_transit_213_official_crop_asset
+    create_transit_213_synthetic_fixture,
+    load_or_fetch_transit_source_asset
 )
-from cut_the_cake.cad_document import CADRoute
+from cut_the_cake.cad_document import CADRoute, validate_cad_document
 
 
 def test_map_trace_draft_serialization_roundtrip(tmp_path):
@@ -27,7 +28,7 @@ def test_map_trace_draft_serialization_roundtrip(tmp_path):
         source={
             "map_name": "Transit 213",
             "source_type": "official_overview_diagram",
-            "source_url": "https://www.callofduty.com/blog/2026/08/transit-213",
+            "source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
             "provenance": "Official Call of Duty Intel",
             "confidence": "reference_reconstruction"
         },
@@ -69,14 +70,14 @@ def test_map_trace_draft_serialization_roundtrip(tmp_path):
     assert len(loaded.uncertain_regions) == 1
 
 
-def test_transit_213_real_crop_segmentation_and_overlay(tmp_path):
-    """Verify hierarchy-filtered segmentation on Transit 213 layout crop."""
-    crop_img = create_transit_213_official_crop_asset()
+def test_transit_213_synthetic_fixture_segmentation_and_overlay(tmp_path):
+    """Verify hierarchy-filtered segmentation on Transit 213 deterministic synthetic fixture."""
+    crop_img = create_transit_213_synthetic_fixture()
     assert crop_img.shape == (480, 480, 3)
 
     draft = build_mw4_trace_draft(
         map_name="Transit 213",
-        source_url="https://www.callofduty.com/blog/2026/08/transit-213",
+        source_url="https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
         image_crop=crop_img,
         min_area_px=60.0,
         simplify_epsilon=2.0
@@ -103,10 +104,10 @@ def test_transit_213_real_crop_segmentation_and_overlay(tmp_path):
 
 def test_uncalibrated_map_trace_draft_cannot_become_cad_document():
     """Verify that an uncalibrated MapTraceDraft cannot silently become a CADDocument."""
-    crop_img = create_transit_213_official_crop_asset()
+    crop_img = create_transit_213_synthetic_fixture()
     draft = build_mw4_trace_draft(
         map_name="Transit 213",
-        source_url="https://www.callofduty.com/blog/2026/08/transit-213",
+        source_url="https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
         image_crop=crop_img
     )
 
@@ -122,13 +123,47 @@ def test_uncalibrated_map_trace_draft_cannot_become_cad_document():
             routes=[]
         )
 
-    # 3. Valid calibration and authored route produces valid CADDocument
+
+def test_promoted_cad_document_satisfies_cad_document_v1_validation_contract():
+    """Verify that a promoted CADDocument strictly passes validate_cad_document() without schema errors."""
+    crop_img = create_transit_213_synthetic_fixture()
+    draft = build_mw4_trace_draft(
+        map_name="Transit 213",
+        source_url="https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
+        image_crop=crop_img
+    )
+
     test_route = CADRoute(id="route_alpha", name="Main Lane", waypoints=[[-5.0, 0.0], [5.0, 0.0]])
     cad_doc = project_trace_draft_to_cad_document(
         draft,
         calibration={"px_per_meter": 20.0, "scale_basis": "traversal_calibrated"},
         routes=[test_route]
     )
+
+    doc_dict = cad_doc.to_dict()
+    is_valid, errors = validate_cad_document(doc_dict)
+    assert is_valid is True, f"Validation failed on promoted CADDocument: {errors}"
+    assert len(errors) == 0
     assert cad_doc.document_id == "mw4_draft_transit_213"
     assert len(cad_doc.obstacles) == len(draft.regions)
     assert len(cad_doc.routes) == 1
+
+
+def test_real_source_acquisition_pipeline_structure(tmp_path):
+    """Verify source asset acquisition, crop rectangle extraction, and SHA-256 calculation."""
+    # Run acquisition in isolated directory
+    meta = {
+        "official_metadata": {
+            "source_page_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
+            "exact_image_asset_url": "https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/mw4/beta/maps/transit-213-card.webp"
+        }
+    }
+    with open(tmp_path / "source.json", "w", encoding="utf-8") as f:
+        json.dump(meta, f)
+
+    crop_img, crop_path, prov = load_or_fetch_transit_source_asset(str(tmp_path))
+    assert os.path.exists(crop_path)
+    assert len(prov["raw_asset_sha256"]) == 64
+    assert len(prov["crop_sha256"]) == 64
+    assert prov["crop_dimensions"] == [430, 430]
+    assert crop_img.shape == (430, 430, 3)

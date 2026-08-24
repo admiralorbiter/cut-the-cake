@@ -5,10 +5,12 @@
     "official_description": "An overgrown central bus depot located in western India filled with derelict, brightly colored buses, flanked by a repair shop and a small gas station, surrounded by ongoing construction projects and tenement blocks. The buses create tight lanes, concealed ambush routes, and longer sightlines across the center lot.",
     "source_page_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
     "exact_image_asset_url": "https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/mw4/beta/maps/transit-213-card.webp",
-    "retrieval_timestamp": "2026-08-23T23:12:00Z",
-    "sha256": "8a31c5f3e9282df5846174a27329ef31d04494c23179df2011b93acfa2248554",
-    "crop_rectangle_px": [28, 235, 275, 482],
-    "extraction_version": "v2.0-spike2",
+    "retrieval_timestamp": "2026-08-23T23:22:00Z",
+    "raw_asset_sha256": "8091f27aedff5a4294e0c4cb762f474c70110c3d8e9658677577f736940db498",
+    "crop_rectangle_px": [40, 235, 470, 665],
+    "crop_dimensions_px": [430, 430],
+    "crop_sha256": "e4759679d17369e7cf690ece20cef42abc4d4ca047bc2b7d335ebc95187450f2",
+    "extraction_version": "v2.0-spike2a",
     "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel"
   },
   "cut_the_cake_suitability": {

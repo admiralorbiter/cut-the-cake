@@ -9,7 +9,9 @@ from .mw4_trace import (
     render_vector_overlay,
     build_mw4_trace_draft,
     project_trace_draft_to_cad_document,
-    create_synthetic_test_card
+    create_synthetic_test_card,
+    create_transit_213_synthetic_fixture,
+    load_or_fetch_transit_source_asset
 )
 
 __all__ = [
@@ -21,5 +23,7 @@ __all__ = [
     "render_vector_overlay",
     "build_mw4_trace_draft",
     "project_trace_draft_to_cad_document",
-    "create_synthetic_test_card"
+    "create_synthetic_test_card",
+    "create_transit_213_synthetic_fixture",
+    "load_or_fetch_transit_source_asset"
 ]
