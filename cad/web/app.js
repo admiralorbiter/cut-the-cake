@@ -451,8 +451,14 @@ async function toggleHeatmap() {
   drawMap();
 }
 
+let latestRequestedHeatmapRev = 0;
+
 async function fetchHeatmapData() {
   if (!activeDoc) return;
+  latestRequestedHeatmapRev++;
+  const thisHeatmapRev = latestRequestedHeatmapRev;
+  const expectedHash = activeDoc.hash || currentAnalysis?.source_doc_hash;
+
   try {
     const activeRouteId = getRoutes().length > 0 ? getRoutes()[0].id : null;
     const resp = await fetch('/api/document/heatmap', {
@@ -461,15 +467,20 @@ async function fetchHeatmapData() {
       body: JSON.stringify({
         route_id: activeRouteId,
         include_floor_grid: showFloorExposure,
-        grid_step_m: 0.25
+        grid_step_m: 0.25,
+        expected_doc_hash: expectedHash,
+        client_revision: thisHeatmapRev
       })
     });
     if (resp.ok) {
       const data = await resp.json();
+      if (thisHeatmapRev !== latestRequestedHeatmapRev) return;
       if (data.is_valid) {
         cachedHeatmapData = data;
         drawMap();
       }
+    } else if (resp.status === 409) {
+      console.log('Stale heatmap request discarded (409)');
     }
   } catch (err) {
     console.warn('Heatmap fetch error:', err);

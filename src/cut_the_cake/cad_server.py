@@ -1104,14 +1104,66 @@ def create_cad_app() -> Flask:
         Optional request / query parameters:
         - route_id: Optional[str]
         - include_floor_grid: bool = False
-        - grid_step_m: float = 0.25
+        - grid_step_m: float = 0.25 (validated: 0.05 <= grid_step_m <= 5.0)
+        - expected_doc_hash: Optional[str] (concurrency defense, returns 409 if stale)
+        - client_revision: Optional[int] (echoed in response for client ordering)
         """
-        req_data = (request.get_json(force=True, silent=True) if request.is_json or request.method == "POST" else None) or {}
+        req_data = (request.get_json(force=True, silent=True) if (request.is_json or request.method == "POST") else None) or {}
         route_id = req_data.get("route_id") or request.args.get("route_id")
-        include_floor_grid = bool(req_data.get("include_floor_grid", False) or request.args.get("include_floor_grid", "false").lower() == "true")
-        grid_step_m = float(req_data.get("grid_step_m", 0.25) or request.args.get("grid_step_m", 0.25))
+        
+        # Concurrency & provenance check
+        expected_doc_hash = req_data.get("expected_doc_hash") or request.args.get("expected_doc_hash")
+        client_rev = req_data.get("client_revision") or request.args.get("client_revision")
+        if client_rev is not None:
+            try:
+                client_rev = int(client_rev)
+            except (ValueError, TypeError):
+                client_rev = None
 
         doc = active_state["working_document"]
+        current_hash = compute_document_hash(doc)
+        if expected_doc_hash and expected_doc_hash != current_hash:
+            return jsonify({
+                "is_valid": False,
+                "error_code": "STALE_DOCUMENT_HASH",
+                "error_reason": f"Expected document hash '{expected_doc_hash}' does not match active document hash '{current_hash}'.",
+                "current_doc_hash": current_hash,
+                "client_revision": client_rev
+            }), 409
+
+        # Grid resolution parsing and validation
+        include_floor_grid = False
+        if "include_floor_grid" in req_data:
+            include_floor_grid = bool(req_data["include_floor_grid"])
+        elif "include_floor_grid" in request.args:
+            include_floor_grid = (request.args["include_floor_grid"].lower() == "true")
+
+        raw_step = None
+        if "grid_step_m" in req_data and req_data["grid_step_m"] is not None:
+            raw_step = req_data["grid_step_m"]
+        elif "grid_step_m" in request.args and request.args["grid_step_m"] is not None:
+            raw_step = request.args["grid_step_m"]
+
+        if raw_step is not None:
+            try:
+                grid_step_m = float(raw_step)
+            except (ValueError, TypeError):
+                return jsonify({
+                    "is_valid": False,
+                    "error_code": "INVALID_GRID_RESOLUTION",
+                    "error_reason": f"Invalid non-numeric grid_step_m: '{raw_step}'"
+                }), 422
+        else:
+            grid_step_m = 0.25
+
+        import math
+        if math.isnan(grid_step_m) or math.isinf(grid_step_m) or grid_step_m < 0.05 or grid_step_m > 5.0:
+            return jsonify({
+                "is_valid": False,
+                "error_code": "INVALID_GRID_RESOLUTION",
+                "error_reason": f"grid_step_m must be a finite number between 0.05m and 5.0m; got {grid_step_m}."
+            }), 422
+
         route_heatmap = compute_cad_route_spatial_heatmap(
             doc=doc,
             route_id=route_id
@@ -1119,6 +1171,9 @@ def create_cad_app() -> Flask:
 
         if not route_heatmap.get("is_valid", False):
             return jsonify(route_heatmap), 422
+
+        if client_rev is not None:
+            route_heatmap["client_revision"] = client_rev
 
         if include_floor_grid:
             floor_data = compute_arena_floor_los_exposure(
