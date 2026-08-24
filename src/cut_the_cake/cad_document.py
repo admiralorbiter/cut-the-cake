@@ -8,12 +8,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 import json
 import os
+from enum import Enum
 from typing import Dict, Any, List, Optional, Tuple
 from shapely.geometry import Polygon, LineString, Point
 
 from .compiler import (
     GeometricModule,
     GeometricRoute,
+    GeometricObstacle,
     GeometricThreat,
     GeometricPort
 )
@@ -24,30 +26,53 @@ def _round_coords(coords: List[List[float]]) -> List[List[float]]:
     return [[round(float(x), 4), round(float(y), 4)] for x, y in coords]
 
 
+class ElevationMode(str, Enum):
+    """Authority mode for threat aim elevation and sightline compilation."""
+    GEOMETRIC = "GEOMETRIC"  # M6-B default: derived from 3D player eye and threat coordinate
+    AUTHORED = "AUTHORED"    # M6-A legacy: copied directly from threat.elevation_deg
+
+
 @dataclass
 class CADObstacle:
-    """Designer-authored obstacle with a stable string identifier."""
+    """Designer-authored obstacle with a stable string identifier and optional vertical extrusion bounds."""
     id: str
     name: str
     vertices: List[List[float]]
+    z_min_m: Optional[float] = None
+    z_max_m: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "id": self.id,
             "name": self.name,
             "vertices": _round_coords(self.vertices)
         }
+        if self.z_min_m is not None:
+            d["z_min_m"] = float(self.z_min_m)
+        if self.z_max_m is not None:
+            d["z_max_m"] = float(self.z_max_m)
+        return d
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> CADObstacle:
         return cls(
             id=str(d["id"]),
             name=str(d.get("name", d["id"])),
-            vertices=_round_coords(d["vertices"])
+            vertices=_round_coords(d["vertices"]),
+            z_min_m=float(d["z_min_m"]) if "z_min_m" in d and d["z_min_m"] is not None else None,
+            z_max_m=float(d["z_max_m"]) if "z_max_m" in d and d["z_max_m"] is not None else None
         )
 
     def to_polygon(self) -> Polygon:
         return Polygon(self.vertices)
+
+    def to_geometric_obstacle(self) -> GeometricObstacle:
+        return GeometricObstacle(
+            id=self.id,
+            polygon=Polygon(self.vertices),
+            z_min_m=float(self.z_min_m) if self.z_min_m is not None else 0.0,
+            z_max_m=float(self.z_max_m) if self.z_max_m is not None else float("inf")
+        )
 
 
 @dataclass
@@ -78,7 +103,7 @@ class CADRoute:
     def to_geometric_route(self) -> GeometricRoute:
         return GeometricRoute(
             route_id=self.id,
-            waypoints=[(float(x), float(y)) for x, y in self.waypoints],
+            waypoints=[tuple(float(c) for c in pt) for pt in self.waypoints],
             v_move_mps=float(self.v_move_mps)
         )
 
@@ -87,9 +112,9 @@ class CADRoute:
 class CADThreat:
     """Authored hostile threat zone and firing anchor.
     
-    Authority Semantics (M6-A):
-    - `elevation_deg`: Authoritative aim elevation angle in degrees [-90, 90] from player eye to threat anchor.
-    - `z_m`: Reserved elevation coordinate in meters for geometric line-of-sight extraction in M6-B.
+    Authority Semantics:
+    - In `ElevationMode.GEOMETRIC` (M6-B default), `z_m` is authoritative for 3D position and dynamic aim elevation phi_j(s).
+    - In `ElevationMode.AUTHORED` (legacy M6-A), `elevation_deg` is authoritative.
     """
     id: str
     name: str
@@ -191,6 +216,7 @@ class CADPlayerModel:
     initial_reticle_deg: float = 0.0
     initial_reticle_elevation_deg: float = 0.0
     eye_height_m: float = 1.65
+    elevation_mode: ElevationMode = ElevationMode.GEOMETRIC
 
     def to_dict(self) -> Dict[str, Any]:
         d = {
@@ -204,10 +230,17 @@ class CADPlayerModel:
             d["initial_reticle_elevation_deg"] = float(self.initial_reticle_elevation_deg)
         if self.eye_height_m != 1.65:
             d["eye_height_m"] = float(self.eye_height_m)
+        if self.elevation_mode != ElevationMode.GEOMETRIC:
+            d["elevation_mode"] = self.elevation_mode.value
         return d
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> CADPlayerModel:
+        mode_val = d.get("elevation_mode", "GEOMETRIC")
+        try:
+            mode = ElevationMode(mode_val)
+        except ValueError:
+            mode = ElevationMode.GEOMETRIC
         return cls(
             v_move_mps=float(d.get("v_move_mps", 4.5)),
             omega_slew_deg_per_s=float(d.get("omega_slew_deg_per_s", 360.0)),
@@ -215,7 +248,8 @@ class CADPlayerModel:
             service_duration_s=float(d.get("service_duration_s", 0.10)),
             initial_reticle_deg=float(d.get("initial_reticle_deg", 0.0)),
             initial_reticle_elevation_deg=float(d.get("initial_reticle_elevation_deg", 0.0)),
-            eye_height_m=float(d.get("eye_height_m", 1.65))
+            eye_height_m=float(d.get("eye_height_m", 1.65)),
+            elevation_mode=mode
         )
 
     def to_combat_params(self) -> TicCombatParameters:
@@ -351,6 +385,15 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         except Exception as e:
             errors.append(f"Obstacle '{obs.get('id')}' invalid geometry: {e}")
 
+        z_min = obs.get("z_min_m")
+        z_max = obs.get("z_max_m")
+        if z_min is not None and not math.isfinite(z_min):
+            errors.append(f"Obstacle '{obs.get('id')}' z_min_m must be a finite number.")
+        if z_max is not None and not math.isfinite(z_max):
+            errors.append(f"Obstacle '{obs.get('id')}' z_max_m must be a finite number.")
+        if z_min is not None and z_max is not None and math.isfinite(z_min) and math.isfinite(z_max) and z_min >= z_max:
+            errors.append(f"Obstacle '{obs.get('id')}' z_min_m ({z_min}) must be strictly less than z_max_m ({z_max}).")
+
     for t in threat_list:
         v = t.get("polygon", [])
         if len(v) < 3:
@@ -398,10 +441,11 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
             errors.append(f"Route '{r.get('id')}' must have at least 2 waypoints.")
             continue
         for pt in wps:
-            if len(pt) != 2 or not math.isfinite(pt[0]) or not math.isfinite(pt[1]):
+            if len(pt) not in (2, 3) or not all(math.isfinite(c) for c in pt):
                 errors.append(f"Route '{r.get('id')}' contains non-finite coordinates.")
         try:
-            ls = LineString(wps)
+            pts2d = [(pt[0], pt[1]) for pt in wps]
+            ls = LineString(pts2d)
             if ls.length < 1e-4:
                 errors.append(f"Route '{r.get('id')}' has zero geometric length.")
         except Exception as e:
@@ -511,6 +555,7 @@ class CADDocument:
             name=self.name,
             boundary=Polygon(self.boundary),
             obstacles=[obs.to_polygon() for obs in self.obstacles],
+            obstacles_25d=[obs.to_geometric_obstacle() for obs in self.obstacles],
             ports=[p.to_geometric_port() for p in self.ports],
             threats=[t.to_geometric_threat() for t in self.threats],
             routes=[r.to_geometric_route() for r in self.routes],

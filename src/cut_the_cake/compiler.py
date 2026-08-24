@@ -79,17 +79,37 @@ class GeometricPort:
     port_type: str = "STANDARD"
 
 
+@dataclass(frozen=True)
+class GeometricObstacle:
+    """An obstacle footprint with explicit vertical height extrusion bounds [G]."""
+    id: str
+    polygon: Polygon
+    z_min_m: float = 0.0
+    z_max_m: float = float("inf")
+
+
 @dataclass
 class GeometricRoute:
     """Authored candidate polyline route traversing through module geometry [G]."""
     route_id: str
-    waypoints: List[Tuple[float, float]]
+    waypoints: List[Tuple[float, ...]]
     v_move_mps: float = 4.5
 
     def __post_init__(self):
         assert len(self.waypoints) >= 2, "A route must contain at least 2 waypoints"
-        self._line = LineString(self.waypoints)
-        self._length = self._line.length
+        self._is_3d = any(len(wp) >= 3 and abs(float(wp[2])) > 1e-6 for wp in self.waypoints)
+        self._pts_2d = [(float(wp[0]), float(wp[1])) for wp in self.waypoints]
+        self._pts_3d = [(float(wp[0]), float(wp[1]), float(wp[2]) if len(wp) >= 3 else 0.0) for wp in self.waypoints]
+        self._line = LineString(self._pts_2d)
+
+        # Calculate cumulative 3D path segment lengths
+        self._seg_lens: List[float] = []
+        for i in range(len(self._pts_3d) - 1):
+            p1 = self._pts_3d[i]
+            p2 = self._pts_3d[i + 1]
+            seg_d = math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2 + (p2[2] - p1[2])**2)
+            self._seg_lens.append(seg_d)
+        self._length = sum(self._seg_lens)
 
     @property
     def total_length_m(self) -> float:
@@ -101,42 +121,67 @@ class GeometricRoute:
 
     def position_at_distance(self, s: float) -> Tuple[float, float]:
         """Get 2D position (x, y) at distance s along the route polyline."""
-        clamped_s = max(0.0, min(self._length, s))
-        pt = self._line.interpolate(clamped_s)
-        return (pt.x, pt.y)
+        pos3d = self.position_3d_at_distance(s)
+        return (pos3d[0], pos3d[1])
 
-    def forward_heading_at_distance(self, s: float) -> float:
-        """Get forward movement heading in degrees at distance s along the route.
-        
-        Convention: At waypoint vertices, uses the outgoing forward direction along the subsequent segment.
-        """
+    def position_3d_at_distance(self, s: float) -> Tuple[float, float, float]:
+        """Get 3D position (x, y, z_feet) at distance s along the route polyline."""
         clamped_s = max(0.0, min(self._length, s))
-        if clamped_s >= self._length - 1e-5:
-            return heading_to_deg(self.waypoints[-2], self.waypoints[-1])
+        if clamped_s <= 1e-6:
+            return self._pts_3d[0]
+        if clamped_s >= self._length - 1e-6:
+            return self._pts_3d[-1]
 
         accum = 0.0
-        for i in range(len(self.waypoints) - 1):
-            p1 = self.waypoints[i]
-            p2 = self.waypoints[i + 1]
-            seg_len = distance(p1, p2)
+        for i, seg_len in enumerate(self._seg_lens):
+            if seg_len < 1e-9:
+                continue
+            if clamped_s <= accum + seg_len:
+                t = (clamped_s - accum) / seg_len
+                p1 = self._pts_3d[i]
+                p2 = self._pts_3d[i + 1]
+                return (
+                    p1[0] + t * (p2[0] - p1[0]),
+                    p1[1] + t * (p2[1] - p1[1]),
+                    p1[2] + t * (p2[2] - p1[2])
+                )
+            accum += seg_len
+        return self._pts_3d[-1]
+
+    def eye_position_at_distance(self, s: float, eye_height_m: float = 1.65) -> Tuple[float, float, float]:
+        """Get 3D player eye position (x, y, z_feet + eye_height_m) at distance s."""
+        pos = self.position_3d_at_distance(s)
+        return (pos[0], pos[1], pos[2] + eye_height_m)
+
+    def forward_heading_at_distance(self, s: float) -> float:
+        """Get forward movement heading in degrees at distance s along the route in the horizontal plane."""
+        clamped_s = max(0.0, min(self._length, s))
+        if clamped_s >= self._length - 1e-5:
+            return heading_to_deg(self._pts_2d[-2], self._pts_2d[-1])
+
+        accum = 0.0
+        for i, seg_len in enumerate(self._seg_lens):
+            if seg_len < 1e-9:
+                continue
             if clamped_s < accum + seg_len - 1e-6:
-                return heading_to_deg(p1, p2)
+                return heading_to_deg(self._pts_2d[i], self._pts_2d[i + 1])
             elif abs(clamped_s - (accum + seg_len)) <= 1e-6:
-                if i + 1 < len(self.waypoints) - 1:
-                    return heading_to_deg(self.waypoints[i + 1], self.waypoints[i + 2])
-                return heading_to_deg(p1, p2)
+                if i + 1 < len(self._pts_2d) - 1:
+                    return heading_to_deg(self._pts_2d[i + 1], self._pts_2d[i + 2])
+                return heading_to_deg(self._pts_2d[i], self._pts_2d[i + 1])
             accum += seg_len
 
-        return heading_to_deg(self.waypoints[-2], self.waypoints[-1])
+        return heading_to_deg(self._pts_2d[-2], self._pts_2d[-1])
 
 
 @dataclass
 class GeometricModule:
-    """Raw spatial module with 2D geometry, obstacles, ports, threats, and candidate routes [G]."""
+    """Raw spatial module with 2D/2.5D geometry, obstacles, ports, threats, and candidate routes [G]."""
     module_id: str
     name: str
     boundary: Polygon
     obstacles: List[Polygon] = field(default_factory=list)
+    obstacles_25d: List[GeometricObstacle] = field(default_factory=list)
     ports: List[GeometricPort] = field(default_factory=list)
     threats: List[GeometricThreat] = field(default_factory=list)
     routes: List[GeometricRoute] = field(default_factory=list)

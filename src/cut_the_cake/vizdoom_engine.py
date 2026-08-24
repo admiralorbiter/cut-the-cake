@@ -25,6 +25,8 @@ from .geometry import (
     normalize_angle_deg,
     angle_diff_deg,
     spherical_aim_distance_deg,
+    derived_aim_elevation_deg,
+    ray_intersects_prism_25d,
     heading_to_deg,
     distance,
     segments_intersect,
@@ -33,6 +35,7 @@ from .geometry import (
 from .compiler import (
     GeometricModule,
     GeometricRoute,
+    GeometricObstacle,
     GeometricThreat,
     GeometricPort,
     GeometryToContractCompiler
@@ -48,6 +51,7 @@ class TicCombatParameters:
     aim_velocity_deg_s: float = 360.0
     acquisition_latency_s: float = 0.15
     inspect_duration_s: float = 0.10
+    eye_height_m: float = 1.65
 
     @property
     def tic_duration_s(self) -> float:
@@ -462,39 +466,79 @@ class DeterministicSimulationReferee:
     def extract_tic_jobs(
         self,
         geo_module: GeometricModule,
-        route_index: int = 0
+        route_index: int = 0,
+        elevation_mode: str = "GEOMETRIC"
     ) -> List[TicThreatJob]:
-        """Compile raw 2D geometry into integer-tic jobs via CheckSight engine queries."""
+        """Compile 2D / 2.5D geometry into integer-tic jobs via height-aware CheckSight engine queries."""
         route = geo_module.routes[route_index]
         total_tics = int(math.ceil(route.total_length_m / self.params.move_m_per_tic))
-        obs_segs = extract_polygon_segments(geo_module.obstacles)
+
+        # Build 2.5D obstacle prism list
+        if geo_module.obstacles_25d:
+            obs_25d = geo_module.obstacles_25d
+        else:
+            obs_25d = [
+                GeometricObstacle(id=f"obs_{i}", polygon=p, z_min_m=0.0, z_max_m=float("inf"))
+                for i, p in enumerate(geo_module.obstacles)
+            ]
+
+        # Fast planar check: if all obstacles are infinite height and route + threats have no elevation deltas
+        is_pure_planar = (
+            not getattr(route, "_is_3d", False)
+            and all(t.z_m is None and t.elevation_deg == 0.0 for t in geo_module.threats)
+            and all(math.isinf(o.z_max_m) for o in obs_25d)
+            and elevation_mode != "AUTHORED"
+        )
+        obs_segs_2d = extract_polygon_segments(geo_module.obstacles) if is_pure_planar else []
 
         jobs: List[TicThreatJob] = []
 
         for threat in geo_module.threats:
             qx, qy = threat.threat_anchor
+            qz = float(threat.z_m) if threat.z_m is not None else self.params.eye_height_m
+            target_pt_3d = (float(qx), float(qy), qz)
+
             first_vis_tic: Optional[int] = None
             vis_angle_deg: float = 0.0
+            vis_elevation_deg: float = 0.0
 
             for k in range(total_tics + 1):
                 s = k * self.params.move_m_per_tic
                 if s > route.total_length_m:
                     break
-                pos = route.position_at_distance(s)
 
-                # 2D CheckSight raycast test
-                blocked = False
-                for s1, s2 in obs_segs:
-                    if segments_intersect(pos, (qx, qy), s1, s2):
-                        blocked = True
+                if is_pure_planar:
+                    pos = route.position_at_distance(s)
+                    blocked = False
+                    for s1, s2 in obs_segs_2d:
+                        if segments_intersect(pos, (qx, qy), s1, s2):
+                            blocked = True
+                            break
+                    if not blocked:
+                        first_vis_tic = k
+                        forward_heading = route.forward_heading_at_distance(s)
+                        target_heading = heading_to_deg(pos, (qx, qy))
+                        vis_angle_deg = normalize_angle_deg(target_heading - forward_heading)
+                        vis_elevation_deg = 0.0
                         break
-                
-                if not blocked:
-                    first_vis_tic = k
-                    forward_heading = route.forward_heading_at_distance(s)
-                    target_heading = heading_to_deg(pos, (qx, qy))
-                    vis_angle_deg = normalize_angle_deg(target_heading - forward_heading)
-                    break
+                else:
+                    eye_pt = route.eye_position_at_distance(s, self.params.eye_height_m)
+                    blocked = False
+                    for obs in obs_25d:
+                        if ray_intersects_prism_25d(eye_pt, target_pt_3d, obs.polygon, obs.z_min_m, obs.z_max_m):
+                            blocked = True
+                            break
+
+                    if not blocked:
+                        first_vis_tic = k
+                        forward_heading = route.forward_heading_at_distance(s)
+                        target_heading = heading_to_deg((eye_pt[0], eye_pt[1]), (qx, qy))
+                        vis_angle_deg = normalize_angle_deg(target_heading - forward_heading)
+                        if elevation_mode == "AUTHORED" or (threat.z_m is None and threat.elevation_deg != 0.0):
+                            vis_elevation_deg = float(threat.elevation_deg)
+                        else:
+                            vis_elevation_deg = derived_aim_elevation_deg(eye_pt, target_pt_3d)
+                        break
 
             if first_vis_tic is not None:
                 due_tics = int(math.ceil(threat.authored_due_window_s * self.params.ticrate_hz))
@@ -507,7 +551,7 @@ class DeterministicSimulationReferee:
                     angle_deg=vis_angle_deg,
                     threat_anchor=(qx, qy),
                     service_duration_tics=serv_tics,
-                    elevation_deg=float(threat.elevation_deg),
+                    elevation_deg=vis_elevation_deg,
                     target_z=threat.z_m
                 ))
 
@@ -522,25 +566,54 @@ class DeterministicSimulationReferee:
         """Compute peak simultaneous physical LOS count from any single point along trajectory."""
         route = geo_module.routes[route_index]
         total_tics = int(math.ceil(route.total_length_m / self.params.move_m_per_tic))
-        obs_segs = extract_polygon_segments(geo_module.obstacles)
         
+        if geo_module.obstacles_25d:
+            obs_25d = geo_module.obstacles_25d
+        else:
+            obs_25d = [
+                GeometricObstacle(id=f"obs_{i}", polygon=p, z_min_m=0.0, z_max_m=float("inf"))
+                for i, p in enumerate(geo_module.obstacles)
+            ]
+
+        is_pure_planar = (
+            not getattr(route, "_is_3d", False)
+            and all(t.z_m is None for t in geo_module.threats)
+            and all(math.isinf(o.z_max_m) for o in obs_25d)
+        )
+        obs_segs_2d = extract_polygon_segments(geo_module.obstacles) if is_pure_planar else []
+
         peak_simul = 0
         for k in range(total_tics + 1):
             s = k * self.params.move_m_per_tic
             if s > route.total_length_m:
                 break
-            pos = route.position_at_distance(s)
             
             simul_now = 0
-            for threat in geo_module.threats:
-                qx, qy = threat.threat_anchor
-                blocked = False
-                for s1, s2 in obs_segs:
-                    if segments_intersect(pos, (qx, qy), s1, s2):
-                        blocked = True
-                        break
-                if not blocked:
-                    simul_now += 1
+            if is_pure_planar:
+                pos = route.position_at_distance(s)
+                for threat in geo_module.threats:
+                    qx, qy = threat.threat_anchor
+                    blocked = False
+                    for s1, s2 in obs_segs_2d:
+                        if segments_intersect(pos, (qx, qy), s1, s2):
+                            blocked = True
+                            break
+                    if not blocked:
+                        simul_now += 1
+            else:
+                eye_pt = route.eye_position_at_distance(s, self.params.eye_height_m)
+                for threat in geo_module.threats:
+                    qx, qy = threat.threat_anchor
+                    qz = float(threat.z_m) if threat.z_m is not None else self.params.eye_height_m
+                    target_pt_3d = (float(qx), float(qy), qz)
+                    blocked = False
+                    for obs in obs_25d:
+                        if ray_intersects_prism_25d(eye_pt, target_pt_3d, obs.polygon, obs.z_min_m, obs.z_max_m):
+                            blocked = True
+                            break
+                    if not blocked:
+                        simul_now += 1
+
             peak_simul = max(peak_simul, simul_now)
 
         return peak_simul

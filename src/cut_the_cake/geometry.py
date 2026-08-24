@@ -72,6 +72,101 @@ def segments_intersect(p1: Tuple[float, float], p2: Tuple[float, float], p3: Tup
     return (d1 * d2 < 0.0) and (d3 * d4 < 0.0)
 
 
+def derived_aim_elevation_deg(
+    eye_pt: Tuple[float, float, float],
+    target_pt: Tuple[float, float, float]
+) -> float:
+    """Compute derived aim elevation angle phi in degrees from eye position to target position."""
+    dx = target_pt[0] - eye_pt[0]
+    dy = target_pt[1] - eye_pt[1]
+    dz = target_pt[2] - eye_pt[2]
+    d_xy = math.hypot(dx, dy)
+    return math.degrees(math.atan2(dz, d_xy))
+
+
+def segment_crosses_prism_face_25d(
+    p1: Tuple[float, float, float],
+    p2: Tuple[float, float, float],
+    s1: Tuple[float, float],
+    s2: Tuple[float, float],
+    z_min: float = 0.0,
+    z_max: float = float("inf")
+) -> bool:
+    """Check if 3D segment [p1, p2] intersects a vertical prism face spanning 2D segment [s1, s2] and z in [z_min, z_max]."""
+    x1, y1, z1 = p1
+    x2, y2, z2 = p2
+    x3, y3 = s1
+    x4, y4 = s2
+
+    # Bounding box rejection in 2D
+    if max(x1, x2) < min(x3, x4) or min(x1, x2) > max(x3, x4) or max(y1, y2) < min(y3, y4) or min(y1, y2) > max(y3, y4):
+        return False
+
+    # 2D cross-product orientation test
+    d1 = (x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)
+    d2 = (x4 - x3) * (y2 - y3) - (y4 - y3) * (x2 - x3)
+    d3 = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)
+    d4 = (x2 - x1) * (y4 - y1) - (y2 - y1) * (x4 - x1)
+
+    if not ((d1 * d2 < 0.0) and (d3 * d4 < 0.0)):
+        return False
+
+    # If z_min is -inf/0 and z_max is +inf (planar infinite obstacle), crossing in 2D is guaranteed blocked
+    if math.isinf(z_max) and (math.isinf(z_min) or z_min <= min(z1, z2)):
+        return True
+
+    # Compute fractional distance t in [0, 1] along ray p1 -> p2
+    denom = (x2 - x1) * (y4 - y3) - (y2 - y1) * (x4 - x3)
+    if abs(denom) < 1e-12:
+        return False
+    t = ((x3 - x1) * (y4 - y3) - (y3 - y1) * (x4 - x3)) / denom
+    if t < 0.0 or t > 1.0:
+        return False
+
+    z_cross = z1 + t * (z2 - z1)
+    return (z_min - 1e-6) <= z_cross <= (z_max + 1e-6)
+
+
+def ray_intersects_prism_25d(
+    p1: Tuple[float, float, float],
+    p2: Tuple[float, float, float],
+    polygon: Polygon,
+    z_min: float = 0.0,
+    z_max: float = float("inf")
+) -> bool:
+    """Check if 3D segment [p1, p2] intersects an extruded 2.5D prism (faces or top/bottom caps)."""
+    # 1. Test vertical faces
+    coords = list(polygon.exterior.coords)
+    for i in range(len(coords) - 1):
+        if segment_crosses_prism_face_25d(p1, p2, coords[i], coords[i + 1], z_min, z_max):
+            return True
+    for interior in polygon.interiors:
+        icoords = list(interior.coords)
+        for i in range(len(icoords) - 1):
+            if segment_crosses_prism_face_25d(p1, p2, icoords[i], icoords[i + 1], z_min, z_max):
+                return True
+
+    # 2. Test top cap plane if finite
+    x1, y1, z1 = p1
+    x2, y2, z2 = p2
+    if not math.isinf(z_max) and abs(z2 - z1) > 1e-6:
+        t_top = (z_max - z1) / (z2 - z1)
+        if 0.0 <= t_top <= 1.0:
+            pt_top = Point(x1 + t_top * (x2 - x1), y1 + t_top * (y2 - y1))
+            if polygon.contains(pt_top) or polygon.touches(pt_top):
+                return True
+
+    # 3. Test bottom cap plane if finite and non-ground
+    if not math.isinf(z_min) and abs(z2 - z1) > 1e-6:
+        t_bot = (z_min - z1) / (z2 - z1)
+        if 0.0 <= t_bot <= 1.0:
+            pt_bot = Point(x1 + t_bot * (x2 - x1), y1 + t_bot * (y2 - y1))
+            if polygon.contains(pt_bot) or polygon.touches(pt_bot):
+                return True
+
+    return False
+
+
 def extract_polygon_segments(obstacles: List[Polygon]) -> List[Tuple[Tuple[float, float], Tuple[float, float]]]:
     """Extract and flatten all boundary and interior hole segments from obstacle polygons."""
     segs = []
@@ -84,6 +179,7 @@ def extract_polygon_segments(obstacles: List[Polygon]) -> List[Tuple[Tuple[float
             for i in range(len(icoords) - 1):
                 segs.append((icoords[i], icoords[i + 1]))
     return segs
+
 
 
 def is_segment_blocked(p1: Tuple[float, float], p2: Tuple[float, float], obstacles: List[Polygon]) -> bool:

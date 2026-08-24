@@ -105,7 +105,9 @@
                   "maxItems": 2
                 },
                 "minItems": 3
-              }
+              },
+              "z_min_m": { "type": "number" },
+              "z_max_m": { "type": "number" }
             }
           }
         },
@@ -124,7 +126,7 @@
                   "type": "array",
                   "items": { "type": "number" },
                   "minItems": 2,
-                  "maxItems": 2
+                  "maxItems": 3
                 },
                 "minItems": 2
               },

@@ -21,6 +21,7 @@ from .cad_document import (
     CADRoute,
     CADThreat,
     CADPlayerModel,
+    ElevationMode,
     get_canonical_f1_document,
     get_custom_asymmetric_corridor_document,
     validate_cad_document
@@ -28,12 +29,15 @@ from .cad_document import (
 from .compiler import (
     GeometricModule,
     GeometricRoute,
+    GeometricObstacle,
     GeometricThreat,
     GeometricPort,
     segments_intersect
 )
 from .geometry import (
     extract_polygon_segments,
+    derived_aim_elevation_deg,
+    ray_intersects_prism_25d,
     heading_to_deg,
     normalize_angle_deg
 )
@@ -1192,12 +1196,14 @@ def analyze_cad_document(
             v_move_mps=effective_v_move,
             aim_velocity_deg_s=float(doc.player_model.omega_slew_deg_per_s),
             acquisition_latency_s=float(doc.player_model.acquisition_latency_s),
-            inspect_duration_s=float(doc.player_model.service_duration_s)
+            inspect_duration_s=float(doc.player_model.service_duration_s),
+            eye_height_m=float(doc.player_model.eye_height_m)
         )
 
     # 1. Authoritative Physics Extraction
     referee = DeterministicSimulationReferee(params)
-    jobs = referee.extract_tic_jobs(geo_module, route_index=route_idx)
+    elev_mode_str = getattr(doc.player_model.elevation_mode, "value", str(doc.player_model.elevation_mode))
+    jobs = referee.extract_tic_jobs(geo_module, route_index=route_idx, elevation_mode=elev_mode_str)
     num_jobs = len(jobs)
     dt_s = params.tic_duration_s
 
@@ -1244,6 +1250,7 @@ def analyze_cad_document(
                 "deadline_tic": j.deadline_tic,
                 "deadline_s": round(j.deadline_tic * dt_s, 4),
                 "angle_deg": round(j.angle_deg, 1),
+                "elevation_deg": round(j.elevation_deg, 2),
                 "service_duration_tics": j.service_duration_tics,
                 "completion_tic": None,
                 "scheduled_service_end_tic": None,
@@ -1392,6 +1399,7 @@ def analyze_cad_document(
             "deadline_tic": j.deadline_tic,
             "deadline_s": round(j.deadline_tic * dt_s, 4),
             "angle_deg": round(j.angle_deg, 1),
+            "elevation_deg": round(j.elevation_deg, 2),
             "service_duration_tics": j.service_duration_tics,
             "completion_tic": c_tic,
             "scheduled_service_end_tic": sched_end_tic,
@@ -2057,11 +2065,13 @@ def compute_cad_route_spatial_heatmap(
  
     selected_route = doc.routes[route_idx]
     if params is None:
+        effective_v_move = float(selected_route.v_move_mps) if (selected_route.v_move_mps and selected_route.v_move_mps > 0) else float(doc.player_model.v_move_mps)
         params = TicCombatParameters(
-            v_move_mps=float(selected_route.v_move_mps if selected_route.v_move_mps is not None else doc.player_model.v_move_mps),
+            v_move_mps=effective_v_move,
             aim_velocity_deg_s=float(doc.player_model.omega_slew_deg_per_s),
             acquisition_latency_s=float(doc.player_model.acquisition_latency_s),
-            inspect_duration_s=float(doc.player_model.service_duration_s)
+            inspect_duration_s=float(doc.player_model.service_duration_s),
+            eye_height_m=float(doc.player_model.eye_height_m)
         )
  
     dt_s = params.tic_duration_s
@@ -2075,9 +2085,23 @@ def compute_cad_route_spatial_heatmap(
     full_jobs = referee.extract_tic_jobs(geo_module, route_index=route_idx)
     num_full_jobs = len(full_jobs)
     full_job_map = {j.id: j for j in full_jobs}
- 
-    obs_segs = extract_polygon_segments(geo_module.obstacles)
- 
+    if geo_module.obstacles_25d:
+        obs_25d = geo_module.obstacles_25d
+    else:
+        obs_25d = [
+            GeometricObstacle(id=f"obs_{i}", polygon=p, z_min_m=0.0, z_max_m=float("inf"))
+            for i, p in enumerate(geo_module.obstacles)
+        ]
+
+    elev_mode_val = getattr(doc.player_model.elevation_mode, "value", str(doc.player_model.elevation_mode))
+    is_pure_planar = (
+        not getattr(geo_route, "_is_3d", False)
+        and all(t.z_m is None for t in geo_module.threats)
+        and all(math.isinf(o.z_max_m) for o in obs_25d)
+        and elev_mode_val != "AUTHORED"
+    )
+    obs_segs = extract_polygon_segments(geo_module.obstacles) if is_pure_planar else []
+
     # 1. Precompute Route Line-of-Sight Matrix LOS[k, j]
     num_threats = len(geo_module.threats)
     sample_positions = []
@@ -2098,16 +2122,30 @@ def compute_cad_route_spatial_heatmap(
     los_matrix = np.zeros((num_samples, num_threats), dtype=int)
 
     for k in range(num_samples):
-        pos_k = sample_positions[k]
-        for j_idx, threat in enumerate(geo_module.threats):
-            qx, qy = threat.threat_anchor
-            blocked = False
-            for s1, s2 in obs_segs:
-                if segments_intersect(pos_k, (qx, qy), s1, s2):
-                    blocked = True
-                    break
-            if not blocked:
-                los_matrix[k, j_idx] = 1
+        if is_pure_planar:
+            pos_k = sample_positions[k]
+            for j_idx, threat in enumerate(geo_module.threats):
+                qx, qy = threat.threat_anchor
+                blocked = False
+                for s1, s2 in obs_segs:
+                    if segments_intersect(pos_k, (qx, qy), s1, s2):
+                        blocked = True
+                        break
+                if not blocked:
+                    los_matrix[k, j_idx] = 1
+        else:
+            eye_k = geo_route.eye_position_at_distance(sample_distances[k], params.eye_height_m)
+            for j_idx, threat in enumerate(geo_module.threats):
+                qx, qy = threat.threat_anchor
+                qz = float(threat.z_m) if threat.z_m is not None else params.eye_height_m
+                target_pt_3d = (float(qx), float(qy), qz)
+                blocked = False
+                for obs in obs_25d:
+                    if ray_intersects_prism_25d(eye_k, target_pt_3d, obs.polygon, obs.z_min_m, obs.z_max_m):
+                        blocked = True
+                        break
+                if not blocked:
+                    los_matrix[k, j_idx] = 1
 
     # 2. Solver Envelope Policy (Strict J <= 6 for live repeated scheduling)
     is_envelope_unsupported = (num_full_jobs > max_exact_jobs and not allow_slow_solver)
@@ -2153,6 +2191,14 @@ def compute_cad_route_spatial_heatmap(
                 serv_dur_tics = int(math.ceil(threat.service_duration_s * params.ticrate_hz))
                 deadline_tic = rel_reveal + due_window_tics
 
+                if is_pure_planar or elev_mode_val == "AUTHORED":
+                    vis_elevation_deg = float(threat.elevation_deg)
+                else:
+                    eye_rev = geo_route.eye_position_at_distance(s_rev, params.eye_height_m)
+                    qz = float(threat.z_m) if threat.z_m is not None else params.eye_height_m
+                    target_pt_3d = (float(qx), float(qy), qz)
+                    vis_elevation_deg = derived_aim_elevation_deg(eye_rev, target_pt_3d)
+
                 # Preserve full floating-point precision for angle_deg to ensure exact scheduler parity
                 suffix_jobs.append(TicThreatJob(
                     id=threat.id,
@@ -2162,7 +2208,7 @@ def compute_cad_route_spatial_heatmap(
                     angle_deg=float(vis_angle_deg),
                     threat_anchor=(float(qx), float(qy)),
                     service_duration_tics=serv_dur_tics,
-                    elevation_deg=float(threat.elevation_deg),
+                    elevation_deg=float(vis_elevation_deg),
                     target_z=threat.z_m
                 ))
 

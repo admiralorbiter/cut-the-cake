@@ -282,7 +282,13 @@ Audited benchmark evidence (`round11.4a-freeze`):
   - **Ascent Mechanism Counterexample:** Demonstrates synthetically on an Ascent Heaven/Rafters-inspired fixture that elevation ($\phi = 35^\circ$) introduces real pitch slew latency ($s_{12} = 4\text{ tics}$), converting a falsely feasible 2D schedule ($M=+1$) into a critical deficit ($M=-3$), proving that the newly added elevation state is sufficient to produce the class of scheduling error identified by the Ascent M5-B boundary.
   - **Eight Verification Gates:** Passed 100% across differential planar identity, pure pitch slew, mixed $(\theta, \phi)$ non-equivalence vs naive decoupled metrics, boundary discretization, $\mathrm{SO}(3)$ 3D rotation invariance, Ascent mechanism counterexample, exact solver envelope preservation ($J \le 6$ interactive, $J=7$ slow, $J \ge 8$ fail-closed by default), and schema bounds / fail-closed telemetry (121 tests in CAD acceptance suite).
 
-- **Milestone 6-B (Next Focus):** Height-Aware Sightlines & Layered Geometry (stairs, ramps, elevation steps, balconies, 3D obstacle occlusion clipping). Contract: $(\mathbf{x}(s), z_{\text{eye}}, \mathbf{q}_j, z_j) \longrightarrow (\theta_j(s), \phi_j(s)) \longrightarrow \text{frozen M6-A scheduler}$.
+- **Milestone 6-B (Completed & Certified):** Height-Aware Geometric Compilation & 2.5D Sightline Occlusion
+  - **2.5D Extruded Prism Model:** Generalized obstacles to vertical prism footprints $P_i \times [z_{i,\min}, z_{i,\max}]$, routes to 3D waypoints $(x, y, z_{\text{feet}})$, and threats to 3D target coordinates $\mathbf{q}_j = (x_j, y_j, z_j)$.
+  - **Derived Dynamic Aim State:** Authored target elevation replaced with authoritative dynamic geometry formula $\phi_j(s) = \operatorname{atan2}(z_j - z_{\text{eye}}(s), d_{xy}(s))$ along player trajectory, feeding the frozen M6-A single-machine discrete scheduler seamlessly.
+  - **Explicit Authority Migration:** Formally established `ElevationMode.GEOMETRIC` (M6-B default derived $\phi$) and `ElevationMode.AUTHORED` (legacy M6-A) without ambiguous competition.
+  - **Eight Verification Gates:** Passed 100% across complete planar bit-for-bit identity, analytic vertical occlusion ($z_{\text{low}}$ blocked vs $z_{\text{high}}$ clear), obstacle-height monotonicity, derived pitch correctness ($+45^\circ, -45^\circ, 0^\circ$), dynamic ramp slew, height-induced reveal differentiation ($R_j^B < R_j^A$), rigid vertical translation invariance ($z \to z + c$), and calibrated Ascent Heaven fixture compilation (129 tests in CAD acceptance suite).
+
+- **Milestone 6-C (Next Focus):** 3D Controller Execution & Real-Map Transfer (3D pitch controller execution, elevated telemetry verification, multi-story competitive graybox benchmark).
 
 ---
 
