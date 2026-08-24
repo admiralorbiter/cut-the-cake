@@ -60,6 +60,8 @@ class GeometricThreat:
     opp_reaction_s: float = 0.20
     service_duration_s: float = 0.20
     description: str = ""
+    elevation_deg: float = 0.0
+    z_m: Optional[float] = None
 
     @property
     def anchor_point(self) -> Point:

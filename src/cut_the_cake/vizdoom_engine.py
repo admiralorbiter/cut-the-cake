@@ -24,6 +24,7 @@ from .model import PlayerModel, CombatModel, InformationRegime
 from .geometry import (
     normalize_angle_deg,
     angle_diff_deg,
+    spherical_aim_distance_deg,
     heading_to_deg,
     distance,
     segments_intersect,
@@ -80,9 +81,12 @@ class TicThreatJob:
     reveal_tic: int                     # R_j (first unoccluded tic)
     due_window_tics: int               # n_j (threat response deadline in tics)
     deadline_tic: int                  # D_j = R_j + n_j
-    angle_deg: float                   # Relative aim bearing at reveal
+    angle_deg: float                   # Relative aim azimuth bearing at reveal
     threat_anchor: Tuple[float, float] # Firing coordinate (x, y)
     service_duration_tics: int = 4
+    elevation_deg: float = 0.0         # Relative aim elevation angle at reveal (M6-A)
+    target_z: Optional[float] = None   # Target elevation coordinate in meters (M6-A)
+
 
 
 @dataclass
@@ -107,16 +111,36 @@ class DiscreteTicScheduler:
     def __init__(self, params: Optional[TicCombatParameters] = None):
         self.params = params or TicCombatParameters()
 
-    def compute_setup_tics(self, angle_from_deg: float, angle_to_deg: float) -> int:
-        """Compute integer reticle transition setup tics: A + ceil(|Delta theta| / Omega)."""
-        delta_theta = angle_diff_deg(angle_from_deg, angle_to_deg)
-        aim_tics = int(math.ceil(delta_theta / self.params.max_aim_deg_per_tic))
+    @staticmethod
+    def _extract_aim_state(val: Any) -> Tuple[float, float]:
+        """Extract (azimuth_deg, elevation_deg) aim state from float heading, tuple, or TicThreatJob."""
+        if isinstance(val, TicThreatJob):
+            return (val.angle_deg, val.elevation_deg)
+        elif isinstance(val, (tuple, list)):
+            if len(val) >= 2:
+                return (float(val[0]), float(val[1]))
+            elif len(val) == 1:
+                return (float(val[0]), 0.0)
+        elif isinstance(val, (int, float)):
+            return (float(val), 0.0)
+        return (0.0, 0.0)
+
+    def compute_setup_tics(
+        self,
+        angle_from_deg: Union[float, Tuple[float, float], TicThreatJob],
+        angle_to_deg: Union[float, Tuple[float, float], TicThreatJob]
+    ) -> int:
+        """Compute integer reticle transition setup tics: A + ceil(Delta alpha / Omega)."""
+        th1, ph1 = self._extract_aim_state(angle_from_deg)
+        th2, ph2 = self._extract_aim_state(angle_to_deg)
+        diff = spherical_aim_distance_deg(th1, ph1, th2, ph2)
+        aim_tics = int(math.ceil(diff / self.params.max_aim_deg_per_tic)) if diff > 1e-4 else 0
         return self.params.acquisition_tics + aim_tics
 
     def compute_hamiltonian_workload_tics(
         self,
         jobs: List[TicThreatJob],
-        initial_reticle_deg: float = 0.0,
+        initial_reticle_deg: Union[float, Tuple[float, float]] = 0.0,
         max_exact_jobs: int = 7,
         allow_slow_solver: bool = False
     ) -> int:
@@ -131,11 +155,13 @@ class DiscreteTicScheduler:
         total_service = sum(j.service_duration_tics for j in jobs)
         min_setup_tour = float("inf")
 
+        init_state = self._extract_aim_state(initial_reticle_deg)
+
         for perm in itertools.permutations(jobs):
             # First transition from initial reticle to perm[0]
-            tour = self.compute_setup_tics(initial_reticle_deg, perm[0].angle_deg)
+            tour = self.compute_setup_tics(init_state, perm[0])
             for i in range(len(perm) - 1):
-                tour += self.compute_setup_tics(perm[i].angle_deg, perm[i+1].angle_deg)
+                tour += self.compute_setup_tics(perm[i], perm[i+1])
             if tour < min_setup_tour:
                 min_setup_tour = tour
 
@@ -144,7 +170,7 @@ class DiscreteTicScheduler:
     def solve(
         self,
         jobs: List[TicThreatJob],
-        initial_reticle_deg: float = 0.0,
+        initial_reticle_deg: Union[float, Tuple[float, float]] = 0.0,
         instantaneous_los_clique: int = 1,
         regime: Optional[InformationRegime] = None,
         actionability_lead_tics: Optional[int] = None,
@@ -201,6 +227,7 @@ class DiscreteTicScheduler:
             jobs, initial_reticle_deg, max_exact_jobs=max_exact_jobs, allow_slow_solver=allow_slow_solver
         )
 
+        init_th, init_ph = self._extract_aim_state(initial_reticle_deg)
 
         # Exact sequence-dependent branch / permutation search
         best_l_star = 999999
@@ -210,14 +237,14 @@ class DiscreteTicScheduler:
 
         for perm in itertools.permutations(job_ids):
             current_time = 0
-            current_reticle = initial_reticle_deg
+            cur_th, cur_ph = init_th, init_ph
             perm_lateness: Dict[str, int] = {}
             perm_completion: Dict[str, int] = {}
             max_l = -999999
 
             for j_id in perm:
                 job = job_map[j_id]
-                diff = angle_diff_deg(current_reticle, job.angle_deg)
+                diff = spherical_aim_distance_deg(cur_th, cur_ph, job.angle_deg, job.elevation_deg)
                 rot_tics = int(math.ceil(diff / self.params.max_aim_deg_per_tic)) if diff > 1e-4 else 0
                 acq_tics = self.params.acquisition_tics
 
@@ -244,7 +271,7 @@ class DiscreteTicScheduler:
                 max_l = max(max_l, lateness)
 
                 current_time = comp_t
-                current_reticle = job.angle_deg
+                cur_th, cur_ph = job.angle_deg, job.elevation_deg
 
             if max_l < best_l_star:
                 best_l_star = max_l
@@ -479,7 +506,9 @@ class DeterministicSimulationReferee:
                     deadline_tic=first_vis_tic + due_tics,
                     angle_deg=vis_angle_deg,
                     threat_anchor=(qx, qy),
-                    service_duration_tics=serv_tics
+                    service_duration_tics=serv_tics,
+                    elevation_deg=float(threat.elevation_deg),
+                    target_z=threat.z_m
                 ))
 
         jobs.sort(key=lambda j: j.reveal_tic)

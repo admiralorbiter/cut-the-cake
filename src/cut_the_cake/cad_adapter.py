@@ -1316,9 +1316,9 @@ def analyze_cad_document(
     scheduler = DiscreteTicScheduler(params)
     sched_res = scheduler.solve(
         jobs,
-        initial_reticle_deg=doc.player_model.initial_reticle_deg,
-        max_exact_jobs=max(max_exact_jobs, num_jobs),
-        allow_slow_solver=True
+        initial_reticle_deg=(doc.player_model.initial_reticle_deg, doc.player_model.initial_reticle_elevation_deg),
+        max_exact_jobs=max_exact_jobs,
+        allow_slow_solver=allow_slow_solver
     )
 
     # 6. Schedulability & Status Bands
@@ -2149,7 +2149,9 @@ def compute_cad_route_spatial_heatmap(
                     deadline_tic=deadline_tic,
                     angle_deg=float(vis_angle_deg),
                     threat_anchor=(float(qx), float(qy)),
-                    service_duration_tics=serv_dur_tics
+                    service_duration_tics=serv_dur_tics,
+                    elevation_deg=float(threat.elevation_deg),
+                    target_z=threat.z_m
                 ))
 
         suffix_jobs.sort(key=lambda j: j.reveal_tic)
@@ -2166,7 +2168,7 @@ def compute_cad_route_spatial_heatmap(
         else:
             sched_res = scheduler.solve(
                 suffix_jobs,
-                initial_reticle_deg=doc.player_model.initial_reticle_deg,
+                initial_reticle_deg=(doc.player_model.initial_reticle_deg, doc.player_model.initial_reticle_elevation_deg),
                 allow_slow_solver=allow_slow_solver
             )
             suffix_margin_tics = sched_res.tactical_margin_tics

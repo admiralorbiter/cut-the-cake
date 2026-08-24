@@ -92,9 +92,11 @@ class CADThreat:
     anchor: List[float]
     due_window_s: float = 0.62
     service_duration_s: float = 0.1143
+    elevation_deg: float = 0.0
+    z_m: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "id": self.id,
             "name": self.name,
             "polygon": _round_coords(self.polygon),
@@ -102,6 +104,11 @@ class CADThreat:
             "due_window_s": float(self.due_window_s),
             "service_duration_s": float(self.service_duration_s)
         }
+        if self.elevation_deg != 0.0:
+            d["elevation_deg"] = float(self.elevation_deg)
+        if self.z_m is not None:
+            d["z_m"] = float(self.z_m)
+        return d
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> CADThreat:
@@ -111,7 +118,9 @@ class CADThreat:
             polygon=_round_coords(d["polygon"]),
             anchor=[float(d["anchor"][0]), float(d["anchor"][1])],
             due_window_s=float(d.get("due_window_s", 0.62)),
-            service_duration_s=float(d.get("service_duration_s", 0.1143))
+            service_duration_s=float(d.get("service_duration_s", 0.1143)),
+            elevation_deg=float(d.get("elevation_deg", 0.0)),
+            z_m=float(d["z_m"]) if "z_m" in d and d["z_m"] is not None else None
         )
 
     def to_geometric_threat(self) -> GeometricThreat:
@@ -121,7 +130,9 @@ class CADThreat:
             threat_anchor=(float(self.anchor[0]), float(self.anchor[1])),
             authored_due_window_s=float(self.due_window_s),
             service_duration_s=float(self.service_duration_s),
-            description=self.name
+            description=self.name,
+            elevation_deg=float(self.elevation_deg),
+            z_m=self.z_m
         )
 
 
@@ -165,21 +176,30 @@ class CADPlayerModel:
     - `omega_slew_deg_per_s`: Authoritative angular slewing rate in degrees per second.
     - `acquisition_latency_s`: Authoritative reaction latency upon threat reveal.
     - `initial_reticle_deg`: Starting reticle heading in degrees [0, 360).
+    - `initial_reticle_elevation_deg`: Starting reticle elevation in degrees [-90, 90] (M6-A).
+    - `eye_height_m`: Standard player eye height in meters (M6-A).
     """
     v_move_mps: float = 4.5
     omega_slew_deg_per_s: float = 360.0
     acquisition_latency_s: float = 0.15
     service_duration_s: float = 0.10
     initial_reticle_deg: float = 0.0
+    initial_reticle_elevation_deg: float = 0.0
+    eye_height_m: float = 1.65
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "v_move_mps": float(self.v_move_mps),
             "omega_slew_deg_per_s": float(self.omega_slew_deg_per_s),
             "acquisition_latency_s": float(self.acquisition_latency_s),
             "service_duration_s": float(self.service_duration_s),
             "initial_reticle_deg": float(self.initial_reticle_deg)
         }
+        if self.initial_reticle_elevation_deg != 0.0:
+            d["initial_reticle_elevation_deg"] = float(self.initial_reticle_elevation_deg)
+        if self.eye_height_m != 1.65:
+            d["eye_height_m"] = float(self.eye_height_m)
+        return d
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> CADPlayerModel:
@@ -188,7 +208,9 @@ class CADPlayerModel:
             omega_slew_deg_per_s=float(d.get("omega_slew_deg_per_s", 360.0)),
             acquisition_latency_s=float(d.get("acquisition_latency_s", 0.15)),
             service_duration_s=float(d.get("service_duration_s", 0.10)),
-            initial_reticle_deg=float(d.get("initial_reticle_deg", 0.0))
+            initial_reticle_deg=float(d.get("initial_reticle_deg", 0.0)),
+            initial_reticle_elevation_deg=float(d.get("initial_reticle_elevation_deg", 0.0)),
+            eye_height_m=float(d.get("eye_height_m", 1.65))
         )
 
     def to_combat_params(self) -> TicCombatParameters:

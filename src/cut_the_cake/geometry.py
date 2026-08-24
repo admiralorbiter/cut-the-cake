@@ -20,6 +20,29 @@ def angle_diff_deg(a1: float, a2: float) -> float:
     return abs(diff)
 
 
+def spherical_aim_distance_deg(
+    theta_i: float,
+    phi_i: float,
+    theta_j: float,
+    phi_j: float
+) -> float:
+    """Compute shortest angular slew distance between two 3D aim states (theta, phi) in degrees.
+    
+    Guarantees bit-for-bit identity with frozen 2D angle_diff_deg when both elevations are 0.0.
+    """
+    if phi_i == 0.0 and phi_j == 0.0:
+        return angle_diff_deg(theta_i, theta_j)  # Exact frozen M2 planar fast-path
+
+    # 3D Spherical geodesic distance on unit sphere
+    rad = math.pi / 180.0
+    th_i, ph_i = theta_i * rad, phi_i * rad
+    th_j, ph_j = theta_j * rad, phi_j * rad
+    dot = math.sin(ph_i) * math.sin(ph_j) + math.cos(ph_i) * math.cos(ph_j) * math.cos(th_i - th_j)
+    dot = max(-1.0, min(1.0, dot))
+    return math.degrees(math.acos(dot))
+
+
+
 def heading_to_deg(from_pt: Tuple[float, float], to_pt: Tuple[float, float]) -> float:
     """Calculate heading angle in degrees from from_pt to to_pt (0 deg = +X, 90 deg = +Y)."""
     dx = to_pt[0] - from_pt[0]

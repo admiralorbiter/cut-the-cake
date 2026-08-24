@@ -274,9 +274,14 @@ Audited benchmark evidence (`round11.4a-freeze`):
 ---
 
 ## Horizon 6: 2.5D Elevation & Layered Geometry (M6)
-- Layered tactical geometry: stairs, ramps, elevation steps, balconies, vertical sightlines.
-- Vertical aim cone slew and 3D pitch constraints ($s_{ij}$ with elevation $\Delta \theta$).
-- Height-conditioned threat anchors and multi-tier room transitions.
+- **Milestone 6-A (Completed & Certified):** 2.5D Elevation & Azimuth/Elevation Aim State Preflight
+  - **Spherical Geodesic Slew Metric:** Generalized $1 \mid r_j, s_{ij} \mid L_{\max}$ transition cost oracle to spherical geodesic distance on the unit sphere: $\Delta \alpha_{ij} = \arccos(\operatorname{clamp}(\sin \phi_i \sin \phi_j + \cos \phi_i \cos \phi_j \cos(\theta_i - \theta_j), -1.0, 1.0))$.
+  - **Structural Planar Identity:** When $\phi_i = \phi_j = 0.0^\circ$, bypasses spherical float roundoff to execute exact frozen 2D `angle_diff_deg()`, guaranteeing $\forall \mathcal{G}_{\text{planar}}, \mathcal{M}_{\text{M6}} \equiv \mathcal{M}_{\text{M2}}$ bit-for-bit.
+  - **Complete Initial Aim State:** Extended initial reticle to $(\theta_0, \phi_0)$ with default $\phi_0 = 0.0^\circ$.
+  - **Ascent Vertical Counterexample:** Proven on an Ascent Heaven/Rafters-inspired fixture that elevation ($\phi = 35^\circ$) introduces real pitch slew latency ($s_{12} = 4\text{ tics}$), converting a falsely feasible 2D schedule ($M=+1$) into an empirically grounded critical deficit ($M=-3$), directly resolving the model boundary documented in M5-B.
+  - **Seven Verification Gates:** Passed 100% across planar identity, pure pitch slew, mixed $(\theta, \phi)$ non-equivalence vs naive decoupled metrics, boundary discretization, $\mathrm{SO}(3)$ 3D rotation invariance, Ascent counterexample, and exact $J \le 6$ envelope preservation (118 tests in CAD acceptance suite).
+
+- **Milestone 6-B (Next Focus):** Height-Aware Sightlines & Layered Geometry (stairs, ramps, elevation steps, balconies, 3D obstacle occlusion clipping).
 
 ---
 

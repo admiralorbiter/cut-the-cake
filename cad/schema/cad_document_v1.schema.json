@@ -67,7 +67,9 @@
         "omega_slew_deg_per_s": { "type": "number", "exclusiveMinimum": 0 },
         "acquisition_latency_s": { "type": "number", "minimum": 0 },
         "service_duration_s": { "type": "number", "minimum": 0 },
-        "initial_reticle_deg": { "type": "number" }
+        "initial_reticle_deg": { "type": "number" },
+        "initial_reticle_elevation_deg": { "type": "number" },
+        "eye_height_m": { "type": "number", "exclusiveMinimum": 0 }
       }
     },
     "geometry": {
@@ -157,7 +159,9 @@
                 "maxItems": 2
               },
               "due_window_s": { "type": "number", "exclusiveMinimum": 0 },
-              "service_duration_s": { "type": "number", "exclusiveMinimum": 0 }
+              "service_duration_s": { "type": "number", "exclusiveMinimum": 0 },
+              "elevation_deg": { "type": "number" },
+              "z_m": { "type": "number" }
             }
           }
         },
