@@ -22,7 +22,8 @@ from .cad_document import (
     CADThreat,
     CADPlayerModel,
     get_canonical_f1_document,
-    get_custom_asymmetric_corridor_document
+    get_custom_asymmetric_corridor_document,
+    validate_cad_document
 )
 from .compiler import (
     GeometricModule,
@@ -1121,21 +1122,41 @@ def update_player_model(
 def analyze_cad_document(
     doc: CADDocument,
     route_id: Optional[str] = None,
+    params: Optional[TicCombatParameters] = None,
+    client_revision: Optional[int] = None,
     include_telemetry: bool = False,
-    client_revision: int = 0,
-    params: Optional[TicCombatParameters] = None
+    max_exact_jobs: int = 7,
+    allow_slow_solver: bool = False
 ) -> Dict[str, Any]:
-    """Authoritative scientific analysis of an arbitrary CADDocument.
+    """Analyze a CAD document by compiling geometry against player motion and solving schedule.
     
-    Operates without benchmark special-casing:
-    - Supports arbitrary obstacle IDs, route IDs, and threat counts.
-    - Accurately classifies source status bands.
-    - Keeps fast-analysis semantics clean (source_schedule_feasible, null realized completion).
-    - Populates realized completion from actual simulated events upon commit.
+    Safe Exact-Solver Envelope (M2D.1):
+    - J <= 6 : EXACT_INTERACTIVE (Fast path < 10 ms)
+    - J == 7 : EXACT_SLOW (Permitted on explicit analyze, ~80 ms)
+    - J >= 8 : EXACT_LIMIT_EXCEEDED (Fail-closed prompt return to avoid factorial hang, unless allow_slow_solver=True)
     """
     t_start = time.perf_counter()
 
+    # Document-level schema and structural validation
+    doc_dict = doc.to_dict()
+    is_valid, errors = validate_cad_document(doc_dict)
+    if not is_valid:
+        return {
+            "is_valid": False,
+            "error_reason": f"Document schema validation failed: {'; '.join(errors)}",
+            "client_revision": client_revision,
+            "runtime_ms": round((time.perf_counter() - t_start) * 1000.0, 2)
+        }
+
     geo_module = doc.to_geometric_module()
+
+    if not doc.routes:
+        return {
+            "is_valid": False,
+            "error_reason": "No routes authored in CAD document.",
+            "client_revision": client_revision,
+            "runtime_ms": round((time.perf_counter() - t_start) * 1000.0, 2)
+        }
 
     # Route selection & effective combat parameters
     route_idx = 0
@@ -1164,15 +1185,133 @@ def analyze_cad_document(
             inspect_duration_s=float(doc.player_model.service_duration_s)
         )
 
-    # 1. Authoritative Physics & Discrete Scheduling Solve
+    # 1. Authoritative Physics Extraction
     referee = DeterministicSimulationReferee(params)
     jobs = referee.extract_tic_jobs(geo_module, route_index=route_idx)
-    scheduler = DiscreteTicScheduler(params)
-    sched_res = scheduler.solve(jobs, initial_reticle_deg=doc.player_model.initial_reticle_deg)
-
-    # 2. Schedulability & Status Bands
-    m_tics = sched_res.tactical_margin_tics
+    num_jobs = len(jobs)
     dt_s = params.tic_duration_s
+
+    # 2. Solver Envelope & Dispatch Guard (M2D.1)
+    if num_jobs <= 6:
+        solver_mode = "EXACT_INTERACTIVE"
+        is_exact = True
+        limit_exceeded = False
+    elif num_jobs == 7:
+        solver_mode = "EXACT_SLOW"
+        is_exact = True
+        limit_exceeded = False
+    else:
+        if allow_slow_solver or num_jobs <= max_exact_jobs:
+            solver_mode = "EXACT_OVERRIDE"
+            is_exact = True
+            limit_exceeded = False
+        else:
+            solver_mode = "EXACT_LIMIT_EXCEEDED"
+            is_exact = False
+            limit_exceeded = True
+
+    # 3. Inter-Threat Reveal Gaps (Generalized for N threats)
+    stagger_gap_tics = 0
+    if len(jobs) >= 2:
+        sorted_reveals = sorted(j.reveal_tic for j in jobs)
+        gaps = [sorted_reveals[i+1] - sorted_reveals[i] for i in range(len(sorted_reveals) - 1)]
+        stagger_gap_tics = min(gaps) if gaps else 0
+
+    stagger_gap_ms = round(stagger_gap_tics * dt_s * 1000.0, 1)
+
+    # 4. Handle Limit-Exceeded Case Promptly (Fail-Closed)
+    if limit_exceeded:
+        threat_output_jobs = []
+        for j in jobs:
+            lbl = next((t.name for t in doc.threats if t.id == j.id), j.id)
+            threat_output_jobs.append({
+                "id": j.id,
+                "label": lbl,
+                "reveal_tic": j.reveal_tic,
+                "reveal_s": round(j.reveal_tic * dt_s, 4),
+                "due_window_tics": j.due_window_tics,
+                "due_window_s": round(j.due_window_tics * dt_s, 4),
+                "deadline_tic": j.deadline_tic,
+                "deadline_s": round(j.deadline_tic * dt_s, 4),
+                "angle_deg": round(j.angle_deg, 1),
+                "service_duration_tics": j.service_duration_tics,
+                "completion_tic": None,
+                "scheduled_service_end_tic": None,
+                "realized_service_complete_tic": None,
+                "completion_s": None,
+                "lateness_tics": None
+            })
+
+        diagnostic = {
+            "type": "SOLVER_LIMIT_EXCEEDED",
+            "critical_threat_id": None,
+            "critical_threat_label": None,
+            "reveal_tic": None,
+            "deadline_tic": None,
+            "scheduled_completion_tic": None,
+            "lateness_tics": None,
+            "explanation": (
+                f"EXACT_LIMIT_EXCEEDED: Authoring produced {num_jobs} active revealed threats along route '{selected_route.id}'. "
+                f"Exact permutation scheduler is limited to J <= {max_exact_jobs} to prevent interactive factorial server hang "
+                f"(J={num_jobs} requires {math.factorial(num_jobs):,} permutations). "
+                f"Simplify route sightlines or enable offline solver override."
+            )
+        }
+
+        runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+        return {
+            "is_valid": True,
+            "document_id": doc.document_id,
+            "document_name": doc.name,
+            "selected_route_id": selected_route.id,
+            "effective_v_move_mps": params.v_move_mps,
+            "client_revision": client_revision,
+            "runtime_ms": runtime_ms,
+            "status_band": "SOLVER_LIMIT_EXCEEDED",
+            "verdict": "inconclusive",
+            "tactical_margin_tics": None,
+            "tactical_margin_ms": None,
+            "l_star_tics": None,
+            "compiled_job_count": num_jobs,
+            "solver_mode": solver_mode,
+            "is_exact": is_exact,
+            "solver_limit": max_exact_jobs,
+            "source_schedule_feasible": False,
+            "stagger_gap_tics": stagger_gap_tics,
+            "stagger_gap_ms": stagger_gap_ms,
+            "threat_jobs": threat_output_jobs,
+            "diagnostic": diagnostic,
+            "candidate_document": doc.to_dict(),
+            "external_engine_evidence": {
+                "evidence_source": "none",
+                "evidence_tier": "source_model",
+                "broken_engine_survived": None,
+                "repaired_engine_survived": None,
+                "survival_flip": None,
+                "source_repair_success": None,
+                "native_engine_rescued": None,
+                "transfer_status": "not_run",
+                "delta_export_tics": None,
+                "delta_execution_tics": None,
+                "delta_total_tics": None
+            },
+            "model_episode_survived": None,
+            "model_death_tic": None,
+            "telemetry_frames": None,
+            "events": None
+        }
+
+    # 5. Discrete Scheduling Solve
+    scheduler = DiscreteTicScheduler(params)
+    sched_res = scheduler.solve(
+        jobs,
+        initial_reticle_deg=doc.player_model.initial_reticle_deg,
+        max_exact_jobs=max(max_exact_jobs, num_jobs),
+        allow_slow_solver=True
+    )
+
+    # 6. Schedulability & Status Bands
+    m_tics = sched_res.tactical_margin_tics
     source_schedule_feasible = (m_tics >= 0)
 
     if m_tics < 0:
@@ -1185,16 +1324,7 @@ def analyze_cad_document(
         status_band = "TARGET RESERVE MET"
         verdict = "serviceable"
 
-    # 3. Inter-Threat Reveal Gaps (Generalized for N threats)
-    stagger_gap_tics = 0
-    if len(jobs) >= 2:
-        sorted_reveals = sorted(j.reveal_tic for j in jobs)
-        gaps = [sorted_reveals[i+1] - sorted_reveals[i] for i in range(len(sorted_reveals) - 1)]
-        stagger_gap_tics = min(gaps) if gaps else 0
-
-    stagger_gap_ms = round(stagger_gap_tics * dt_s * 1000.0, 1)
-
-    # 4. Threat Jobs Output Data
+    # 7. Threat Jobs Output Data
     threat_output_jobs = []
     
     # Fast path defaults
@@ -1204,7 +1334,7 @@ def analyze_cad_document(
     telemetry_frames_output: Optional[List[Dict[str, Any]]] = None
     events_output: Optional[List[Dict[str, Any]]] = None
 
-    # 5. Full Simulated Execution (Only when requested on commit)
+    # 8. Full Simulated Execution (Only when requested on commit)
     if include_telemetry:
         from .cad_export import _generate_telemetry_and_events
         telemetry_frames, events, stats = _generate_telemetry_and_events(
@@ -1295,6 +1425,10 @@ def analyze_cad_document(
         "tactical_margin_tics": m_tics,
         "tactical_margin_ms": round(m_tics * dt_s * 1000.0, 1),
         "l_star_tics": sched_res.lateness_optimal_l_star_tics,
+        "compiled_job_count": num_jobs,
+        "solver_mode": solver_mode,
+        "is_exact": is_exact,
+        "solver_limit": max_exact_jobs,
         "source_schedule_feasible": source_schedule_feasible,
         "stagger_gap_tics": stagger_gap_tics,
         "stagger_gap_ms": stagger_gap_ms,

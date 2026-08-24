@@ -116,11 +116,18 @@ class DiscreteTicScheduler:
     def compute_hamiltonian_workload_tics(
         self,
         jobs: List[TicThreatJob],
-        initial_reticle_deg: float = 0.0
+        initial_reticle_deg: float = 0.0,
+        max_exact_jobs: int = 7,
+        allow_slow_solver: bool = False
     ) -> int:
         """Compute exact minimum Hamiltonian tour of setup transitions plus service dwell."""
         if not jobs:
             return 0
+        if len(jobs) > max_exact_jobs and not allow_slow_solver:
+            raise ValueError(
+                f"Exact permutation scheduler job limit exceeded in Hamiltonian workload: "
+                f"J={len(jobs)} > {max_exact_jobs}. Pass allow_slow_solver=True to allow factorial enumeration."
+            )
         total_service = sum(j.service_duration_tics for j in jobs)
         min_setup_tour = float("inf")
 
@@ -141,7 +148,9 @@ class DiscreteTicScheduler:
         instantaneous_los_clique: int = 1,
         regime: Optional[InformationRegime] = None,
         actionability_lead_tics: Optional[int] = None,
-        actionability_tics: Optional[Dict[str, int]] = None
+        actionability_tics: Optional[Dict[str, int]] = None,
+        max_exact_jobs: int = 7,
+        allow_slow_solver: bool = False
     ) -> DiscreteScheduleResult:
         """Solve optimal permutation minimizing maximum lateness L*_tic under specified information regime."""
         if not jobs:
@@ -157,6 +166,12 @@ class DiscreteTicScheduler:
                 min_slack_tics=999,
                 raw_workload_tics=0,
                 is_feasible=True
+            )
+
+        if len(jobs) > max_exact_jobs and not allow_slow_solver:
+            raise ValueError(
+                f"Exact permutation scheduler job limit exceeded: J={len(jobs)} > {max_exact_jobs}. "
+                f"Pass allow_slow_solver=True to allow factorial enumeration."
             )
 
         job_map = {j.id: j for j in jobs}
@@ -182,7 +197,9 @@ class DiscreteTicScheduler:
         )
 
         # Baseline 3: Exact Hamiltonian Workload Lower Bound B_work^Ham
-        b_work_ham = self.compute_hamiltonian_workload_tics(jobs, initial_reticle_deg)
+        b_work_ham = self.compute_hamiltonian_workload_tics(
+            jobs, initial_reticle_deg, max_exact_jobs=max_exact_jobs, allow_slow_solver=allow_slow_solver
+        )
 
 
         # Exact sequence-dependent branch / permutation search

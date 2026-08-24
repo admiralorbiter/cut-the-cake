@@ -127,8 +127,8 @@ class TestCADMetamorphicProperties:
         )
 
     def test_route_speed_scaling_discrete_exact(self):
-        """Halving route speed v -> v/2 must satisfy discrete-time reveal relation:
-        r(v/2) in { 2*r(v) - 1, 2*r(v) }.
+        """Halving route speed v -> v/2 under discrete reveal timing r(v) = ceil(s* / (v * Delta_t))
+        must satisfy discrete-time reveal relation: r(v/2) in { 2*r(v) - 1, 2*r(v) }.
         """
         doc_base = _make_straight_monotonic_fixture(wall_x=4.0)
         
@@ -186,21 +186,22 @@ class TestCADMetamorphicProperties:
         l_base = res_base["l_star_tics"]
         job_count_base = len(res_base["threat_jobs"])
 
-        # Add a fully encased bunker threat at (5.0, 5.0) surrounded by walls
+        # Add a fully encased bunker threat inside boundary at (7.5, -2.1) surrounded by walls
+        # placed in an empty quadrant so it doesn't occlude any existing threats
         doc_bunker = copy.deepcopy(doc)
         doc_bunker.obstacles.append(
             CADObstacle(
                 id="bunker_box",
                 name="Bunker Box",
-                vertices=[[4.0, 4.0], [6.0, 4.0], [6.0, 6.0], [4.0, 6.0]],
+                vertices=[[6.0, -2.8], [9.0, -2.8], [9.0, -1.4], [6.0, -1.4], [6.0, -2.8]],
             )
         )
         doc_bunker.threats.append(
             CADThreat(
                 id="threat_bunker_isolated",
                 name="Bunker Threat",
-                polygon=[[4.8, 4.8], [5.2, 4.8], [5.2, 5.2], [4.8, 5.2]],
-                anchor=[5.0, 5.0],
+                polygon=[[7.3, -2.3], [7.7, -2.3], [7.7, -1.9], [7.3, -1.9], [7.3, -2.3]],
+                anchor=[7.5, -2.1],
                 due_window_s=0.5,
                 service_duration_s=0.2,
             )

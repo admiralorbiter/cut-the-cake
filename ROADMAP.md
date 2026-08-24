@@ -187,12 +187,13 @@ Audited benchmark evidence (`round11.4a-freeze`):
   - Monotonic document/session wall sequence ID allocation (non-reusing deleted IDs across undo/redo).
   - Absolute target-angle vs relative delta rotation composition.
   - State-preserving undo/redo history stack across multi-element mutations.
-- **Milestone 2D (M2D — Active / Verification Conditional):** Scenario Authoring, Interactive Playback & Automated Verification Harness:
+- **Milestone 2D / 2D.1 (M2D — Completed & Scientifically Frozen):** Scenario Authoring, Interactive Playback & Safe Solver Envelope:
   - Interactive scenario authoring: route creation, waypoint editing, route speed tuning ($v_{\text{move}}$), combat parameters ($\omega_{\text{slew}}, T_{\text{acq}}, T_{\text{serv}}$), and initial reticle azimuth.
   - Interactive time-indexed playback scrubbing with synchronized player cone and authoritative LOS visibility rays.
   - Fast path vs full simulation dual-mode analysis dispatch.
-  - 4-Tier verification system: Tiered state-machine fuzzer, metamorphic property suite, Playwright browser E2E, and scaling benchmark matrix.
-- **Milestone 2E (M2E — Planned):** "Auto-Fix" integration invoking `MinimalRepairOptimizer` to suggest compliant obstacle placements in authored layouts.
+  - Safe Exact-Solver Envelope ($J \le 6$ `EXACT_INTERACTIVE`, $J=7$ `EXACT_SLOW`, $J \ge 8$ `EXACT_LIMIT_EXCEEDED` fail-closed dispatch).
+  - 4-Tier verification system: Tiered state-machine fuzzer, metamorphic property suite, Playwright browser E2E, and decoupled scaling benchmark matrix.
+- **Milestone 2E (M2E — Next / Planned):** "Auto-Fix" integration invoking `MinimalRepairOptimizer` to suggest compliant obstacle placements in authored layouts within certified $J \le 6$ envelope.
 - **Milestone 2F (M2F — Planned):** Live spatial heatmaps of tactical margin deficits along authored patrol routes.
 
 ---

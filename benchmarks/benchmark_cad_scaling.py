@@ -230,7 +230,7 @@ def run_scaling_benchmark(output_path: str = "benchmarks/results_scaling.json") 
 
     # Peak memory allocation
     print("\n" + "=" * 90)
-    print("CUT THE CAKE: PEAK MEMORY ALLOCATION")
+    print("CUT THE CAKE: PEAK MEMORY ALLOCATION (PYTHON HEAP TRACEMALLOC)")
     print("=" * 90)
     tracemalloc.start()
     doc_heavy = generate_scaling_document(5000, 6)
@@ -238,18 +238,18 @@ def run_scaling_benchmark(output_path: str = "benchmarks/results_scaling.json") 
     _, peak_mem = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     peak_mb = round(peak_mem / (1024 * 1024), 2)
-    print(f"Peak memory for 5000-segment / 6-threat document analysis: {peak_mb} MB")
+    print(f"Peak Python allocation observed by tracemalloc for 5000-segment / 6-threat document analysis: {peak_mb} MB")
 
     full_payload = {
         "metadata": {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "python_version": "3.12",
-            "notes": "Track A isolates 2D raycasting scaling across geometry tiers. Track B measures exact scheduler factorial curve O(J! * J). Track C measures full telemetry playback."
+            "notes": "Track A isolates geometry compilation from factorial scheduler growth, while segment count and route-tic count remain coupled by the synthetic generator. Track B measures exact scheduler factorial curve O(J! * J). Track C measures full telemetry playback."
         },
         "track_a_geometry_scaling": track_a_results,
         "track_b_scheduler_scaling": track_b_results,
         "track_c_telemetry_samples": track_c_results,
-        "peak_memory_mb": peak_mb,
+        "peak_python_tracemalloc_mb": peak_mb,
     }
     with open(output_path, "w") as f:
         json.dump(full_payload, f, indent=2)
