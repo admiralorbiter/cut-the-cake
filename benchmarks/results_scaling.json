@@ -1,0 +1,318 @@
+{
+  "metadata": {
+    "timestamp": "2026-08-24T18:37:53Z",
+    "python_version": "3.12",
+    "notes": "Track A isolates 2D raycasting scaling across geometry tiers. Track B measures exact scheduler factorial curve O(J! * J). Track C measures full telemetry playback."
+  },
+  "track_a_geometry_scaling": [
+    {
+      "segments_actual": 48,
+      "threats_authored": 2,
+      "route_tics": 94,
+      "compiled_jobs": 2,
+      "compile_p50_ms": 1.224,
+      "compile_sample_max_ms": 1.823,
+      "fast_total_p50_ms": 2.418,
+      "fast_total_sample_max_ms": 3.047
+    },
+    {
+      "segments_actual": 48,
+      "threats_authored": 4,
+      "route_tics": 94,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 3.495,
+      "compile_sample_max_ms": 4.412,
+      "fast_total_p50_ms": 5.006,
+      "fast_total_sample_max_ms": 5.409
+    },
+    {
+      "segments_actual": 48,
+      "threats_authored": 6,
+      "route_tics": 94,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 8.255,
+      "compile_sample_max_ms": 9.897,
+      "fast_total_p50_ms": 10.869,
+      "fast_total_sample_max_ms": 12.039
+    },
+    {
+      "segments_actual": 100,
+      "threats_authored": 2,
+      "route_tics": 94,
+      "compiled_jobs": 2,
+      "compile_p50_ms": 2.142,
+      "compile_sample_max_ms": 2.55,
+      "fast_total_p50_ms": 3.525,
+      "fast_total_sample_max_ms": 4.424
+    },
+    {
+      "segments_actual": 100,
+      "threats_authored": 4,
+      "route_tics": 94,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 4.764,
+      "compile_sample_max_ms": 5.183,
+      "fast_total_p50_ms": 5.875,
+      "fast_total_sample_max_ms": 7.134
+    },
+    {
+      "segments_actual": 100,
+      "threats_authored": 6,
+      "route_tics": 94,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 8.359,
+      "compile_sample_max_ms": 14.227,
+      "fast_total_p50_ms": 11.214,
+      "fast_total_sample_max_ms": 12.212
+    },
+    {
+      "segments_actual": 248,
+      "threats_authored": 2,
+      "route_tics": 125,
+      "compiled_jobs": 2,
+      "compile_p50_ms": 5.686,
+      "compile_sample_max_ms": 6.581,
+      "fast_total_p50_ms": 9.772,
+      "fast_total_sample_max_ms": 10.864
+    },
+    {
+      "segments_actual": 248,
+      "threats_authored": 4,
+      "route_tics": 125,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 7.578,
+      "compile_sample_max_ms": 9.883,
+      "fast_total_p50_ms": 11.883,
+      "fast_total_sample_max_ms": 13.601
+    },
+    {
+      "segments_actual": 248,
+      "threats_authored": 6,
+      "route_tics": 125,
+      "compiled_jobs": 6,
+      "compile_p50_ms": 12.093,
+      "compile_sample_max_ms": 12.46,
+      "fast_total_p50_ms": 24.91,
+      "fast_total_sample_max_ms": 25.457
+    },
+    {
+      "segments_actual": 500,
+      "threats_authored": 2,
+      "route_tics": 172,
+      "compiled_jobs": 2,
+      "compile_p50_ms": 11.981,
+      "compile_sample_max_ms": 15.337,
+      "fast_total_p50_ms": 16.625,
+      "fast_total_sample_max_ms": 21.243
+    },
+    {
+      "segments_actual": 500,
+      "threats_authored": 4,
+      "route_tics": 172,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 16.13,
+      "compile_sample_max_ms": 18.766,
+      "fast_total_p50_ms": 21.999,
+      "fast_total_sample_max_ms": 24.493
+    },
+    {
+      "segments_actual": 500,
+      "threats_authored": 6,
+      "route_tics": 172,
+      "compiled_jobs": 5,
+      "compile_p50_ms": 26.524,
+      "compile_sample_max_ms": 29.601,
+      "fast_total_p50_ms": 31.191,
+      "fast_total_sample_max_ms": 36.599
+    },
+    {
+      "segments_actual": 1000,
+      "threats_authored": 2,
+      "route_tics": 218,
+      "compiled_jobs": 2,
+      "compile_p50_ms": 21.433,
+      "compile_sample_max_ms": 37.017,
+      "fast_total_p50_ms": 29.372,
+      "fast_total_sample_max_ms": 33.673
+    },
+    {
+      "segments_actual": 1000,
+      "threats_authored": 4,
+      "route_tics": 218,
+      "compiled_jobs": 3,
+      "compile_p50_ms": 38.995,
+      "compile_sample_max_ms": 41.876,
+      "fast_total_p50_ms": 42.733,
+      "fast_total_sample_max_ms": 44.919
+    },
+    {
+      "segments_actual": 1000,
+      "threats_authored": 6,
+      "route_tics": 218,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 55.132,
+      "compile_sample_max_ms": 57.29,
+      "fast_total_p50_ms": 60.205,
+      "fast_total_sample_max_ms": 62.551
+    },
+    {
+      "segments_actual": 2500,
+      "threats_authored": 2,
+      "route_tics": 323,
+      "compiled_jobs": 2,
+      "compile_p50_ms": 40.091,
+      "compile_sample_max_ms": 41.972,
+      "fast_total_p50_ms": 61.214,
+      "fast_total_sample_max_ms": 63.772
+    },
+    {
+      "segments_actual": 2500,
+      "threats_authored": 4,
+      "route_tics": 323,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 60.563,
+      "compile_sample_max_ms": 62.015,
+      "fast_total_p50_ms": 81.573,
+      "fast_total_sample_max_ms": 202.283
+    },
+    {
+      "segments_actual": 2500,
+      "threats_authored": 6,
+      "route_tics": 323,
+      "compiled_jobs": 5,
+      "compile_p50_ms": 93.162,
+      "compile_sample_max_ms": 95.337,
+      "fast_total_p50_ms": 119.269,
+      "fast_total_sample_max_ms": 126.748
+    },
+    {
+      "segments_actual": 5000,
+      "threats_authored": 2,
+      "route_tics": 452,
+      "compiled_jobs": 2,
+      "compile_p50_ms": 82.913,
+      "compile_sample_max_ms": 89.747,
+      "fast_total_p50_ms": 139.002,
+      "fast_total_sample_max_ms": 159.534
+    },
+    {
+      "segments_actual": 5000,
+      "threats_authored": 4,
+      "route_tics": 452,
+      "compiled_jobs": 4,
+      "compile_p50_ms": 119.421,
+      "compile_sample_max_ms": 177.515,
+      "fast_total_p50_ms": 164.369,
+      "fast_total_sample_max_ms": 288.267
+    },
+    {
+      "segments_actual": 5000,
+      "threats_authored": 6,
+      "route_tics": 452,
+      "compiled_jobs": 5,
+      "compile_p50_ms": 184.255,
+      "compile_sample_max_ms": 194.968,
+      "fast_total_p50_ms": 229.212,
+      "fast_total_sample_max_ms": 349.853
+    }
+  ],
+  "track_b_scheduler_scaling": [
+    {
+      "num_jobs": 2,
+      "permutations_j_fact": 2,
+      "scheduler_p50_ms": 0.018,
+      "scheduler_sample_max_ms": 0.022
+    },
+    {
+      "num_jobs": 3,
+      "permutations_j_fact": 6,
+      "scheduler_p50_ms": 0.061,
+      "scheduler_sample_max_ms": 0.111
+    },
+    {
+      "num_jobs": 4,
+      "permutations_j_fact": 24,
+      "scheduler_p50_ms": 0.289,
+      "scheduler_sample_max_ms": 0.506
+    },
+    {
+      "num_jobs": 5,
+      "permutations_j_fact": 120,
+      "scheduler_p50_ms": 1.581,
+      "scheduler_sample_max_ms": 2.603
+    },
+    {
+      "num_jobs": 6,
+      "permutations_j_fact": 720,
+      "scheduler_p50_ms": 9.734,
+      "scheduler_sample_max_ms": 11.699
+    },
+    {
+      "num_jobs": 7,
+      "permutations_j_fact": 5040,
+      "scheduler_p50_ms": 82.561,
+      "scheduler_sample_max_ms": 94.841
+    },
+    {
+      "num_jobs": 8,
+      "permutations_j_fact": 40320,
+      "scheduler_p50_ms": 728.034,
+      "scheduler_sample_max_ms": 749.833
+    },
+    {
+      "num_jobs": 9,
+      "permutations_j_fact": 362880,
+      "scheduler_p50_ms": 6946.088,
+      "scheduler_sample_max_ms": 7035.774
+    },
+    {
+      "num_jobs": 10,
+      "permutations_j_fact": 3628800,
+      "scheduler_p50_ms": 81894.89,
+      "scheduler_sample_max_ms": 81894.89
+    }
+  ],
+  "track_c_telemetry_samples": [
+    {
+      "segments_actual": 48,
+      "threats_authored": 2,
+      "route_tics": 94,
+      "compiled_jobs": 2,
+      "telemetry_p50_ms": 11.755,
+      "telemetry_sample_max_ms": 12.054
+    },
+    {
+      "segments_actual": 248,
+      "threats_authored": 4,
+      "route_tics": 125,
+      "compiled_jobs": 4,
+      "telemetry_p50_ms": 50.648,
+      "telemetry_sample_max_ms": 51.472
+    },
+    {
+      "segments_actual": 500,
+      "threats_authored": 6,
+      "route_tics": 172,
+      "compiled_jobs": 5,
+      "telemetry_p50_ms": 163.242,
+      "telemetry_sample_max_ms": 170.791
+    },
+    {
+      "segments_actual": 1000,
+      "threats_authored": 6,
+      "route_tics": 218,
+      "compiled_jobs": 4,
+      "telemetry_p50_ms": 345.501,
+      "telemetry_sample_max_ms": 347.106
+    },
+    {
+      "segments_actual": 2500,
+      "threats_authored": 6,
+      "route_tics": 323,
+      "compiled_jobs": 5,
+      "telemetry_p50_ms": 767.062,
+      "telemetry_sample_max_ms": 798.058
+    }
+  ],
+  "peak_memory_mb": 1.96
+}

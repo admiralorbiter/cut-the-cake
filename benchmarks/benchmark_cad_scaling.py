@@ -1,11 +1,14 @@
-"""Multi-Phase Scaling Benchmark for Cut the Cake CAD Engine.
+"""Performance & Scaling Benchmarks for Tactical CAD.
 
-Phased execution:
-- Phase 1: Full 35-cell matrix (7 segment counts x 5 threat counts) measuring
-  warmup-stabilized p50 and p95 latencies for Job Compilation, L* Scheduling,
-  and Fast Total Analysis.
-- Phase 2: Representative anchor cells for Full Telemetry simulation.
-- Phase 3: Separate memory footprint profiling without timing interference.
+Structured into 3 decoupled measurement tracks:
+- Track A (Geometry Raycasting Scaling): Evaluates line-of-sight compile scaling
+  across segment tiers (50 to 5,000 segments) with bounded threat counts (2, 4, 6)
+  to cleanly isolate raycast cost from scheduler combinatorial explosion.
+- Track B (Exact Scheduler Factorial Scaling): Measures DiscreteTicScheduler.solve
+  latency across job counts J in {2, 3, 4, 5, 6, 7, 8, 9, 10} to quantify the O(J! * J)
+  permutation enumeration curve.
+- Track C (Full Telemetry Simulation & Memory): Measures end-to-end interactive
+  playback simulation latency and peak memory allocation.
 """
 
 from __future__ import annotations
@@ -27,12 +30,12 @@ from cut_the_cake.cad_adapter import analyze_cad_document
 from cut_the_cake.vizdoom_engine import (
     DeterministicSimulationReferee,
     DiscreteTicScheduler,
-    TicCombatParameters,
+    TicThreatJob,
 )
 
 
 def generate_scaling_document(num_segments: int, num_threats: int) -> CADDocument:
-    """Generate a synthetic graybox corridor with approximately num_segments and num_threats."""
+    """Generate synthetic graybox corridor with num_segments and num_threats."""
     obstacles = []
     num_boxes = max(1, num_segments // 4)
     cols = int(math.ceil(math.sqrt(num_boxes)))
@@ -117,37 +120,29 @@ def _timed_runs(fn, runs: int = 5, warmup: int = 1) -> tuple[float, float]:
 
 def run_scaling_benchmark(output_path: str = "benchmarks/results_scaling.json") -> dict[str, Any]:
     segment_counts = [50, 100, 250, 500, 1000, 2500, 5000]
-    threat_counts = [2, 4, 8, 12, 20]
+    geometry_threat_counts = [2, 4, 6]
     
-    print("=" * 102)
-    print("CUT THE CAKE - PHASE 1: GEOMETRY & THREAT SCALING (FAST ANALYSIS MATRIX)")
-    print("=" * 102)
-    print(f"{'Segments':<10} | {'Threats':<8} | {'Route Tics':<11} | {'Jobs':<6} | {'Job Comp (p50/max ms)':<24} | {'Sched (p50 ms)':<16} | {'Fast Tot (p50/max ms)':<22}")
-    print("-" * 102)
+    print("=" * 105)
+    print("CUT THE CAKE - TRACK A: GEOMETRY RAYCASTING SCALING (BOUNDED THREATS J <= 6)")
+    print("=" * 105)
+    print(f"{'Segments':<10} | {'Threats':<8} | {'Route Tics':<11} | {'Jobs':<6} | {'Job Comp (p50/max ms)':<25} | {'Fast Tot (p50/max ms)':<22}")
+    print("-" * 105)
 
-    phase1_results = []
+    track_a_results = []
     for seg in segment_counts:
-        for th in threat_counts:
+        for th in geometry_threat_counts:
             doc = generate_scaling_document(seg, th)
             actual_segs = sum(len(o.vertices) for o in doc.obstacles)
             params = doc.player_model.to_combat_params()
             geo_module = doc.to_geometric_module()
             referee = DeterministicSimulationReferee(params)
-            scheduler = DiscreteTicScheduler(params)
 
-            # Route tics and extracted jobs
             route = geo_module.routes[0]
             route_tics = int(math.ceil(route.total_length_m / params.move_m_per_tic))
             jobs = referee.extract_tic_jobs(geo_module, route_index=0)
             compiled_jobs = len(jobs)
 
-            # Job compilation timing
             c_p50, c_max = _timed_runs(lambda: referee.extract_tic_jobs(geo_module, route_index=0), runs=5)
-            
-            # Scheduler timing (exact permutation scheduler: O(J! * J))
-            s_p50, s_max = _timed_runs(lambda: scheduler.solve(jobs), runs=5)
-
-            # Fast analysis timing
             f_p50, f_max = _timed_runs(lambda: analyze_cad_document(doc, include_telemetry=False), runs=5)
 
             row = {
@@ -157,29 +152,63 @@ def run_scaling_benchmark(output_path: str = "benchmarks/results_scaling.json") 
                 "compiled_jobs": compiled_jobs,
                 "compile_p50_ms": c_p50,
                 "compile_sample_max_ms": c_max,
-                "scheduler_p50_ms": s_p50,
-                "scheduler_sample_max_ms": s_max,
                 "fast_total_p50_ms": f_p50,
                 "fast_total_sample_max_ms": f_max,
             }
-            phase1_results.append(row)
+            track_a_results.append(row)
             print(
                 f"{actual_segs:<10} | {th:<8} | {route_tics:<11} | {compiled_jobs:<6} | "
-                f"{f'{c_p50:.2f} / {c_max:.2f}':<24} | {s_p50:<16.2f} | {f'{f_p50:.2f} / {f_max:.2f}':<22}"
+                f"{f'{c_p50:.2f} / {c_max:.2f}':<25} | {f'{f_p50:.2f} / {f_max:.2f}':<22}"
             )
 
     print("\n" + "=" * 90)
-    print("CUT THE CAKE - PHASE 2: REPRESENTATIVE FULL TELEMETRY SIMULATION")
+    print("CUT THE CAKE - TRACK B: EXACT SCHEDULER FACTORIAL SCALING O(J! * J)")
+    print("=" * 90)
+    print(f"{'Compiled Jobs (J)':<20} | {'Permutations J!':<22} | {'Scheduler p50 (ms)':<20} | {'Sample Max (ms)':<18}")
+    print("-" * 90)
+
+    doc_sample = generate_scaling_document(50, 2)
+    params = doc_sample.player_model.to_combat_params()
+    scheduler = DiscreteTicScheduler(params)
+
+    track_b_results = []
+    for num_j in range(2, 11):
+        test_jobs = [
+            TicThreatJob(
+                id=f"job_{i}",
+                reveal_tic=i * 5,
+                due_window_tics=20,
+                deadline_tic=i * 5 + 20,
+                angle_deg=float((i * 45) % 360),
+                threat_anchor=(float(i), 2.0),
+                service_duration_tics=4,
+            )
+            for i in range(num_j)
+        ]
+        perms = math.factorial(num_j)
+        runs_count = 5 if num_j <= 8 else (3 if num_j == 9 else 1)
+        s_p50, s_max = _timed_runs(lambda: scheduler.solve(test_jobs), runs=runs_count)
+
+        row = {
+            "num_jobs": num_j,
+            "permutations_j_fact": perms,
+            "scheduler_p50_ms": s_p50,
+            "scheduler_sample_max_ms": s_max,
+        }
+        track_b_results.append(row)
+        print(f"{num_j:<20} | {perms:<22} | {s_p50:<20.2f} | {s_max:<18.2f}")
+
+    print("\n" + "=" * 90)
+    print("CUT THE CAKE - TRACK C: REPRESENTATIVE FULL TELEMETRY SIMULATION")
     print("=" * 90)
     print(f"{'Segments':<10} | {'Threats':<8} | {'Route Tics':<11} | {'Jobs':<6} | {'Telemetry p50 (ms)':<20} | {'Telemetry sample_max (ms)':<26}")
     print("-" * 90)
 
-    phase2_cells = [(50, 2), (250, 4), (500, 8), (1000, 12), (2500, 20)]
-    phase2_results = []
-    for seg, th in phase2_cells:
+    track_c_cells = [(50, 2), (250, 4), (500, 6), (1000, 6), (2500, 6)]
+    track_c_results = []
+    for seg, th in track_c_cells:
         doc = generate_scaling_document(seg, th)
         actual_segs = sum(len(o.vertices) for o in doc.obstacles)
-        params = doc.player_model.to_combat_params()
         geo_module = doc.to_geometric_module()
         referee = DeterministicSimulationReferee(params)
         route = geo_module.routes[0]
@@ -196,30 +225,31 @@ def run_scaling_benchmark(output_path: str = "benchmarks/results_scaling.json") 
             "telemetry_p50_ms": t_p50,
             "telemetry_sample_max_ms": t_max,
         }
-        phase2_results.append(row)
+        track_c_results.append(row)
         print(f"{actual_segs:<10} | {th:<8} | {route_tics:<11} | {compiled_jobs:<6} | {t_p50:<20.2f} | {t_max:<26.2f}")
 
-    # Phase 3: Memory footprint
+    # Peak memory allocation
     print("\n" + "=" * 90)
-    print("CUT THE CAKE - PHASE 3: PEAK MEMORY ALLOCATION")
+    print("CUT THE CAKE: PEAK MEMORY ALLOCATION")
     print("=" * 90)
     tracemalloc.start()
-    doc_heavy = generate_scaling_document(5000, 20)
+    doc_heavy = generate_scaling_document(5000, 6)
     _ = analyze_cad_document(doc_heavy, include_telemetry=False)
-    current_mem, peak_mem = tracemalloc.get_traced_memory()
+    _, peak_mem = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     peak_mb = round(peak_mem / (1024 * 1024), 2)
-    print(f"Peak memory for 5000-segment / 20-threat document analysis: {peak_mb} MB")
+    print(f"Peak memory for 5000-segment / 6-threat document analysis: {peak_mb} MB")
 
     full_payload = {
         "metadata": {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "python_version": "3.12",
-            "notes": "Synthetic generator scales both obstacle segments and corridor length (route_tics). Scheduler is factorial O(J! * J) in compiled jobs J."
+            "notes": "Track A isolates 2D raycasting scaling across geometry tiers. Track B measures exact scheduler factorial curve O(J! * J). Track C measures full telemetry playback."
         },
-        "phase1_fast_matrix": phase1_results,
-        "phase2_telemetry_samples": phase2_results,
-        "phase3_peak_memory_mb": peak_mb,
+        "track_a_geometry_scaling": track_a_results,
+        "track_b_scheduler_scaling": track_b_results,
+        "track_c_telemetry_samples": track_c_results,
+        "peak_memory_mb": peak_mb,
     }
     with open(output_path, "w") as f:
         json.dump(full_payload, f, indent=2)
