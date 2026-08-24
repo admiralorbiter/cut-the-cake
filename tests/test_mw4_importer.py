@@ -1,6 +1,8 @@
 """Tests for MW4 Beta Overhead Map Importer & Vectorization Pipeline."""
 
 import os
+import json
+import cv2
 import numpy as np
 import pytest
 
@@ -10,14 +12,17 @@ from cut_the_cake.importers.mw4_trace import (
     MapTraceUncertainRegion,
     crop_overhead_diagram,
     segment_map_obstacles_and_boundary,
+    render_vector_overlay,
     build_mw4_trace_draft,
     project_trace_draft_to_cad_document,
-    create_transit_213_synthetic_reference
+    create_synthetic_test_card,
+    create_transit_213_official_crop_asset
 )
+from cut_the_cake.cad_document import CADRoute
 
 
 def test_map_trace_draft_serialization_roundtrip(tmp_path):
-    """Verify MapTraceDraft serialization and deserialization."""
+    """Verify MapTraceDraft serialization and deserialization with unreviewed status."""
     draft = MapTraceDraft(
         source={
             "map_name": "Transit 213",
@@ -31,11 +36,12 @@ def test_map_trace_draft_serialization_roundtrip(tmp_path):
         boundary_px=[[0.0, 0.0], [600.0, 0.0], [600.0, 600.0], [0.0, 600.0], [0.0, 0.0]],
         regions=[
             MapTraceRegion(
-                id="bus_001",
+                id="obs_001",
                 polygon_px=[[240.0, 180.0], [350.0, 180.0], [350.0, 215.0], [240.0, 215.0], [240.0, 180.0]],
-                classification="bus",
-                confidence=0.92,
-                notes="Central North Bus"
+                classification="solid_structure",
+                confidence=None,
+                review_status="unreviewed",
+                notes="Central North Structure"
             )
         ],
         uncertain_regions=[
@@ -43,7 +49,8 @@ def test_map_trace_draft_serialization_roundtrip(tmp_path):
                 id="unc_001",
                 bbox_px=[100.0, 100.0, 200.0, 200.0],
                 classification="possible_interior",
-                confidence=0.60,
+                confidence=None,
+                review_status="unreviewed",
                 notes="Overhead roof occludes ground path"
             )
         ]
@@ -55,30 +62,73 @@ def test_map_trace_draft_serialization_roundtrip(tmp_path):
     loaded = MapTraceDraft.load_json(save_path)
     assert loaded.source["map_name"] == "Transit 213"
     assert len(loaded.regions) == 1
-    assert loaded.regions[0].id == "bus_001"
-    assert loaded.regions[0].classification == "bus"
+    assert loaded.regions[0].id == "obs_001"
+    assert loaded.regions[0].classification == "solid_structure"
+    assert loaded.regions[0].confidence is None
+    assert loaded.regions[0].review_status == "unreviewed"
     assert len(loaded.uncertain_regions) == 1
 
 
-def test_transit_213_classical_segmentation_and_draft():
-    """Verify classical CV segmentation on Transit 213 diagram."""
-    ref_img = create_transit_213_synthetic_reference()
-    assert ref_img.shape == (600, 600, 3)
+def test_transit_213_real_crop_segmentation_and_overlay(tmp_path):
+    """Verify hierarchy-filtered segmentation on Transit 213 layout crop."""
+    crop_img = create_transit_213_official_crop_asset()
+    assert crop_img.shape == (480, 480, 3)
 
     draft = build_mw4_trace_draft(
         map_name="Transit 213",
         source_url="https://www.callofduty.com/blog/2026/08/transit-213",
-        image_crop=ref_img,
-        min_area_px=100.0,
+        image_crop=crop_img,
+        min_area_px=60.0,
         simplify_epsilon=2.0
     )
 
     assert draft.source["map_name"] == "Transit 213"
     assert len(draft.boundary_px) >= 4
-    assert len(draft.regions) >= 5  # 4 buses + repair shop + gas station + crate
+    # Exactly 7 discrete interior obstacles: 2 buildings + 4 buses + 1 crate
+    assert len(draft.regions) == 7
 
-    # Check projection to CADDocument
-    cad_doc = project_trace_draft_to_cad_document(draft, scale_px_per_m=20.0)
+    # Verify no perimeter outline is emitted as a giant obstacle
+    total_area = 480 * 480
+    for r in draft.regions:
+        pts = np.array(r.polygon_px, dtype=np.int32)
+        area = float(cv2.contourArea(pts))
+        assert area < 0.35 * total_area, f"Perimeter outline emitted as obstacle {r.id}"
+
+    # Verify vector overlay generation
+    overlay_path = str(tmp_path / "test_overlay.png")
+    overlay = render_vector_overlay(crop_img, draft, out_path=overlay_path)
+    assert os.path.exists(overlay_path)
+    assert overlay.shape == crop_img.shape
+
+
+def test_uncalibrated_map_trace_draft_cannot_become_cad_document():
+    """Verify that an uncalibrated MapTraceDraft cannot silently become a CADDocument."""
+    crop_img = create_transit_213_official_crop_asset()
+    draft = build_mw4_trace_draft(
+        map_name="Transit 213",
+        source_url="https://www.callofduty.com/blog/2026/08/transit-213",
+        image_crop=crop_img
+    )
+
+    # 1. Uncalibrated draft must raise ValueError
+    with pytest.raises(ValueError, match="Cannot promote uncalibrated MapTraceDraft"):
+        project_trace_draft_to_cad_document(draft)
+
+    # 2. Missing routes must raise ValueError
+    with pytest.raises(ValueError, match="at least one authored route"):
+        project_trace_draft_to_cad_document(
+            draft,
+            calibration={"px_per_meter": 20.0, "scale_basis": "traversal_calibrated"},
+            routes=[]
+        )
+
+    # 3. Valid calibration and authored route produces valid CADDocument
+    test_route = CADRoute(id="route_alpha", name="Main Lane", waypoints=[[-5.0, 0.0], [5.0, 0.0]])
+    cad_doc = project_trace_draft_to_cad_document(
+        draft,
+        calibration={"px_per_meter": 20.0, "scale_basis": "traversal_calibrated"},
+        routes=[test_route]
+    )
     assert cad_doc.document_id == "mw4_draft_transit_213"
     assert len(cad_doc.obstacles) == len(draft.regions)
-    assert cad_doc.metadata["provenance"] == "MW4 Beta Importer Spike"
+    assert len(cad_doc.routes) == 1

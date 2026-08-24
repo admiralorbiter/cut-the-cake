@@ -1,12 +1,19 @@
 {
-  "map_name": "Transit 213",
-  "difficulty_rank": "★ (Low)",
-  "planar_2d_confidence": "HIGH",
-  "setting": "Overgrown bus depot in western India",
-  "geometry_character": "Planar rectangular arena with abandoned bus occluders, gas station, and repair shop flanking central lanes.",
-  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
-  "retrieval_date": "2026-08-23",
-  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
-  "confidence_status": "reference_reconstruction",
-  "notes": "Ideal canonical first MW4 test case. Highly planar geometry dominated by rectangular bus occluders."
+  "official_metadata": {
+    "map_name": "Transit 213",
+    "setting": "Overgrown central bus depot in western India",
+    "official_description": "An overgrown central bus depot located in western India filled with derelict, brightly colored buses, flanked by a repair shop and a small gas station, surrounded by ongoing construction projects and tenement blocks. The buses create tight lanes, concealed ambush routes, and longer sightlines across the center lot.",
+    "source_page_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
+    "exact_image_asset_url": "https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/mw4/beta/maps/transit-213-card.webp",
+    "retrieval_timestamp": "2026-08-23T23:12:00Z",
+    "sha256": "8a31c5f3e9282df5846174a27329ef31d04494c23179df2011b93acfa2248554",
+    "crop_rectangle_px": [28, 235, 275, 482],
+    "extraction_version": "v2.0-spike2",
+    "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel"
+  },
+  "cut_the_cake_suitability": {
+    "difficulty_rank": "★ (Low)",
+    "planar_2d_confidence": "HIGH",
+    "analysis_notes": "Cut the Cake Inference: Highly planar rectangular arena dominated by rectangular bus occluders, perimeter yard fence, and two small flank buildings. Ideal canonical first MW4 test case."
+  }
 }

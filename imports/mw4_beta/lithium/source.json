@@ -1,12 +1,15 @@
 {
-  "map_name": "Lithium",
-  "difficulty_rank": "★★–★★★ (Medium)",
-  "planar_2d_confidence": "MEDIUM",
-  "setting": "Lithium processing refinery in rural Mexico",
-  "geometry_character": "Industrial structure with catwalks, heavy tanks, and interactive security doors.",
-  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-lithium",
-  "retrieval_date": "2026-08-23",
-  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
-  "confidence_status": "reference_reconstruction",
-  "notes": "Introduces dynamic doors and catwalk sightlines requiring careful 2D projection."
+  "official_metadata": {
+    "map_name": "Lithium",
+    "setting": "Active lithium processing refinery in rural Mexico",
+    "official_description": "A lithium extraction and processing facility situated beneath the Sierra mountains. Features industrial reaction tanks, overhead maintenance catwalks, control rooms, and interactive security doors connecting the inner refinery to exterior loading bays.",
+    "source_page_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-lithium",
+    "retrieval_date": "2026-08-23",
+    "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel"
+  },
+  "cut_the_cake_suitability": {
+    "difficulty_rank": "★★–★★★ (Medium)",
+    "planar_2d_confidence": "MEDIUM",
+    "analysis_notes": "Cut the Cake Inference: Dynamic interactive doors introduce stateful geometric switching. Catwalks introduce secondary elevation layers requiring careful 2D planar projection."
+  }
 }

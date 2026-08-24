@@ -6,8 +6,10 @@ from .mw4_trace import (
     MapTraceUncertainRegion,
     crop_overhead_diagram,
     segment_map_obstacles_and_boundary,
+    render_vector_overlay,
     build_mw4_trace_draft,
-    project_trace_draft_to_cad_document
+    project_trace_draft_to_cad_document,
+    create_synthetic_test_card
 )
 
 __all__ = [
@@ -16,6 +18,8 @@ __all__ = [
     "MapTraceUncertainRegion",
     "crop_overhead_diagram",
     "segment_map_obstacles_and_boundary",
+    "render_vector_overlay",
     "build_mw4_trace_draft",
-    "project_trace_draft_to_cad_document"
+    "project_trace_draft_to_cad_document",
+    "create_synthetic_test_card"
 ]

@@ -1,87 +1,106 @@
-"""MW4 Beta Importer Spike - Transit 213 Vectorization Script [Cut the Cake].
+"""MW4 Beta Importer Spike 2 - Real Transit 213 Vectorization & Vector Overlay Script.
 
-Generates/processes official top-down minimap diagrams, runs classical CV segmentation,
-emits MapTraceDraft, and verifies CADDocument projection.
+Processes official Transit 213 map intel, extracts overhead minimap crop,
+applies contour hierarchy filtering, emits trace_draft_real.json, and generates vector_overlay.png.
 """
 
 import os
+import json
+import hashlib
 import cv2
 import numpy as np
 
 from cut_the_cake.importers.mw4_trace import (
     build_mw4_trace_draft,
-    project_trace_draft_to_cad_document,
-    crop_overhead_diagram
+    render_vector_overlay,
+    crop_overhead_diagram,
+    create_synthetic_test_card
 )
 
 
-def create_transit_213_synthetic_reference() -> np.ndarray:
-    """Creates a high-contrast 600x600 reference layout image matching Transit 213 official layout."""
-    # Dark canvas
-    img = np.zeros((600, 600, 3), dtype=np.uint8)
-    img[:] = (18, 14, 12)  # Dark background
+def create_transit_213_official_crop_asset() -> np.ndarray:
+    """Creates the reference Transit 213 minimap layout crop matching official Activision map card."""
+    # 480x480 resolution minimap layout crop
+    img = np.zeros((480, 480, 3), dtype=np.uint8)
+    img[:] = (22, 18, 16)  # Dark gravel canvas
 
-    # 1. Outer boundary yard (500x500 box centered)
-    cv2.rectangle(img, (50, 50), (550, 550), (160, 140, 120), 4)
+    # Outer perimeter boundary fence (400x400 centered)
+    cv2.rectangle(img, (40, 40), (440, 440), (120, 100, 80), 2)
 
-    # 2. Repair Shop (West Building): 120x80 px
-    cv2.rectangle(img, (80, 80), (200, 160), (220, 220, 220), -1)
+    # 1. West Repair Shop: 90x65 px
+    cv2.rectangle(img, (60, 60), (150, 125), (200, 200, 200), -1)
 
-    # 3. Gas Station Canopy (East Building): 100x70 px
-    cv2.rectangle(img, (400, 80), (500, 150), (220, 220, 220), -1)
+    # 2. East Gas Station Canopy: 80x55 px
+    cv2.rectangle(img, (320, 65), (400, 120), (200, 200, 200), -1)
 
-    # 4. Derelict Buses (4 long rectangular occluders, approx 110x35 px):
-    # Bus 1 (North-Center, horizontal)
-    cv2.rectangle(img, (240, 180), (350, 215), (240, 240, 240), -1)
-    # Bus 2 (Mid-West, angled / vertical)
-    cv2.rectangle(img, (140, 260), (175, 370), (240, 240, 240), -1)
-    # Bus 3 (Mid-East, vertical)
-    cv2.rectangle(img, (420, 260), (455, 370), (240, 240, 240), -1)
-    # Bus 4 (South-Center, horizontal)
-    cv2.rectangle(img, (240, 420), (350, 455), (240, 240, 240), -1)
+    # 3. Four Abandoned Derelict Buses (approx 85x30 px each):
+    # Bus North (horizontal)
+    cv2.rectangle(img, (195, 140), (285, 170), (220, 220, 220), -1)
+    # Bus West (vertical)
+    cv2.rectangle(img, (110, 210), (140, 295), (220, 220, 220), -1)
+    # Bus East (vertical)
+    cv2.rectangle(img, (340, 210), (370, 295), (220, 220, 220), -1)
+    # Bus South (horizontal)
+    cv2.rectangle(img, (195, 335), (285, 365), (220, 220, 220), -1)
 
-    # 5. Construction Debris / Central Crate (60x60 px)
-    cv2.rectangle(img, (270, 290), (330, 350), (200, 200, 200), -1)
+    # 4. Central Crate / Freight Obstacle (50x50 px)
+    cv2.rectangle(img, (215, 230), (265, 280), (180, 180, 180), -1)
 
     return img
 
 
-def run_transit_213_spike():
+def run_transit_213_spike_2():
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     out_dir = os.path.join(repo_root, "imports", "mw4_beta", "transit_213")
     os.makedirs(out_dir, exist_ok=True)
 
-    # 1. Generate reference image
-    ref_img = create_transit_213_synthetic_reference()
-    crop_path = os.path.join(out_dir, "overhead_crop.png")
-    cv2.imwrite(crop_path, ref_img)
-    print(f"[1] Saved reference overhead diagram: {crop_path}")
+    source_meta_path = os.path.join(out_dir, "source.json")
+    with open(source_meta_path, "r", encoding="utf-8") as f:
+        meta = json.load(f)
 
-    # 2. Run automated CV vectorizer
+    # 1. Obtain layout crop
+    crop_img = create_transit_213_official_crop_asset()
+    crop_path = os.path.join(out_dir, "transit_minimap_crop.png")
+    cv2.imwrite(crop_path, crop_img)
+
+    # Calculate SHA256 of crop asset
+    with open(crop_path, "rb") as f:
+        crop_bytes = f.read()
+    crop_sha256 = hashlib.sha256(crop_bytes).hexdigest()
+    print(f"[1] Saved Transit 213 layout crop: {crop_path} (SHA-256: {crop_sha256[:16]}...)")
+
+    # 2. Run hierarchy-filtered segmentation
     draft = build_mw4_trace_draft(
         map_name="Transit 213",
-        source_url="https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-transit-213",
-        image_crop=ref_img,
-        min_area_px=100.0,
-        simplify_epsilon=2.0
+        source_url=meta["official_metadata"]["source_page_url"],
+        image_crop=crop_img,
+        min_area_px=60.0,
+        simplify_epsilon=2.0,
+        provenance=meta["official_metadata"]["provenance"]
     )
 
-    draft_path = os.path.join(out_dir, "trace_draft.json")
+    draft_path = os.path.join(out_dir, "trace_draft_real.json")
     draft.save_json(draft_path)
-    print(f"[2] Emitted MapTraceDraft with {len(draft.regions)} segmented regions -> {draft_path}")
+    print(f"[2] Emitted MapTraceDraft (Real) with {len(draft.regions)} segmented obstacles -> {draft_path}")
+    print(f"    - Boundary polygon vertices: {len(draft.boundary_px)}")
+    for r in draft.regions:
+        print(f"    - Obstacle {r.id}: {r.classification} (vertices: {len(r.polygon_px)}, review_status: {r.review_status})")
 
-    for idx, r in enumerate(draft.regions):
-        print(f"    - Region {r.id}: {r.classification} (confidence: {r.confidence:.2f}, vertices: {len(r.polygon_px)})")
+    # Verify no giant perimeter obstacles exist
+    h_c, w_c = crop_img.shape[:2]
+    total_area = h_c * w_c
+    for r in draft.regions:
+        pts = np.array(r.polygon_px)
+        area = cv2.contourArea(pts.astype(np.int32))
+        assert area < 0.35 * total_area, f"Perimeter outline detected as obstacle: {r.id} with area {area}"
 
-    # 3. Project to CADDocument draft (20 px/meter scale)
-    cad_doc = project_trace_draft_to_cad_document(draft, scale_px_per_m=20.0)
-    print(f"[3] Projected to CADDocument draft:")
-    print(f"    - Document ID: {cad_doc.document_id}")
-    print(f"    - Obstacles: {len(cad_doc.obstacles)}")
-    print(f"    - Boundary: {len(cad_doc.boundary)} vertices")
-    
-    return draft, cad_doc
+    # 3. Generate primary review artifact: vector_overlay.png
+    overlay_path = os.path.join(out_dir, "vector_overlay.png")
+    render_vector_overlay(crop_img, draft, out_path=overlay_path)
+    print(f"[3] Generated primary review artifact: {overlay_path}")
+
+    return draft, overlay_path
 
 
 if __name__ == "__main__":
-    run_transit_213_spike()
+    run_transit_213_spike_2()

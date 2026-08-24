@@ -1,12 +1,15 @@
 {
-  "map_name": "Rooftops",
-  "difficulty_rank": "★★★★★ (Very High)",
-  "planar_2d_confidence": "LOW",
-  "setting": "Skyscraper rooftops in high-density metropolis with ziplines and vertical shafts",
-  "geometry_character": "High vertical disparity, multi-level drops, helipads, and mechanical penthouses.",
-  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-rooftops",
-  "retrieval_date": "2026-08-23",
-  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
-  "confidence_status": "reference_reconstruction",
-  "notes": "Planar 2D projection breaks down due to true vertical combat layers; canonical case study for Milestone 6 (2.5D)."
+  "official_metadata": {
+    "map_name": "Rooftops",
+    "setting": "High-density metropolis skyscraper rooftops",
+    "official_description": "Snow-covered skyscraper rooftops featuring mechanical penthouses, rooftop HVAC units, elevated helipads, connecting utility ziplines, and vertical maintenance shafts connecting multi-tier roof decks.",
+    "source_page_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-rooftops",
+    "retrieval_date": "2026-08-23",
+    "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel"
+  },
+  "cut_the_cake_suitability": {
+    "difficulty_rank": "★★★★★ (Very High)",
+    "planar_2d_confidence": "LOW",
+    "analysis_notes": "Cut the Cake Inference: Pure 2D planar projection breaks down due to distinct multi-tier roof decks and zipline connections. Canonical benchmark case study for Milestone 6 (2.5D elevation layers)."
+  }
 }

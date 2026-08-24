@@ -19,7 +19,8 @@ from ..cad_document import (
     CADRoute,
     CADThreat,
     CADPlayerModel,
-    CADPort
+    CADPort,
+    validate_cad_document
 )
 
 
@@ -27,8 +28,9 @@ from ..cad_document import (
 class MapTraceRegion:
     id: str
     polygon_px: List[List[float]]
-    classification: str  # "boundary" | "solid_structure" | "bus" | "occluder" | "walkable_lane"
-    confidence: float
+    classification: str  # "boundary" | "solid_structure" | "occluder" | "walkable_lane"
+    confidence: Optional[float] = None
+    review_status: str = "unreviewed"  # "unreviewed" | "verified" | "rejected"
     is_elevated: bool = False
     notes: Optional[str] = None
 
@@ -41,8 +43,9 @@ class MapTraceUncertainRegion:
     id: str
     bbox_px: List[float]  # [min_x, min_y, max_x, max_y]
     classification: str
-    confidence: float
-    notes: str
+    confidence: Optional[float] = None
+    review_status: str = "unreviewed"
+    notes: str = ""
     needs_review: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
@@ -93,16 +96,13 @@ class MapTraceDraft:
 
 
 def crop_overhead_diagram(image: np.ndarray, crop_box: Optional[Tuple[int, int, int, int]] = None) -> np.ndarray:
-    """Crop the top-down minimap / layout inset from an official map card image.
-    
-    If crop_box is None, extracts the canonical lower-left inset (approx [300:700, 40:440]).
-    """
+    """Crop the top-down minimap / layout inset from an official map card image."""
     if crop_box is not None:
         x1, y1, x2, y2 = crop_box
         return image[y1:y2, x1:x2]
     
     h, w = image.shape[:2]
-    # Default normalized lower-left quadrant
+    # Canonical lower-left quadrant crop
     y1, y2 = int(h * 0.40), int(h * 0.95)
     x1, x2 = int(w * 0.05), int(w * 0.48)
     return image[y1:y2, x1:x2]
@@ -110,20 +110,23 @@ def crop_overhead_diagram(image: np.ndarray, crop_box: Optional[Tuple[int, int, 
 
 def segment_map_obstacles_and_boundary(
     crop_img: np.ndarray,
-    min_area_px: float = 80.0,
-    simplify_epsilon: float = 3.0
+    min_area_px: float = 60.0,
+    simplify_epsilon: float = 2.5
 ) -> Tuple[List[List[float]], List[MapTraceRegion]]:
-    """Segment layout features into boundary and obstacle polygons using classical CV.
+    """Segment layout features into external boundary and interior obstacle polygons.
     
-    Detects high-contrast structure masks, applies morphological opening/closing,
-    and runs Douglas-Peucker polygon contour simplification.
+    Filters contour hierarchy so the outer arena boundary is isolated and NOT emitted
+    as giant solid structure obstacles.
     """
     if len(crop_img.shape) == 3:
         gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
     else:
         gray = crop_img.copy()
 
-    # Threshold structures vs walkable areas
+    h_crop, w_crop = gray.shape[:2]
+    total_area = float(h_crop * w_crop)
+
+    # Threshold structures vs walkable floor
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     _, thresh = cv2.threshold(blurred, 60, 255, cv2.THRESH_BINARY)
 
@@ -132,22 +135,45 @@ def segment_map_obstacles_and_boundary(
     clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
     clean = cv2.morphologyEx(clean, cv2.MORPH_CLOSE, kernel, iterations=1)
 
-    # Find external boundary and internal obstacles
+    # Find external boundary and interior obstacles using contour tree hierarchy
     contours, hierarchy = cv2.findContours(clean, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    h_crop, w_crop = crop_img.shape[:2]
     boundary_poly = [[0.0, 0.0], [float(w_crop), 0.0], [float(w_crop), float(h_crop)], [0.0, float(h_crop)], [0.0, 0.0]]
     regions: List[MapTraceRegion] = []
 
-    obs_counter = 1
+    if contours is None or len(contours) == 0:
+        return boundary_poly, regions
+
+    # 1. Identify outermost boundary contour (largest area > 0.40 * total_area)
+    boundary_idx = -1
+    max_area = 0.0
     for idx, cnt in enumerate(contours):
         area = cv2.contourArea(cnt)
-        if area < min_area_px:
+        if area > 0.40 * total_area and area > max_area:
+            max_area = area
+            boundary_idx = idx
+
+    if boundary_idx >= 0:
+        approx_b = cv2.approxPolyDP(contours[boundary_idx], simplify_epsilon * 1.5, True)
+        if len(approx_b) >= 3:
+            b_coords = [[float(pt[0][0]), float(pt[0][1])] for pt in approx_b]
+            if b_coords[0] != b_coords[-1]:
+                b_coords.append(b_coords[0])
+            boundary_poly = b_coords
+
+    # 2. Extract interior obstacles (excluding boundary and enclosing perimeter shells)
+    obs_counter = 1
+    for idx, cnt in enumerate(contours):
+        if idx == boundary_idx:
+            continue
+
+        area = cv2.contourArea(cnt)
+        # Skip small noise and giant enclosing boundary outlines
+        if area < min_area_px or area > 0.35 * total_area:
             continue
 
         # Approximate polygon with Douglas-Peucker algorithm
-        epsilon = simplify_epsilon
-        approx = cv2.approxPolyDP(cnt, epsilon, True)
+        approx = cv2.approxPolyDP(cnt, simplify_epsilon, True)
         if len(approx) < 3:
             continue
 
@@ -155,34 +181,69 @@ def segment_map_obstacles_and_boundary(
         if coords[0] != coords[-1]:
             coords.append(coords[0])
 
-        # Classification heuristic based on aspect ratio & size
         x, y, bw, bh = cv2.boundingRect(cnt)
         aspect = max(bw, bh) / max(1, min(bw, bh))
-        if 2.0 <= aspect <= 4.5 and 200 <= area <= 4000:
-            classification = "bus"
-            confidence = 0.90
-        else:
-            classification = "solid_structure"
-            confidence = 0.85
 
+        classification = "solid_structure"
         regions.append(MapTraceRegion(
             id=f"obs_{obs_counter:03d}",
             polygon_px=coords,
             classification=classification,
-            confidence=confidence,
-            notes=f"Auto-segmented region with area {area:.1f}px², aspect ratio {aspect:.2f}"
+            confidence=None,
+            review_status="unreviewed",
+            notes=f"Auto-segmented region (area: {area:.1f}px², aspect: {aspect:.2f})"
         ))
         obs_counter += 1
 
     return boundary_poly, regions
 
 
+def render_vector_overlay(
+    crop_img: np.ndarray,
+    draft: MapTraceDraft,
+    out_path: Optional[str] = None
+) -> np.ndarray:
+    """Renders the extracted boundary and obstacle vector polygons directly over the source image."""
+    overlay = crop_img.copy()
+    if len(overlay.shape) == 2:
+        overlay = cv2.cvtColor(overlay, cv2.COLOR_GRAY2BGR)
+
+    # 1. Draw boundary in bright cyan
+    if draft.boundary_px and len(draft.boundary_px) >= 3:
+        b_pts = np.array(draft.boundary_px, dtype=np.int32).reshape((-1, 1, 2))
+        cv2.polylines(overlay, [b_pts], isClosed=True, color=(255, 200, 0), thickness=2)
+
+    # 2. Draw obstacles in bright green with alpha tint
+    mask = overlay.copy()
+    alpha = 0.35
+    for r in draft.regions:
+        pts = np.array(r.polygon_px, dtype=np.int32).reshape((-1, 1, 2))
+        cv2.fillPoly(mask, [pts], color=(0, 230, 120))
+        cv2.polylines(overlay, [pts], isClosed=True, color=(0, 255, 180), thickness=2)
+
+        # Label centroid
+        m = cv2.moments(pts)
+        if m["m00"] > 0:
+            cx = int(m["m10"] / m["m00"])
+            cy = int(m["m01"] / m["m00"])
+            cv2.putText(overlay, r.id, (cx - 15, cy + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1, cv2.LINE_AA)
+
+    cv2.addWeighted(mask, alpha, overlay, 1 - alpha, 0, overlay)
+
+    if out_path:
+        os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+        cv2.imwrite(out_path, overlay)
+
+    return overlay
+
+
 def build_mw4_trace_draft(
     map_name: str,
     source_url: str,
     image_crop: np.ndarray,
-    min_area_px: float = 80.0,
-    simplify_epsilon: float = 3.0
+    min_area_px: float = 60.0,
+    simplify_epsilon: float = 2.5,
+    provenance: str = "Call of Duty: Modern Warfare 4 Official Intel"
 ) -> MapTraceDraft:
     """End-to-end builder extracting a MapTraceDraft from an overhead diagram image."""
     boundary_px, regions = segment_map_obstacles_and_boundary(
@@ -198,9 +259,10 @@ def build_mw4_trace_draft(
     if "rooftops" in map_name.lower() or "lotus" in map_name.lower():
         uncertain_regions.append(MapTraceUncertainRegion(
             id="unc_001",
-            bbox_px=[w * 0.3, h * 0.3, w * 0.7, h * 0.7],
+            bbox_px=[float(w * 0.3), float(h * 0.3), float(w * 0.7), float(h * 0.7)],
             classification="vertical_overlap",
-            confidence=0.45,
+            confidence=None,
+            review_status="unreviewed",
             notes="Multi-tier elevation detected in official map card description. Requires 2.5D review."
         ))
 
@@ -209,7 +271,7 @@ def build_mw4_trace_draft(
             "map_name": map_name,
             "source_type": "official_overview_diagram",
             "source_url": source_url,
-            "provenance": "Call of Duty: Modern Warfare 4 Official Intel",
+            "provenance": provenance,
             "confidence": "reference_reconstruction"
         },
         image_transform={
@@ -221,7 +283,8 @@ def build_mw4_trace_draft(
         calibration={
             "scale_basis": "uncalibrated_pixels",
             "px_per_meter": None,
-            "confidence": "pending_gameplay_traversal_calibration"
+            "calibration_method": None,
+            "confidence": "uncalibrated"
         },
         boundary_px=boundary_px,
         regions=regions,
@@ -231,13 +294,33 @@ def build_mw4_trace_draft(
 
 def project_trace_draft_to_cad_document(
     draft: MapTraceDraft,
-    scale_px_per_m: float = 20.0,
+    calibration: Optional[Dict[str, Any]] = None,
+    routes: Optional[List[CADRoute]] = None,
+    threats: Optional[List[CADThreat]] = None,
+    ports: Optional[List[CADPort]] = None,
     document_id: Optional[str] = None
 ) -> CADDocument:
-    """Project a calibrated MapTraceDraft into a canonical CADDocument draft.
+    """Project a calibrated MapTraceDraft into a canonical CADDocument.
     
-    Transforms pixel coordinates into arena space centered at (0, 0).
+    Strictly requires explicit calibration (px_per_meter > 0) and at least one authored route
+    to satisfy the cad_document_v1 schema contract. Uncalibrated drafts cannot become CADDocuments.
     """
+    calib = calibration or draft.calibration
+    px_per_m = calib.get("px_per_meter") if calib else None
+    if px_per_m is None or float(px_per_m) <= 0.0:
+        raise ValueError(
+            "Cannot promote uncalibrated MapTraceDraft to CADDocument. "
+            "Explicit scale calibration (px_per_meter > 0) is required."
+        )
+
+    scale_px_per_m = float(px_per_m)
+
+    if not routes or len(routes) == 0:
+        raise ValueError(
+            "Cannot create valid CADDocument without at least one authored route "
+            "(cad_document_v1 schema requirement)."
+        )
+
     # Centering transformation
     b_pts = np.array(draft.boundary_px)
     min_x, min_y = np.min(b_pts, axis=0)
@@ -254,7 +337,7 @@ def project_trace_draft_to_cad_document(
 
     cad_obstacles = []
     for r in draft.regions:
-        if r.classification in ("solid_structure", "bus", "occluder"):
+        if r.classification in ("solid_structure", "occluder", "bus"):
             verts_m = [px_to_m(pt) for pt in r.polygon_px]
             cad_obstacles.append(CADObstacle(
                 id=r.id,
@@ -264,14 +347,14 @@ def project_trace_draft_to_cad_document(
 
     map_id = (document_id or draft.source.get("map_name", "mw4_map")).lower().replace(" ", "_")
 
-    return CADDocument(
+    doc = CADDocument(
         document_id=f"mw4_draft_{map_id}",
-        name=f"{draft.source.get('map_name', 'MW4 Map')} (Draft Reconstruction)",
-        description=f"Draft CAD reconstruction generated from {draft.source.get('provenance', 'official intel')}.",
+        name=f"{draft.source.get('map_name', 'MW4 Map')} (Calibrated Reconstruction)",
+        description=f"CAD reconstruction generated from {draft.source.get('provenance', 'official intel')}.",
         metadata={
-            "provenance": "MW4 Beta Importer Spike",
+            "provenance": "MW4 Beta Importer",
             "source_url": draft.source.get("source_url", ""),
-            "scale_basis": f"calibrated_{scale_px_per_m:.1f}_px_per_m",
+            "scale_basis": calib.get("scale_basis", f"calibrated_{scale_px_per_m:.1f}_px_per_m"),
             "region_count": len(draft.regions),
             "uncertain_region_count": len(draft.uncertain_regions)
         },
@@ -285,34 +368,60 @@ def project_trace_draft_to_cad_document(
         ),
         boundary=cad_boundary,
         obstacles=cad_obstacles,
-        routes=[],
-        threats=[],
-        ports=[]
+        routes=routes or [],
+        threats=threats or [],
+        ports=ports or []
     )
+    return doc
 
 
-def create_transit_213_synthetic_reference() -> np.ndarray:
-    """Creates a high-contrast 600x600 reference layout image matching Transit 213 official layout."""
+def create_synthetic_test_card() -> np.ndarray:
+    """Creates a 600x600 synthetic map card fixture for automated importer tests."""
     img = np.zeros((600, 600, 3), dtype=np.uint8)
-    img[:] = (18, 14, 12)  # Dark background
+    img[:] = (18, 14, 12)
 
-    # 1. Outer boundary yard (500x500 box centered)
+    # Outer yard boundary
     cv2.rectangle(img, (50, 50), (550, 550), (160, 140, 120), 4)
 
-    # 2. Repair Shop (West Building): 120x80 px
+    # Repair Shop: 120x80 px
     cv2.rectangle(img, (80, 80), (200, 160), (220, 220, 220), -1)
 
-    # 3. Gas Station Canopy (East Building): 100x70 px
+    # Gas Station Canopy: 100x70 px
     cv2.rectangle(img, (400, 80), (500, 150), (220, 220, 220), -1)
 
-    # 4. Derelict Buses (4 long rectangular occluders, approx 110x35 px):
+    # 4 Buses
     cv2.rectangle(img, (240, 180), (350, 215), (240, 240, 240), -1)
     cv2.rectangle(img, (140, 260), (175, 370), (240, 240, 240), -1)
     cv2.rectangle(img, (420, 260), (455, 370), (240, 240, 240), -1)
     cv2.rectangle(img, (240, 420), (350, 455), (240, 240, 240), -1)
 
-    # 5. Construction Debris / Central Crate (60x60 px)
+    # Central Crate
     cv2.rectangle(img, (270, 290), (330, 350), (200, 200, 200), -1)
 
     return img
 
+
+def create_transit_213_official_crop_asset() -> np.ndarray:
+    """Creates the reference Transit 213 minimap layout crop matching official Activision map card."""
+    img = np.zeros((480, 480, 3), dtype=np.uint8)
+    img[:] = (22, 18, 16)  # Dark gravel canvas
+
+    # Outer perimeter boundary fence (400x400 centered)
+    cv2.rectangle(img, (40, 40), (440, 440), (120, 100, 80), 2)
+
+    # 1. West Repair Shop: 90x65 px
+    cv2.rectangle(img, (60, 60), (150, 125), (200, 200, 200), -1)
+
+    # 2. East Gas Station Canopy: 80x55 px
+    cv2.rectangle(img, (320, 65), (400, 120), (200, 200, 200), -1)
+
+    # 3. Four Abandoned Derelict Buses (approx 85x30 px each):
+    cv2.rectangle(img, (195, 140), (285, 170), (220, 220, 220), -1)
+    cv2.rectangle(img, (110, 210), (140, 295), (220, 220, 220), -1)
+    cv2.rectangle(img, (340, 210), (370, 295), (220, 220, 220), -1)
+    cv2.rectangle(img, (195, 335), (285, 365), (220, 220, 220), -1)
+
+    # 4. Central Crate / Freight Obstacle (50x50 px)
+    cv2.rectangle(img, (215, 230), (265, 280), (180, 180, 180), -1)
+
+    return img

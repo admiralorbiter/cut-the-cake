@@ -39,6 +39,11 @@ cad = [
     "flask>=3.0.0",
     "jsonschema>=4.0.0"
 ]
+importer = [
+    "opencv-python>=4.8.0",
+    "pillow>=9.0.0",
+    "requests>=2.28.0"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

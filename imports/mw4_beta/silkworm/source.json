@@ -1,12 +1,15 @@
 {
-  "map_name": "Silkworm",
-  "difficulty_rank": "★★ (Medium-Low)",
-  "planar_2d_confidence": "HIGH",
-  "setting": "South Korean neon-lit shopping district and subway entrance",
-  "geometry_character": "Ground-level street combat with tight alleys, storefront interiors, and central stairs.",
-  "official_source_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-silkworm",
-  "retrieval_date": "2026-08-23",
-  "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel",
-  "confidence_status": "reference_reconstruction",
-  "notes": "Strong 2D applicability with straightforward shop partitions."
+  "official_metadata": {
+    "map_name": "Silkworm",
+    "setting": "Neon-lit South Korean commercial shopping district and subway entrance",
+    "official_description": "An urban commercial district in South Korea featuring narrow street alleys, ground-level convenience stores, a gaming den interior, and a central sunken subway entrance designed for rapid boots-on-the-ground skirmishes.",
+    "source_page_url": "https://www.callofduty.com/blog/2026/08/call-of-duty-modern-warfare-4-beta-maps-intel-silkworm",
+    "retrieval_date": "2026-08-23",
+    "provenance": "Activision / Infinity Ward Call of Duty: Modern Warfare 4 Official Intel"
+  },
+  "cut_the_cake_suitability": {
+    "difficulty_rank": "★★ (Medium-Low)",
+    "planar_2d_confidence": "HIGH",
+    "analysis_notes": "Cut the Cake Inference: Strong 2D planar applicability. Most engagements occur on the street and interior floor planes, with straightforward solid partitions."
+  }
 }
