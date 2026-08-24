@@ -1462,7 +1462,8 @@ def analyze_cad_document(
         "model_death_tic": model_death_tic,
         "telemetry_frames": telemetry_frames_output,
         "events": events_output,
-        "heatmap_available": True
+        "heatmap_available": True,
+        "source_doc_hash": doc.compute_hash()
     }
 
 
@@ -2066,19 +2067,25 @@ def compute_cad_route_spatial_heatmap(
  
     # 1. Precompute Route Line-of-Sight Matrix LOS[k, j]
     num_threats = len(geo_module.threats)
-    los_matrix = np.zeros((total_tics + 1, num_threats), dtype=int)
     sample_positions = []
     sample_headings = []
     sample_distances = []
- 
+
     for k in range(total_tics + 1):
-        s_k = min(k * params.move_m_per_tic, total_length_m)
+        s_k = k * params.move_m_per_tic
+        if s_k > total_length_m:
+            break
         pos_k = geo_route.position_at_distance(s_k)
         heading_k = geo_route.forward_heading_at_distance(s_k)
         sample_distances.append(s_k)
         sample_positions.append(pos_k)
         sample_headings.append(heading_k)
- 
+
+    num_samples = len(sample_distances)
+    los_matrix = np.zeros((num_samples, num_threats), dtype=int)
+
+    for k in range(num_samples):
+        pos_k = sample_positions[k]
         for j_idx, threat in enumerate(geo_module.threats):
             qx, qy = threat.threat_anchor
             blocked = False
@@ -2088,23 +2095,23 @@ def compute_cad_route_spatial_heatmap(
                     break
             if not blocked:
                 los_matrix[k, j_idx] = 1
- 
+
     # 2. Solver Envelope Policy (Strict J <= 6 for live repeated scheduling)
     is_envelope_unsupported = (num_full_jobs > max_exact_jobs and not allow_slow_solver)
- 
+
     scheduler = DiscreteTicScheduler(params)
     samples: List[Dict[str, Any]] = []
- 
-    for k in range(total_tics + 1):
+
+    for k in range(num_samples):
         s_k = sample_distances[k]
         pos_k = sample_positions[k]
         heading_k = sample_headings[k]
- 
+
         # Active visible threats at current position
         active_threat_indices = [j_idx for j_idx in range(num_threats) if los_matrix[k, j_idx] == 1]
         active_threat_ids = [geo_module.threats[j_idx].id for j_idx in active_threat_indices]
         los_k = len(active_threat_ids)
- 
+
         # Minimum active deadline headroom delta_min(k) on original full-route clock
         headrooms = []
         for t_id in active_threat_ids:
@@ -2112,7 +2119,7 @@ def compute_cad_route_spatial_heatmap(
                 fj = full_job_map[t_id]
                 headrooms.append(fj.deadline_tic - k)
         min_headroom_tics = min(headrooms) if headrooms else None
- 
+
         # Build suffix encounter starting at tic k
         suffix_jobs: List[TicThreatJob] = []
         for j_idx, threat in enumerate(geo_module.threats):
@@ -2121,18 +2128,18 @@ def compute_cad_route_spatial_heatmap(
             if len(vis_indices) > 0:
                 rel_reveal = int(vis_indices[0])  # relative to k
                 abs_reveal = k + rel_reveal
-                s_rev = min(abs_reveal * params.move_m_per_tic, total_length_m)
+                s_rev = abs_reveal * params.move_m_per_tic
                 pos_rev = geo_route.position_at_distance(s_rev)
                 fwd_rev = geo_route.forward_heading_at_distance(s_rev)
- 
+
                 qx, qy = threat.threat_anchor
                 target_heading = heading_to_deg(pos_rev, (qx, qy))
                 vis_angle_deg = normalize_angle_deg(target_heading - fwd_rev)
- 
+
                 due_window_tics = int(math.ceil(threat.authored_due_window_s * params.ticrate_hz))
                 serv_dur_tics = int(math.ceil(threat.service_duration_s * params.ticrate_hz))
                 deadline_tic = rel_reveal + due_window_tics
- 
+
                 # Preserve full floating-point precision for angle_deg to ensure exact scheduler parity
                 suffix_jobs.append(TicThreatJob(
                     id=threat.id,
@@ -2143,10 +2150,10 @@ def compute_cad_route_spatial_heatmap(
                     threat_anchor=(float(qx), float(qy)),
                     service_duration_tics=serv_dur_tics
                 ))
- 
+
         suffix_jobs.sort(key=lambda j: j.reveal_tic)
         num_suffix_jobs = len(suffix_jobs)
- 
+
         if is_envelope_unsupported:
             status_band = "UNSUPPORTED"
             suffix_margin_tics = None
@@ -2156,26 +2163,21 @@ def compute_cad_route_spatial_heatmap(
             suffix_margin_tics = None
             color = "#64748b"
         else:
-            try:
-                sched_res = scheduler.solve(
-                    suffix_jobs,
-                    initial_reticle_deg=doc.player_model.initial_reticle_deg,
-                    allow_slow_solver=allow_slow_solver
-                )
-                suffix_margin_tics = sched_res.tactical_margin_tics
-                if suffix_margin_tics < 0:
-                    status_band = "CRITICAL"
-                    color = "#ef4444"
-                elif suffix_margin_tics < 2:
-                    status_band = "CONTESTED"
-                    color = "#eab308"
-                else:
-                    status_band = "SAFE"
-                    color = "#22c55e"
-            except Exception:
-                status_band = "UNSUPPORTED"
-                suffix_margin_tics = None
-                color = "#a855f7"
+            sched_res = scheduler.solve(
+                suffix_jobs,
+                initial_reticle_deg=doc.player_model.initial_reticle_deg,
+                allow_slow_solver=allow_slow_solver
+            )
+            suffix_margin_tics = sched_res.tactical_margin_tics
+            if suffix_margin_tics < 0:
+                status_band = "CRITICAL"
+                color = "#ef4444"
+            elif suffix_margin_tics < 2:
+                status_band = "CONTESTED"
+                color = "#eab308"
+            else:
+                status_band = "SAFE"
+                color = "#22c55e"
  
         samples.append({
             "tic": k,

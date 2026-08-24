@@ -288,10 +288,22 @@ def test_cad_e2e_spatial_heatmap(cad_server_url):
         page.goto(cad_server_url, wait_until="networkidle")
         page.wait_for_selector("#fixtureBadge")
 
+        # Track outgoing heatmap request payloads
+        heatmap_requests = []
+        page.on("request", lambda req: heatmap_requests.append(req.post_data_json) if "/api/document/heatmap" in req.url and req.post_data else None)
+
         # 2. Toggle Heatmap via [H] button
         page.click("#btnToggleHeatmap")
         page.wait_for_selector("#heatmapLegend", state="visible", timeout=5000)
         assert "active" in page.get_attribute("#btnToggleHeatmap", "class")
+
+        # Verify outgoing request contained valid 16-character expected_doc_hash
+        page.wait_for_timeout(300)
+        assert len(heatmap_requests) > 0
+        last_req = heatmap_requests[-1]
+        assert "expected_doc_hash" in last_req
+        assert last_req["expected_doc_hash"] is not None
+        assert len(last_req["expected_doc_hash"]) == 16
 
         # 3. Hover over route entrance to inspect tooltip
         canvas = page.locator("#mapCanvas")

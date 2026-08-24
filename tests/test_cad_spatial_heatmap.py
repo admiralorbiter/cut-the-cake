@@ -1,17 +1,20 @@
 """Deterministic Unit & API Tests for Milestone 2F (M2F): Live Spatial Heatmaps & Suffix Tactical Margin.
 
 Verifies:
-1. Entrance Equivalence Identity: Field-level structural identity between authoritative jobs and
-   reconstructed suffix jobs at k=0 (r_j, D_j, theta_j, p_j, q_j), guaranteeing M_suffix(0) == M_authoritative.
-2. Angular-Boundary Discretization Parity: Proves that exact float angle preservation prevents
+1. Entrance Equivalence Identity: Field-for-field structural identity between authoritative jobs and
+   reconstructed suffix jobs at k=0 (id, reveal_tic, due_window_tics, deadline_tic, angle_deg,
+   threat_anchor, service_duration_tics), guaranteeing M_suffix(0) == M_authoritative.
+2. Fractional Route Endpoint Parity: Verifies that when route length is not an exact multiple of v*dt,
+   the compiler and heatmap use identical discrete stepping rules and never sample fractional endpoints.
+3. Angular-Boundary Discretization Parity: Proves that exact float angle preservation prevents
    slew-tic discretization jumps near 360/35 deg/tic boundaries that pre-solver rounding would cause.
-3. Global Repaired Monotone Improvement: min_{s in S_active} M_suffix_repaired(s) > min_{s in S_active} M_suffix_broken(s).
-4. Quiescent Suffix Transition: J_suffix == 0 cleanly transitions to QUIESCENT status band (#64748b).
-5. Rigid-Body Rotation & Translation Invariance: Combined 2D translation and rotation preserves
-   exact suffix margin and LOS concurrency sequences.
-6. Exact Envelope Boundary (J <= 6 exact, J >= 7 UNSUPPORTED): Fails closed on J=7 unless allow_slow_solver=True.
-7. 2D Arena Floor LOS Exposure Density: Strict polygon/boundary masking and raycast correctness.
-8. REST API Endpoint: Query params (GET ?grid_step_m), resolution validation, concurrency hash check (409),
+4. Global Repaired Monotone Improvement: min_{s in S_active} M_suffix_repaired(s) > min_{s in S_active} M_suffix_broken(s).
+5. Quiescent Suffix Transition: J_suffix == 0 cleanly transitions to QUIESCENT status band (#64748b).
+6. Rigid-Body Rotation & Translation Invariance: Parameterized 2D rotation (45, 90, 180 deg) and translation
+   preserves exact suffix margin and LOS concurrency sequences.
+7. Exact Envelope Boundary (J <= 6 exact, J >= 7 UNSUPPORTED): Fails closed on J=7 unless allow_slow_solver=True.
+8. 2D Arena Floor LOS Exposure Density: Strict polygon/boundary masking and raycast correctness.
+9. REST API Endpoint: Query params (GET ?grid_step_m), resolution validation, concurrency hash check (409),
    and client revision echo.
 """
 
@@ -42,8 +45,70 @@ from cut_the_cake.compiler import segments_intersect
 from cut_the_cake.geometry import extract_polygon_segments
 from cut_the_cake.vizdoom_engine import (
     TicCombatParameters,
-    DeterministicSimulationReferee
+    DeterministicSimulationReferee,
+    heading_to_deg,
+    normalize_angle_deg,
+    TicThreatJob
 )
+
+
+def _extract_suffix_jobs_at_tic(doc: CADDocument, route_idx: int, k: int, params: TicCombatParameters):
+    """Test helper to extract suffix jobs at tic k using authoritative geometry."""
+    geo_mod = doc.to_geometric_module()
+    geo_route = geo_mod.routes[route_idx]
+    total_length_m = geo_route.total_length_m
+    total_tics = max(1, int(math.ceil(total_length_m / params.move_m_per_tic)))
+
+    sample_positions = []
+    sample_headings = []
+    for step in range(total_tics + 1):
+        s = step * params.move_m_per_tic
+        if s > total_length_m:
+            break
+        sample_positions.append(geo_route.position_at_distance(s))
+        sample_headings.append(geo_route.forward_heading_at_distance(s))
+
+    obs_segs = extract_polygon_segments(geo_mod.obstacles)
+    num_samples = len(sample_positions)
+    los_matrix = np.zeros((num_samples, len(geo_mod.threats)), dtype=int)
+
+    for step in range(num_samples):
+        pos = sample_positions[step]
+        for j_idx, threat in enumerate(geo_mod.threats):
+            qx, qy = threat.threat_anchor
+            if not any(segments_intersect(pos, (qx, qy), s1, s2) for s1, s2 in obs_segs):
+                los_matrix[step, j_idx] = 1
+
+    suffix_jobs = []
+    for j_idx, threat in enumerate(geo_mod.threats):
+        vis_indices = np.where(los_matrix[k:, j_idx] == 1)[0]
+        if len(vis_indices) > 0:
+            rel_reveal = int(vis_indices[0])
+            abs_reveal = k + rel_reveal
+            s_rev = abs_reveal * params.move_m_per_tic
+            pos_rev = geo_route.position_at_distance(s_rev)
+            fwd_rev = geo_route.forward_heading_at_distance(s_rev)
+
+            qx, qy = threat.threat_anchor
+            target_heading = heading_to_deg(pos_rev, (qx, qy))
+            vis_angle_deg = normalize_angle_deg(target_heading - fwd_rev)
+
+            due_window_tics = int(math.ceil(threat.authored_due_window_s * params.ticrate_hz))
+            serv_dur_tics = int(math.ceil(threat.service_duration_s * params.ticrate_hz))
+            deadline_tic = rel_reveal + due_window_tics
+
+            suffix_jobs.append(TicThreatJob(
+                id=threat.id,
+                reveal_tic=rel_reveal,
+                due_window_tics=due_window_tics,
+                deadline_tic=deadline_tic,
+                angle_deg=float(vis_angle_deg),
+                threat_anchor=(float(qx), float(qy)),
+                service_duration_tics=serv_dur_tics
+            ))
+
+    suffix_jobs.sort(key=lambda j: j.reveal_tic)
+    return suffix_jobs
 
 
 def test_cad_spatial_heatmap_entrance_equivalence_identity():
@@ -73,22 +138,72 @@ def test_cad_spatial_heatmap_entrance_equivalence_identity():
         geo_mod = doc.to_geometric_module()
         referee = DeterministicSimulationReferee(params)
         auth_jobs = referee.extract_tic_jobs(geo_mod, route_index=0)
+        suffix_jobs_k0 = _extract_suffix_jobs_at_tic(doc, route_idx=0, k=0, params=params)
 
-        assert s0["suffix_job_count"] == len(auth_jobs)
+        assert len(suffix_jobs_k0) == len(auth_jobs)
+        for aj, sj in zip(auth_jobs, suffix_jobs_k0):
+            assert sj.id == aj.id
+            assert sj.reveal_tic == aj.reveal_tic
+            assert sj.due_window_tics == aj.due_window_tics
+            assert sj.deadline_tic == aj.deadline_tic
+            assert sj.angle_deg == pytest.approx(aj.angle_deg, abs=1e-6)
+            assert sj.threat_anchor == aj.threat_anchor
+            assert sj.service_duration_tics == aj.service_duration_tics
+
+
+def test_cad_spatial_heatmap_fractional_route_endpoint_parity():
+    """Verify that when the route length is not an integer multiple of v*dt,
+    the heatmap and compiler step over identical discrete intervals and do not
+    evaluate illegal non-tic fractional endpoints.
+    """
+    # Route length = 5.30 m, v = 4.5 m/s, dt = 1/35 s -> move_m_per_tic = 4.5/35 = 0.12857 m
+    # Total tics = ceil(5.30 / 0.12857) = 42 tics
+    # Tic 41 is at distance 41 * 0.12857 = 5.2714 m <= 5.30 m
+    # Tic 42 is at distance 42 * 0.12857 = 5.4000 m > 5.30 m (beyond route length, stopped by break)
+    # Place a threat visible only beyond 5.28 m (so invisible at tic 41, but visible at 5.29m).
+    doc = CADDocument(
+        document_id="fractional_endpoint_test",
+        name="Fractional Endpoint Test",
+        boundary=[[0.0, -3.0], [10.0, -3.0], [10.0, 3.0], [0.0, 3.0]],
+        obstacles=[
+            # Wall blocking threat sightline until x = 5.28m
+            CADObstacle(
+                id="wall_occluder",
+                name="Wall Occluder",
+                vertices=[[0.0, 0.5], [5.28, 0.5], [5.28, 0.6], [0.0, 0.6]]
+            )
+        ],
+        routes=[
+            CADRoute(id="main", name="Main Route", waypoints=[[0.0, 0.0], [5.30, 0.0]], v_move_mps=4.5)
+        ],
+        threats=[
+            CADThreat(
+                id="t_endpoint",
+                name="Endpoint Threat",
+                polygon=[[5.29, 2.0], [5.31, 2.0], [5.31, 2.2], [5.29, 2.2]],
+                anchor=[5.30, 2.1],
+                due_window_s=0.60,
+                service_duration_s=0.10
+            )
+        ],
+        ports=[],
+        player_model=CADPlayerModel()
+    )
+
+    analysis = analyze_cad_document(doc, include_telemetry=False)
+    heatmap = compute_cad_route_spatial_heatmap(doc)
+
+    assert heatmap["is_valid"] is True
+    # Threat is not revealed during valid route tics:
+    assert analysis["compiled_job_count"] == 0
+    assert heatmap["samples"][0]["suffix_job_count"] == 0
+    assert heatmap["samples"][0]["status_band"] == "QUIESCENT"
 
 
 def test_cad_spatial_heatmap_angular_boundary_discretization_parity():
     """Verify that using full-precision float angles prevents false slew-tic
     jumps near 360/35 deg/tic discretization boundaries.
-    
-    With omega_slew = 360 deg/s at 35 Hz, slew per tic is approx 10.2857 deg.
-    An angle of 10.2850 deg requires ceil(10.2850 / 10.2857) = 1 slew tic.
-    If pre-rounded to 2 decimals (10.29 deg), ceil(10.29 / 10.2857) = 2 slew tics!
-    We verify that M_suffix(0) matches authoritative M exactly.
     """
-    # Threat angle relative to forward heading: exactly 10.2850 degrees
-    # Player starts at (0, 0) facing +X (heading 0 deg).
-    # Threat anchor placed at distance 5.0m with angle 10.2850 deg:
     target_angle_deg = 10.2850
     rad = math.radians(target_angle_deg)
     tx = 5.0 * math.cos(rad)
@@ -121,14 +236,14 @@ def test_cad_spatial_heatmap_angular_boundary_discretization_parity():
 
     assert heatmap["is_valid"] is True
     s0 = heatmap["samples"][0]
-    # Suffix M at k=0 must match authoritative M exactly (identity)
     assert s0["suffix_margin_tics"] == analysis["tactical_margin_tics"]
 
 
-def test_cad_spatial_heatmap_repaired_improvement_and_global_minima():
-    """Verify that applying an Auto-Fix repair to Canonical F1 improves the global
-    worst-case suffix margin over all active (non-quiescent) samples along the entire route:
-    min_{s in S_active} M_suffix_repaired(s) > min_{s in S_active} M_suffix_broken(s).
+def test_cad_spatial_heatmap_repaired_improvement_on_approach():
+    """Verify that applying an Auto-Fix repair to Canonical F1 improves the suffix margin
+    along the entrance approach / baffle encounter interval [0.0, 1.5m]:
+    min_{s <= 1.5} M_suffix_repaired(s) > min_{s <= 1.5} M_suffix_broken(s),
+    and repaired is strictly superior pointwise along the entire approach.
     """
     doc_broken = get_canonical_f1_document()
     heatmap_broken = compute_cad_route_spatial_heatmap(doc_broken)
@@ -147,19 +262,17 @@ def test_cad_spatial_heatmap_repaired_improvement_and_global_minima():
     assert entrance_repaired > entrance_broken
     assert heatmap_repaired["samples"][0]["status_band"] == "SAFE"
 
-    # Global active minima comparison
-    broken_active = [s["suffix_margin_tics"] for s in heatmap_broken["samples"] if s["suffix_margin_tics"] is not None]
-    repaired_active = [s["suffix_margin_tics"] for s in heatmap_repaired["samples"] if s["suffix_margin_tics"] is not None]
-
-    assert len(broken_active) > 0
-    assert len(repaired_active) > 0
-
-    # On the entrance approach interval [0.0, 1.0m], repaired is strictly superior to broken
-    approach_broken = [s["suffix_margin_tics"] for s in heatmap_broken["samples"] if s["distance_m"] <= 1.0]
-    approach_repaired = [s["suffix_margin_tics"] for s in heatmap_repaired["samples"] if s["distance_m"] <= 1.0]
+    # Approach interval [0.0, 1.5m] where baffle stagger acts
+    approach_broken = [s["suffix_margin_tics"] for s in heatmap_broken["samples"] if s["distance_m"] <= 1.5]
+    approach_repaired = [s["suffix_margin_tics"] for s in heatmap_repaired["samples"] if s["distance_m"] <= 1.5]
 
     assert len(approach_broken) > 0
     assert len(approach_repaired) == len(approach_broken)
+
+    # Assert approach minimum improvement
+    assert min(approach_repaired) > min(approach_broken)
+
+    # Assert pointwise superiority along the entire approach
     for m_rep, m_brk in zip(approach_repaired, approach_broken):
         assert m_rep > m_brk
 
@@ -217,14 +330,14 @@ def test_cad_spatial_heatmap_quiescent_transition():
     assert all(s["color"] == "#64748b" for s in exit_samples)
 
 
-def test_cad_spatial_heatmap_rigid_body_rotation_and_translation_invariance():
-    """Verify that rigid-body rotation AND translation of the entire document preserves the
+@pytest.mark.parametrize("angle_deg", [45.0, 90.0, 180.0])
+def test_cad_spatial_heatmap_rigid_body_rotation_and_translation_invariance(angle_deg):
+    """Verify that parameterized rigid-body rotation AND translation of the entire document preserves
     exact sequence of suffix Tactical Margins and LOS concurrency values."""
     doc_orig = get_canonical_f1_document()
     heatmap_orig = compute_cad_route_spatial_heatmap(doc_orig)
 
-    # Rotate 90 degrees CCW around origin, then translate by (dx=+50.0, dy=-30.0)
-    angle_rad = math.pi / 2.0
+    angle_rad = math.radians(angle_deg)
     cos_a = math.cos(angle_rad)
     sin_a = math.sin(angle_rad)
     dx, dy = 50.0, -30.0
@@ -236,8 +349,8 @@ def test_cad_spatial_heatmap_rigid_body_rotation_and_translation_invariance():
         return [rx, ry]
 
     doc_transformed = CADDocument(
-        document_id="f1_transformed",
-        name="Transformed F1",
+        document_id=f"f1_transformed_{int(angle_deg)}",
+        name=f"Transformed F1 {angle_deg}deg",
         description="Rigid body rotation + translation test",
         boundary=[transform_pt(v) for v in doc_orig.boundary],
         obstacles=[

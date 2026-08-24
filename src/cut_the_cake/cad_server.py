@@ -155,7 +155,9 @@ def create_cad_app() -> Flask:
     @app.route("/api/document", methods=["GET"])
     def get_document():
         """Retrieve active working CADDocument."""
-        doc_dict = active_state["working_document"].to_dict()
+        doc = active_state["working_document"]
+        doc_dict = doc.to_dict()
+        doc_dict["hash"] = compute_document_hash(doc)
         doc_dict["can_undo"] = len(active_state["undo_stack"]) > 0
         doc_dict["can_redo"] = len(active_state["redo_stack"]) > 0
         return jsonify(doc_dict)
@@ -193,10 +195,13 @@ def create_cad_app() -> Flask:
         active_state["next_route_sequence"] = compute_initial_route_sequence(doc)
         active_state["next_threat_sequence"] = compute_initial_threat_sequence(doc)
 
+        doc_payload = doc.to_dict()
+        doc_payload["hash"] = compute_document_hash(doc)
+
         return jsonify({
             "status": "loaded",
             "document_type": active_state["document_type"],
-            "document": doc.to_dict(),
+            "document": doc_payload,
             "can_undo": False,
             "can_redo": False
         })
@@ -207,9 +212,11 @@ def create_cad_app() -> Flask:
         active_state["working_document"] = copy.deepcopy(active_state["baseline_document"])
         active_state["undo_stack"].clear()
         active_state["redo_stack"].clear()
+        doc_payload = active_state["working_document"].to_dict()
+        doc_payload["hash"] = compute_document_hash(active_state["working_document"])
         return jsonify({
             "status": "reset",
-            "document": active_state["working_document"].to_dict(),
+            "document": doc_payload,
             "can_undo": False,
             "can_redo": False
         })
