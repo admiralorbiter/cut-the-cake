@@ -95,9 +95,11 @@ def _export_geometry_struct(geo_mod: GeometricModule) -> Dict[str, Any]:
 
 def _load_frozen_engine_record(fixture_id: str) -> Optional[Dict[str, Any]]:
     """Load canonical external engine record for fixture from results/repair/results.json."""
+    module_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(module_dir, "..", ".."))
     possible_paths = [
-        os.path.join(os.path.dirname(__file__), "..", "..", "results", "repair", "results.json"),
-        os.path.join("results", "repair", "results.json"),
+        os.path.join(repo_root, "results", "repair", "results.json"),
+        os.path.join(os.getcwd(), "results", "repair", "results.json"),
         os.path.abspath("results/repair/results.json")
     ]
     for p in possible_paths:
@@ -404,10 +406,20 @@ def export_scene_manifest(
         broken_engine_survived = frozen_rec.get("engine_broken_survived", False)
         repaired_engine_survived = frozen_rec.get("engine_repaired_survived", True)
         survival_flip = frozen_rec.get("survival_flip", True)
+        source_succ = frozen_rec.get("repair_success", True)
         delta_export = frozen_rec.get("delta_export_tics", 0)
         delta_exec = frozen_rec.get("delta_execution_tics", 0)
         delta_tot = frozen_rec.get("delta_total_tics", 0)
-        transfer_eff = 1.0 if (repaired_engine_survived and frozen_rec.get("repair_success", True)) else 0.0
+        
+        if source_succ and repaired_engine_survived:
+            transfer_status = "source_success_engine_rescued"
+        elif source_succ and not repaired_engine_survived:
+            transfer_status = "source_success_engine_dead"
+        elif not source_succ and not repaired_engine_survived:
+            transfer_status = "source_fail_engine_dead"
+        else:
+            transfer_status = "source_fail_engine_survived"
+            
         evidence_tier = "native_engine_verified"
         evidence_source = "results/repair/results.json"
     else:
@@ -415,10 +427,11 @@ def export_scene_manifest(
         broken_engine_survived = False
         repaired_engine_survived = True
         survival_flip = True
+        source_succ = True
         delta_export = 0
         delta_exec = 0
         delta_tot = 0
-        transfer_eff = 1.0
+        transfer_status = "source_success_engine_rescued"
         evidence_tier = "source_model"
         evidence_source = "unindexed"
 
@@ -482,10 +495,12 @@ def export_scene_manifest(
             "broken_engine_survived": broken_engine_survived,
             "repaired_engine_survived": repaired_engine_survived,
             "survival_flip": survival_flip,
+            "source_repair_success": source_succ,
+            "native_engine_rescued": repaired_engine_survived,
+            "transfer_status": transfer_status,
             "delta_export_tics": delta_export,
             "delta_execution_tics": delta_exec,
-            "delta_total_tics": delta_tot,
-            "transfer_efficiency": transfer_eff
+            "delta_total_tics": delta_tot
         }
     }
 

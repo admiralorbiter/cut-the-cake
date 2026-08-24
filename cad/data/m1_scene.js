@@ -5951,9 +5951,11 @@ window.SCENE_MANIFEST = {
     "broken_engine_survived": false,
     "repaired_engine_survived": true,
     "survival_flip": true,
+    "source_repair_success": true,
+    "native_engine_rescued": true,
+    "transfer_status": "source_success_engine_rescued",
     "delta_export_tics": 0,
     "delta_execution_tics": 0,
-    "delta_total_tics": 0,
-    "transfer_efficiency": 1.0
+    "delta_total_tics": 0
   }
 };

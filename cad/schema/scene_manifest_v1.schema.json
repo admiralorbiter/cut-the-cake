@@ -123,10 +123,12 @@
         "broken_engine_survived",
         "repaired_engine_survived",
         "survival_flip",
+        "source_repair_success",
+        "native_engine_rescued",
+        "transfer_status",
         "delta_export_tics",
         "delta_execution_tics",
-        "delta_total_tics",
-        "transfer_efficiency"
+        "delta_total_tics"
       ],
       "properties": {
         "evidence_source": { "type": "string" },
@@ -137,10 +139,20 @@
         "broken_engine_survived": { "type": "boolean" },
         "repaired_engine_survived": { "type": "boolean" },
         "survival_flip": { "type": "boolean" },
+        "source_repair_success": { "type": "boolean" },
+        "native_engine_rescued": { "type": "boolean" },
+        "transfer_status": {
+          "type": "string",
+          "enum": [
+            "source_success_engine_rescued",
+            "source_success_engine_dead",
+            "source_fail_engine_dead",
+            "source_fail_engine_survived"
+          ]
+        },
         "delta_export_tics": { "type": "integer" },
         "delta_execution_tics": { "type": "integer" },
-        "delta_total_tics": { "type": "integer" },
-        "transfer_efficiency": { "type": "number" }
+        "delta_total_tics": { "type": "integer" }
       }
     }
   },

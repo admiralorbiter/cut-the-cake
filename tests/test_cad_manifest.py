@@ -110,7 +110,7 @@ def test_exported_timing_and_margin_parity(canonical_manifest):
     assert broken_data["l_star_tics"] == sched_res.lateness_optimal_l_star_tics
     assert broken_data["verdict"] == "unserviceable"
     assert broken_data["model_episode_survived"] is False
-    assert broken_data["model_death_tic"] is not None
+    assert broken_data["model_death_tic"] == 25
 
     # Verify per-threat job records
     job_map = {j.id: j for j in jobs}
@@ -119,6 +119,60 @@ def test_exported_timing_and_margin_parity(canonical_manifest):
         assert item["reveal_tic"] == j.reveal_tic
         assert item["deadline_tic"] == j.deadline_tic
         assert item["due_window_tics"] == j.due_window_tics
+
+
+def test_frozen_deadline_and_window_arithmetic(canonical_manifest):
+    """Rigorous audit asserting D_j == R_j + due_window_tics with exact canonical Family 1 values."""
+    # 1. Broken Scenario Audit
+    b_data = canonical_manifest["broken_scenario"]
+    b_jobs = {j["id"]: j for j in b_data["threat_jobs"]}
+    
+    # Assert due_window arithmetic
+    for j in b_data["threat_jobs"]:
+        assert j["deadline_tic"] == j["reveal_tic"] + j["due_window_tics"]
+
+    t1_b = b_jobs["F1_T1_L00"]
+    assert t1_b["reveal_tic"] == 0
+    assert t1_b["due_window_tics"] == 22
+    assert t1_b["deadline_tic"] == 22
+    assert t1_b["completion_tic"] == 13
+    assert t1_b["service_complete_tic"] == 12
+
+    t2_b = b_jobs["F1_T2_R00"]
+    assert t2_b["reveal_tic"] == 3
+    assert t2_b["due_window_tics"] == 22
+    assert t2_b["deadline_tic"] == 25
+    assert t2_b["completion_tic"] == 31
+    assert t2_b["service_complete_tic"] == 30
+
+    assert b_data["model_death_tic"] == 25
+    assert b_data["tactical_margin_tics"] == -6
+    assert b_data["l_star_tics"] == 6
+
+    # 2. Repaired Scenario Audit
+    r_data = canonical_manifest["repaired_scenario"]
+    r_jobs = {j["id"]: j for j in r_data["threat_jobs"]}
+
+    for j in r_data["threat_jobs"]:
+        assert j["deadline_tic"] == j["reveal_tic"] + j["due_window_tics"]
+
+    t1_r = r_jobs["F1_T1_L00"]
+    assert t1_r["reveal_tic"] == 0
+    assert t1_r["due_window_tics"] == 22
+    assert t1_r["deadline_tic"] == 22
+    assert t1_r["completion_tic"] == 13
+    assert t1_r["service_complete_tic"] == 12
+
+    t2_r = r_jobs["F1_T2_R00"]
+    assert t2_r["reveal_tic"] == 13
+    assert t2_r["due_window_tics"] == 22
+    assert t2_r["deadline_tic"] == 35
+    assert t2_r["completion_tic"] == 33
+    assert t2_r["service_complete_tic"] == 32
+
+    assert r_data["model_death_tic"] is None
+    assert r_data["tactical_margin_tics"] == 2
+    assert r_data["l_star_tics"] == -2
 
 
 def test_post_death_telemetry_freeze(canonical_manifest):
@@ -167,6 +221,9 @@ def test_external_engine_evidence_matches_frozen_results(canonical_manifest, fro
     assert evidence["broken_engine_survived"] == rec["engine_broken_survived"]
     assert evidence["repaired_engine_survived"] == rec["engine_repaired_survived"]
     assert evidence["survival_flip"] == rec["survival_flip"]
+    assert evidence["source_repair_success"] == rec["repair_success"]
+    assert evidence["native_engine_rescued"] == rec["engine_repaired_survived"]
+    assert evidence["transfer_status"] == "source_success_engine_rescued"
     assert evidence["delta_export_tics"] == rec["delta_export_tics"]
     assert evidence["delta_execution_tics"] == rec["delta_execution_tics"]
     assert evidence["delta_total_tics"] == rec["delta_total_tics"]
