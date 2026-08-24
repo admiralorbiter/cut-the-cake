@@ -29,8 +29,9 @@ CALIBRATION_METADATA: Dict[str, Any] = {
         "pos_x": -2476.0,
         "pos_y": 3239.0,
         "scale": 4.4,
-        "source_units_per_meter": 52.4934,
-        "meters_per_source_unit": 0.01905
+        "scale_convention": "declared_hull_metric_approximation",
+        "meters_per_source_unit": 0.01905,
+        "notes": "1 Source unit = 0.01905 m (0.75 in) represents player hull proportions; standard Hammer 1.0 in = 0.0254 m is tested in uncertainty sweeps."
     },
     "control_points": [
         {"name": "CP1_doors_inner", "src": [1075.0, 410.0], "cad": [0.0, 0.0], "description": "Long Doors Inner Threshold"},
@@ -40,8 +41,8 @@ CALIBRATION_METADATA: Dict[str, Any] = {
         {"name": "CP5_site_ramp",   "src": [2850.0, 95.0],  "cad": [33.8, -6.0], "description": "A-Site Plat Ramp Top"}
     ],
     "fitted_scale_m_per_unit": 0.019048,
-    "rmse_residual_m": 0.0064,
-    "uncertainty_envelope_m": 0.020
+    "affine_fit_internal_residual_m": 0.0064,
+    "notes": "0.0064 m residual measures internal mathematical consistency of the landmark transform, not independent laser/photogrammetry reconstruction ground truth."
 }
 
 

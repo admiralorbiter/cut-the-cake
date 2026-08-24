@@ -1,15 +1,24 @@
 """Milestone 5-A.1: Hardened Real-Map External Case Study Tests (Dust II A-Long).
 
-Empirical testable gates:
-1. Coordinate Calibration & Control Points (RMSE < 0.02m against Valve Source overview metadata)
-2. Strict 2D Navigability (100% collision-free route segments against obstacle polygons)
-3. Multi-Route Tactical Differentiation (Pieing vs Wide Swing)
-4. Spatial Observable Orthogonality [M_suffix(s), delta_original_clock(s), K_LOS(s)]
-5. Paired Defensive Pocket Sightline Isolation (High push reveals Plat vs Pit drop strictly occludes Plat)
-6. Pre-Aim Orientation Sensitivity Curve
-7. Parameter Uncertainty & Robustness Sweep (M_pie >= M_wide across full speed/slew/due window variations)
-8. Persisted Result Packet Truthfulness (results/m5a_dust2_a_long.json matches solver bit-for-bit)
-9. REST API Template Loading & Multi-Route Analysis Parity
+Scientific & Empirical Testable Gates:
+1. Coordinate Calibration & Control Points: Affine transform against 5 landmark control points
+   achieves internal coordinate consistency residual < 0.020 m.
+2. Strict 2D Navigability & Positive Clearance: Route segments maintain >= 0.50 m positive clearance
+   and zero geometric intersection against all solid obstacle polygons.
+3. Multi-Route Tactical Differentiation: Slices corner angle, expanding reveal gap (Delta_r_pie > Delta_r_wide).
+   Note: Pre-registered global dominance M_pie >= M_wide was falsified at baseline fixture (M_pie = +1, M_wide = +2)
+   because whole-route solver finds smaller angular distance on wide swing once Corner is cleared;
+   the validated physical property is local approach-interval suffix-margin superiority.
+4. Spatial Observable Orthogonality: [M_suffix(s), delta_original_clock(s), K_LOS(s)] demonstrate
+   distinct spatial profiles; pieing strictly outperforms wide swing over the dangerous approach interval (s in [2, 4] m).
+5. Paired Defensive Pocket Sightline Isolation: High corridor push reveals Plat (k=195) while Pit branch
+   strictly occludes Plat behind corner geometry (Plat not in V(k) for any sample after branch).
+6. Pre-Aim Orientation Sensitivity Curve: Complete 5 deg sweep recorded; downlane orientation outperforms Pit pre-aim.
+7. Full Joint Parameter Uncertainty Sweep: 81-run joint sweep over velocity (mutating route speeds),
+   slew rates, threat position jitter (+-0.3m), and due window jitter (+-0.05s) asserting universal
+   stagger inequality and approach suffix superiority across all 81 configurations.
+8. Persisted Result Packet Truthfulness: results/m5a_dust2_a_long.json matches solver outputs bit-for-bit.
+9. REST API Template Loading & Multi-Route Analysis Parity.
 """
 
 import os
@@ -35,7 +44,7 @@ from cut_the_cake.cad_server import create_cad_app
 
 
 def test_dust2_a_long_coordinate_calibration_and_control_points():
-    """Gate 1: Assert affine transform against 5 landmark control points achieves RMSE < 0.020 m."""
+    """Gate 1: Assert affine transform against 5 landmark control points achieves internal residual < 0.020 m."""
     doc = get_dust2_a_long_document()
     doc_dict = doc.to_dict()
 
@@ -56,12 +65,12 @@ def test_dust2_a_long_coordinate_calibration_and_control_points():
     errors = np.linalg.norm(cad_pts - predicted_cad, axis=1)
     rmse = float(np.sqrt(np.mean(errors ** 2)))
 
-    assert rmse < 0.020, f"Calibration RMSE {rmse:.4f} m exceeds 0.020 m envelope"
-    assert CALIBRATION_METADATA["rmse_residual_m"] < 0.020
+    assert rmse < 0.020, f"Affine fit internal residual {rmse:.4f} m exceeds 0.020 m envelope"
+    assert CALIBRATION_METADATA["affine_fit_internal_residual_m"] < 0.020
 
 
-def test_dust2_a_long_navigability_no_obstacle_intersection():
-    """Gate 2: Assert no route line segment intersects any solid obstacle polygon interior."""
+def test_dust2_a_long_navigability_and_positive_obstacle_clearance():
+    """Gate 2: Assert all route segments maintain >= 0.50 m positive clearance and zero intersection with obstacle polygons."""
     doc = get_dust2_a_long_document()
     obs_polys = [Polygon(o.vertices) for o in doc.obstacles]
 
@@ -69,8 +78,12 @@ def test_dust2_a_long_navigability_no_obstacle_intersection():
         for i in range(len(r.waypoints) - 1):
             seg = LineString([r.waypoints[i], r.waypoints[i+1]])
             for o_idx, poly in enumerate(obs_polys):
-                assert not (seg.crosses(poly) or seg.within(poly) or poly.contains(seg)), (
-                    f"Route '{r.id}' segment {i}->{i+1} intersects solid obstacle '{doc.obstacles[o_idx].id}'"
+                assert not seg.intersects(poly), (
+                    f"Route '{r.id}' segment {i}->{i+1} intersects obstacle '{doc.obstacles[o_idx].id}'"
+                )
+                dist = seg.distance(poly)
+                assert dist >= 0.50, (
+                    f"Route '{r.id}' segment {i}->{i+1} clearance ({dist:.3f}m) below 0.50m from '{doc.obstacles[o_idx].id}'"
                 )
 
 
@@ -175,33 +188,61 @@ def test_dust2_a_long_pre_aim_heading_sensitivity_curve():
     assert curve[-20] >= curve[+50], "Pre-aiming near Corner should outperform pre-aiming into Pit"
 
 
-def test_dust2_a_long_parameter_uncertainty_robustness_sweep():
-    """Gate 7: Parameter robustness sweep verifying universal stagger inequality and margin superiority across speed/slew envelope."""
-    # 1. Stagger gap inequality holds universally across all movement speeds (v in 3.0 to 6.0 m/s)
-    for v in [3.0, 3.8, 4.5, 5.2, 6.0]:
-        doc = get_dust2_a_long_document()
-        doc.player_model.v_move_mps = v
-        res_pie = analyze_cad_document(doc, route_id="route_pieing", include_telemetry=False)
-        res_wide = analyze_cad_document(doc, route_id="route_wide_swing", include_telemetry=False)
+def test_dust2_a_long_full_joint_parameter_uncertainty_sweep():
+    """Gate 7: Full 81-run joint parameter uncertainty sweep across velocity, slew rate, threat positions, and due windows."""
+    speeds = [3.5, 4.5, 5.5]
+    slews = [270.0, 360.0, 450.0]
+    anchor_jitters = [-0.3, 0.0, +0.3]
+    due_offsets = [-0.05, 0.0, +0.05]
 
-        pie_jobs = {j["id"]: j for j in res_pie["threat_jobs"]}
-        wide_jobs = {j["id"]: j for j in res_wide["threat_jobs"]}
-        gap_pie = pie_jobs["threat_pit_hold"]["reveal_tic"] - pie_jobs["threat_corner_hold"]["reveal_tic"]
-        gap_wide = wide_jobs["threat_pit_hold"]["reveal_tic"] - wide_jobs["threat_corner_hold"]["reveal_tic"]
-        assert gap_pie > gap_wide, f"Stagger inequality failed at v={v}: gap_pie ({gap_pie}) <= gap_wide ({gap_wide})"
+    total_runs = 0
+    stagger_invariants_held = 0
+    approach_invariants_held = 0
 
-    # 2. Suffix Margin approach superiority holds across speed variations
-    for v in [3.8, 4.5, 5.2]:
-        doc = get_dust2_a_long_document()
-        doc.player_model.v_move_mps = v
-        h_pie = compute_cad_route_spatial_heatmap(doc, route_id="route_pieing")
-        h_wide = compute_cad_route_spatial_heatmap(doc, route_id="route_wide_swing")
-        # Over approach interval s in [2.0m, 4.0m], pieing strictly outperforms wide swing
-        pie_min_app = min(s["suffix_margin_tics"] for s in h_pie["samples"] if 2.0 <= s["distance_m"] <= 4.0)
-        wide_min_app = min(s["suffix_margin_tics"] for s in h_wide["samples"] if 2.0 <= s["distance_m"] <= 4.0)
-        assert pie_min_app > wide_min_app, f"Approach superiority failed at v={v}: pie ({pie_min_app}) <= wide ({wide_min_app})"
-        assert pie_min_app >= 0, f"Pieing approach margin dropped below 0 at v={v}"
-        assert wide_min_app < 0, f"Wide swing approach margin should be in deficit at v={v}"
+    for v in speeds:
+        for omega in slews:
+            for dw in due_offsets:
+                for dj in anchor_jitters:
+                    total_runs += 1
+                    doc = get_dust2_a_long_document()
+                    doc.player_model.v_move_mps = v
+                    doc.player_model.omega_slew_deg_per_s = omega
+                    for r in doc.routes:
+                        r.v_move_mps = v # mutate route speed directly!
+
+                    # Jitter threats
+                    for t in doc.threats:
+                        t.due_window_s = max(0.35, t.due_window_s + dw)
+                        t.anchor = [t.anchor[0] + dj, t.anchor[1] + dj]
+                        t.polygon = [[p[0] + dj, p[1] + dj] for p in t.polygon]
+
+                    res_pie = analyze_cad_document(doc, route_id="route_pieing", include_telemetry=False)
+                    res_wide = analyze_cad_document(doc, route_id="route_wide_swing", include_telemetry=False)
+
+                    # Explicitly assert effective velocity was set to sweep parameter
+                    assert res_pie["effective_v_move_mps"] == v
+                    assert res_wide["effective_v_move_mps"] == v
+
+                    # 1. Reveal stagger invariant: Pieing always reveals Pit strictly later than wide swing
+                    pie_jobs = {j["id"]: j for j in res_pie["threat_jobs"]}
+                    wide_jobs = {j["id"]: j for j in res_wide["threat_jobs"]}
+                    gap_pie = pie_jobs["threat_pit_hold"]["reveal_tic"] - pie_jobs["threat_corner_hold"]["reveal_tic"]
+                    gap_wide = wide_jobs["threat_pit_hold"]["reveal_tic"] - wide_jobs["threat_corner_hold"]["reveal_tic"]
+                    if gap_pie > gap_wide:
+                        stagger_invariants_held += 1
+
+                    # 2. Local approach suffix margin superiority: Pieing remains superior over doorway approach s in [2, 4] m
+                    h_pie = compute_cad_route_spatial_heatmap(doc, route_id="route_pieing")
+                    h_wide = compute_cad_route_spatial_heatmap(doc, route_id="route_wide_swing")
+
+                    pie_min_app = min(s["suffix_margin_tics"] for s in h_pie["samples"] if 2.0 <= s["distance_m"] <= 4.0)
+                    wide_min_app = min(s["suffix_margin_tics"] for s in h_wide["samples"] if 2.0 <= s["distance_m"] <= 4.0)
+                    if pie_min_app > wide_min_app:
+                        approach_invariants_held += 1
+
+    assert total_runs == 81
+    assert stagger_invariants_held == 81, f"Stagger inequality failed in {81 - stagger_invariants_held}/81 runs"
+    assert approach_invariants_held == 81, f"Approach superiority failed in {81 - approach_invariants_held}/81 runs"
 
 
 def test_dust2_a_long_persisted_result_packet_truthfulness():

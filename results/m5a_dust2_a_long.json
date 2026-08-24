@@ -11,8 +11,9 @@
       "pos_x": -2476.0,
       "pos_y": 3239.0,
       "scale": 4.4,
-      "source_units_per_meter": 52.4934,
-      "meters_per_source_unit": 0.01905
+      "scale_convention": "declared_hull_metric_approximation",
+      "meters_per_source_unit": 0.01905,
+      "notes": "1 Source unit = 0.01905 m (0.75 in) represents player hull proportions; standard Hammer 1.0 in = 0.0254 m is tested in uncertainty sweeps."
     },
     "control_points": [
       {
@@ -77,8 +78,8 @@
       }
     ],
     "fitted_scale_m_per_unit": 0.019048,
-    "rmse_residual_m": 0.0064,
-    "uncertainty_envelope_m": 0.02
+    "affine_fit_internal_residual_m": 0.0064,
+    "notes": "0.0064 m residual measures internal mathematical consistency of the landmark transform, not independent laser/photogrammetry reconstruction ground truth."
   },
   "combat_model": {
     "v_move_mps": 4.5,
