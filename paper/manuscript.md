@@ -20,7 +20,7 @@ We validate this framework across an end-to-end computational pipeline:
 3. **Discrete Simulation Population Benchmark (Round 11S):** Evaluated across 60 parameterized micro-arenas spanning 6 distinct geometric mechanisms under 5 independent controllers ($9,000$ discrete simulation episodes on a 35 Hz logic clock using a paired common-random-number design). Tactical Margin achieves strong construct validity across held-out geometric families (**$\text{LOGFO-AUC} = 1.0000$, $\rho = +0.9282$**), outperforming peak physical line-of-sight concurrency ($K_{\text{static}}$, $\text{LOGFO-AUC} = 0.8098$, $+19.02\%$), cumulative Hamiltonian workload ($0.8260$, $+17.40\%$), and static minimum slack ($0.5742$, $+42.58\%$).
 4. **Native Game Engine Translation (ViZDoom):** Evaluated across 12 binary WAD micro-arenas in headless C++ ZDoom. Measured three-layer lateness residuals yield a mean absolute residual of $0.83\,\text{tics}$ ($23.7\,\text{ms}$), with an empirical deployment reserve $\epsilon_{\text{deploy}} = 3\,\text{tics}$ ($85.7\,\text{ms}$) providing 100% survival on deployable arenas.
 5. **Actionable-Information Parameterization ($a_j$):** Introducing the actionable-information timestamp $a_j$ connects map knowledge to the established scheduling distinction between non-anticipatory setup (reveal-gated: $a_j = r_j$) and anticipatory setup (pre-aim: $a_j = 0$), defining the **Tactical Value of Map Knowledge** $\Delta\mathcal{M}_{\text{knowledge}} = \mathcal{M}_{\text{preaim}} - \mathcal{M}_{\text{reveal}}$.
-6. **Inverse Tactical Repair & Automated Level Linter:** Formulates minimal geometric repair $G^* = \arg\min_{G'} d(G, G') \text{ s.t. } \mathcal{M}(G') \ge \epsilon$, isolating critical scheduling bottlenecks to directed occluder perturbations. Across a 50-arena benchmark of held-out unserviceable micro-arenas, the optimizer achieves an **82.0% repair success rate** (median edit distance $0.90\,\text{m}$, median runtime $58.2\,\text{ms}$), with paired native ViZDoom executions verifying that successfully repaired layouts flip from fatal engine deaths to guaranteed survival.
+6. **Inverse Tactical Repair & Automated Level Linter:** Formulates grid-minimal geometric repair over a declared obstacle-translation operator set $\mathcal{T}_{\text{obs}}$, isolating critical scheduling bottlenecks to directed occluder perturbations. Across an audited 50-arena benchmark of genuinely unserviceable micro-arenas ($100\%$ initial $\mathcal{M} < 0$, fatal baseline in native ViZDoom), the optimizer achieves an **80.0% source-model repair success rate** (40/50, median edit distance $0.85\,\text{m}$), a **60.0% native ViZDoom engine rescue rate** (30/50), and a **75.0% engine transfer efficiency** (30/40), with export and execution residual decomposition exposing family-dependent transfer limits.
 
 ---
 
@@ -84,7 +84,7 @@ To maintain scientific rigor and avoid over-generalization, the claims in this p
 | **2. Geometry** | Continuous 2D visibility bisection & 10 adversarial fixtures | Sub-millisecond polygonal geometry $\to$ discrete contract compilation ($K=8$) | Unstructured arbitrary 3D non-planar environments |
 | **3. PCG** | 25,000-candidate corpus sweeps & $N=30$ paired-seed MAP-Elites | Model-scoped compositional certification & zero-overhead linting (Condition E) | Universal playability across un-modeled gameplay mechanics |
 | **4. Simulation** | 60 micro-arenas $\times$ 5 controllers $\times$ 30 trials = $9,000$ episodes | Construct validity, baseline discrimination, and noise robustness | Population validity across arbitrary human player cohorts |
-| **5. ViZDoom & Repair** | 12 reference arenas + 50-arena population repair benchmark in headless C++ ZDoom | Quantized WAD export residual ($\epsilon_{\text{deploy}} = 3\,\text{tics}$) and causal repair survival flip | Closed predictive validity across full commercial game engines |
+| **5. ViZDoom & Repair** | 12 reference arenas + 50-arena audited population repair benchmark in headless C++ ZDoom | Three-layer residual decomposition ($\Delta_{\text{export}} L, \Delta_{\text{execution}} L$) and external-transfer validation | Closed predictive validity across full commercial game engines |
 | **6. Human (Prospective)** | Capability Envelope bounds $\mathcal{C} = \{(A, \omega, p) : \mathcal{M} \ge 0\}$ & frozen pilot protocol | Model-scoped boundary conditions and hypothesized familiarity transitions (H1–H4) | Empirical population calibration of human shooter cohorts |
 
 
@@ -505,27 +505,59 @@ Across all four selected knowledge-rescuable fixtures (4/4), the observed surviv
 
 Rather than treating Tactical Margin solely as an evaluative pass/fail metric, the scheduling formulation directly enables **constructive, gradient-directed level repair**.
 
-### 11.1 Problem Formulation & Bottleneck Diagnosis
-Given an unserviceable authored or generated geometry $G$ with $\mathcal{M}(G) < 0$, the inverse repair objective finds a minimally perturbed geometry $G^*$:
-$$G^* = \arg\min_{G'} d(G, G') \quad \text{subject to} \quad \mathcal{M}(G') \ge \epsilon_{\text{target}}, \quad \text{ValidTopology}(G')$$
-where $d(G, G')$ measures geometric edit magnitude (Euclidean displacement of obstacle vertices) and $\epsilon_{\text{target}} \ge 0$ is the desired margin reserve.
+### 11.1 Problem Formulation & Declared Operator Set
+Given an unserviceable authored or generated geometry $G$ with initial margin $\mathcal{M}(G) < 0$, the inverse repair objective finds a grid-minimal perturbed geometry $G^*$ over a declared translation operator set $\mathcal{T}_{\text{obs}}$:
+$$G^* = \arg\min_{G' \in \mathcal{T}_{\text{obs}}(G)} d(G, G') \quad \text{subject to} \quad \mathcal{M}_{\text{source}}(G') \ge \epsilon_{\text{target}}, \quad \text{ValidPreservation}(G, G')$$
+where $d(G, G')$ measures minimal Euclidean obstacle displacement and $\epsilon_{\text{target}} \ge +2\,\text{tics}$ ($+57.1\,\text{ms}$) is the target margin reserve.
+
+The declared operator set evaluates rigid obstacle translations:
+$$\mathcal{T}_{\text{obs}}(G) = \left\{ G' = \text{translate}(O_i, d \cdot \hat{u}) \;\middle|\; O_i \in \text{Obstacles}(G), \; \hat{u} \in \mathcal{U}, \; d \in [\delta, d_{\max}] \right\}$$
+where $\mathcal{U} = \{ \hat{n}, -\hat{n}, (+1, 0), (-1, 0), (0, +1), (0, -1) \}$, grid resolution $\delta = 0.05\,\text{m}$, and $d_{\max} = 1.80\,\text{m}$.
 
 The diagnostic analyzer evaluates the scheduling bottleneck:
-1. **Critical Threat Attribution:** Identifies threat $T_{\text{crit}}$ causing the maximum lateness breach $L^* = C_{\text{crit}} - D_{\text{crit}}$ and the required delay $\Delta s = (D_{\text{crit}} - C_{\text{crit}}) \cdot v_{\text{move}}$.
+1. **Critical Threat Attribution:** Identifies threat $T_{\text{crit}}$ causing the maximum lateness breach $L^* = C_{\text{crit}} - D_{\text{crit}}$.
 2. **Controlling Occluder Edge:** Isolates the active obstacle boundary segment $e^* = (\vec{v}_1, \vec{v}_2)$ whose vertex collinear raycast governs the critical first-reveal timestamp $r_{\text{crit}}$.
-3. **Directed Line Search:** Evaluates 1D/2D perturbations along the normal $\vec{n}_{e^*}$ to shift or extend the occluding baffle, evaluated via vectorized flat-array segment broadcasting ($<0.1\,\text{ms}$ per test).
+3. **Directed Multi-Axis Grid Search:** Evaluates directional translations along normal and cardinal axes, pruning searches when $d \ge d^*_{\text{current}}$.
+4. **Strict Geometric Preservation:** Enforces invariant room boundaries, obstacle count/area conservation, obstacle containment, obstacle-threat non-clipping, and route non-clipping.
 
-### 11.2 Population Benchmark Results (N=50 Held-out Unserviceable Arenas)
-We evaluated the repair pipeline across $N=50$ unserviceable micro-arenas spanning 5 distinct mechanism families (Stagger Deficits, Aperture Crossfires, Blind Spots, Triad Congestion, and Flanking Squeezes) evaluated in native C++ ViZDoom:
+### 11.2 Audited Population Benchmark Results (N=50 Unserviceable Arenas)
+We evaluated the audited repair pipeline across $N=50$ genuinely unserviceable micro-arenas ($100\%$ initial $\mathcal{M} < 0$, $100\%$ baseline death in native ViZDoom) spanning 5 distinct mechanism families:
 
-| Metric | Benchmark Result | Interpretation |
+| Metric | Audited Value | Interpretation |
 | :--- | :---: | :--- |
-| **Repair Success Rate** | **82.0%** (41/50) | Optimizer reliably converts unserviceable geometry into certified clearable space |
-| **Median Edit Distance** | **0.90\,m** (Mean: 0.79\,m) | Minimal perturbations preserve overall room topology, footprint, and sightline aesthetics |
-| **Median Repair Runtime** | **58.2\,ms** (Mean: 156.4\,ms) | Directed search executes in sub-100ms without expensive gradient computation |
-| **Native ViZDoom Survival Flip Rate** | **42.0%** (21/50) | In 100% of successfully repaired layouts, agent flips from lethal engine death to verified survival |
+| **Audited Broken Population** | **50/50** (100.0%) | All benchmark arenas verified to satisfy initial $\mathcal{M} < 0$ |
+| **Source-Model Repair Success Rate** | **80.0%** (40/50) | Offline optimizer finds grid-minimal feasible translation achieving $\mathcal{M} \ge +2\,\text{tics}$ |
+| **Native ViZDoom Engine Rescue Rate** | **60.0%** (30/50) | Broken layouts flipping from fatal engine death to verified survival ($100\,\text{HP}$) |
+| **Engine Transfer Efficiency** | **75.0%** (30/40) | Source-successful repairs successfully transferring to native engine survival |
+| **Median Edit Distance** | **0.85\,m** (Mean: 0.89\,m) | Grid-minimal displacement within declared translation operator set $\mathcal{T}_{\text{obs}}$ |
+| **Median Repair Runtime** | **292.8\,ms** (Mean: 357.2\,ms) | Multi-directional grid search across candidate obstacles |
+| **Mean Export Residual ($\Delta_{\text{export}} L$)** | **+1.64 tics** | WAD quantization and coordinate discretization effect |
+| **Mean Execution Residual ($\Delta_{\text{execution}} L$)** | **-0.08 tics** | Engine reticle slew dynamics and sub-tic action latency |
 
-This empirical survival flip inside an independent 3D game engine provides causal validation: modifying the specific occluder governing the critical scheduling bottleneck eliminates the lethal crossfire while preserving the broader level geometry.
+### 11.3 Contingency Analysis & Three-Layer Residual Decomposition
+We evaluate the contingency between source-model repair certification and realized external-engine rescue:
+
+$$\begin{array}{c|cc|c}
+\text{Source Optimizer} \backslash \text{ViZDoom Engine} & \text{Engine Rescued (Survived)} & \text{Engine Fatal (Dead)} & \text{Total} \\
+\hline
+\text{Source Repair Success} & \mathbf{30} \text{ (60.0\%)} & \mathbf{10} \text{ (20.0\%)} & \mathbf{40} \text{ (80.0\%)} \\
+\text{Source Repair Fail} & \mathbf{0} \text{ (0.0\%)} & \mathbf{10} \text{ (20.0\%)} & \mathbf{10} \text{ (20.0\%)} \\
+\hline
+\text{Total} & \mathbf{30} \text{ (60.0\%)} & \mathbf{20} \text{ (40.0\%)} & \mathbf{50} \text{ (100.0\%)}
+\end{array}$$
+
+| Mechanism Family | Arenas | Initial $\mathcal{M}$ | Source Success | Median Edit $d^*$ | Engine Rescue | Transfer Efficiency | Mean $\Delta_{\text{export}} L$ | Mean $\Delta_{\text{execution}} L$ |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Family 1: Stagger Deficit** | 10 | $-6 \dots -4\,\text{t}$ | 10/10 (100%) | 0.97 m | 10/10 (100%) | **100%** | $-0.1\,\text{t}$ | $-0.4\,\text{t}$ |
+| **Family 2: Aperture Crossfire** | 10 | $-15 \dots -13\,\text{t}$ | 10/10 (100%) | 1.15 m | 8/10 (80%) | **80%** | $+0.4\,\text{t}$ | $+0.7\,\text{t}$ |
+| **Family 3: Blind Spot** | 10 | $-7 \dots -2\,\text{t}$ | 0/10 (0%) | 0.00 m | 0/10 (0%) | **0%** | $+0.0\,\text{t}$ | $+0.0\,\text{t}$ |
+| **Family 4: Triad Congestion** | 10 | $-12 \dots -8\,\text{t}$ | 10/10 (100%) | 0.60 m | 3/10 (30%) | **30%** | $+6.6\,\text{t}$ | $-0.1\,\text{t}$ |
+| **Family 5: Flank Squeeze** | 10 | $-16 \dots -15\,\text{t}$ | 10/10 (100%) | 0.82 m | 9/10 (90%) | **90%** | $+1.3\,\text{t}$ | $-0.6\,\text{t}$ |
+
+The residual decomposition $\Delta_{\text{total}} L = \Delta_{\text{export}} L + \Delta_{\text{execution}} L = (L^*_{\text{engine}} - L^*_{\text{source}}) + (L_{\text{realized}} - L^*_{\text{engine}})$ illuminates where the transfer boundary holds:
+* For single-baffle geometries (**Family 1** and **Family 5**), $\Delta_{\text{export}} L \approx 0$ and $\Delta_{\text{execution}} L \le 0$, yielding high engine transfer efficiency ($100\%$ and $90\%$).
+* For dense multi-threat clusters (**Family 4**), continuous 3D linedef raycasting in Doom unoccludes secondary angles earlier than 2D grid raycasting ($\Delta_{\text{export}} L = +6.6\,\text{tics}$), causing transfer failure unless an empirical guard band of $\epsilon_{\text{deploy}} \approx 7\,\text{tics}$ is enforced.
+* Where geometry cannot be repaired within the single-obstacle translation operator budget (**Family 3**), the optimizer correctly returns failure ($0\%$ source success) with zero false-positive claims.
 
 ---
 

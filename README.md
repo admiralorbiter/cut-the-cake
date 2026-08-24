@@ -4,7 +4,18 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Tests: 74 Passed](https://img.shields.io/badge/tests-74%20passed-brightgreen.svg)]()
+[![Tests: 80 Passed](https://img.shields.io/badge/tests-80%20passed-brightgreen.svg)]()
+[![Freeze: Round 11.4A](https://img.shields.io/badge/scientific%20core-Round%2011.4A%20Frozen-blue.svg)](results/repair/ROUND_11_4A_FREEZE.md)
+
+---
+
+## Product Vision & Scientific Foundation
+
+The long-term **North Star** for this project is a **Tactical CAD Platform** for competitive shooter level design—an interactive authoring instrument that analyzes sightlines, compiles clearability schedules, flags unfair multi-angle crossfires, and offers automated geometric repairs in real time.
+
+See [**ROADMAP.md**](ROADMAP.md) for the multi-horizon product development plan.
+
+The current Python repository forms the **verified scientific core (Horizon 0)** underneath that future platform. It provides the mathematical theory, polynomial-time polygon-to-contract compiler, single-machine real-time scheduling solvers, and external game-engine validation bridges.
 
 ---
 
@@ -15,10 +26,10 @@ In competitive first-person shooter (FPS) level design, procedural generation fa
 **Cut the Cake** formalizes the tactical doctrine of **"Slicing the Pie"** (sequential angle isolation) as a **non-preemptive single-machine real-time scheduling problem ($1 \mid r_j, s_{ij} \mid L_{\max}$)**, where the player's single reticle acts as a stateful processor bottleneck.
 
 ### Core Capabilities:
-1. **Geometry-to-Contract Compilation:** Automatically compiles continuous 2D polygonal map geometry into discrete angular transfer matrices over $(\min, +)$ dioid algebra via critical-LOS ray-vertex bisection ($< 0.1\,	ext{ms}$).
+1. **Geometry-to-Contract Compilation:** Automatically compiles continuous 2D polygonal map geometry into discrete angular transfer matrices over $(\min, +)$ dioid algebra via critical-LOS ray-vertex bisection ($< 0.1\,\text{ms}$).
 2. **Tactical Margin ($\mathcal{M} = -L^*$):** Computes the exact temporal reserve before hostile deadline breach, separating solvable sequential clears from lethal crossfire traps.
-3. **Inverse Tactical Repair ($G 	o G^*$):** Given an unserviceable room ($\mathcal{M} < 0$), isolates the critical scheduling bottleneck and synthesizes minimal geometric perturbations ($\Delta x \le 0.90\,	ext{m}$) to guarantee $\mathcal{M}(G^*) \ge \epsilon$.
-4. **External Game Engine Verification (ViZDoom):** Validated across $9,000$ simulation episodes and $72$ native C++ Doom WAD micro-arenas, proving that repaired layouts flip from fatal engine deaths to guaranteed survival.
+3. **Inverse Tactical Repair ($G \to G^*$):** Given an unserviceable room ($\mathcal{M} < 0$), isolates the critical scheduling bottleneck and synthesizes grid-minimal geometric translations ($d^* \approx 0.85\,\text{m}$) over declared operator sets to guarantee source $\mathcal{M}(G^*) \ge \epsilon$.
+4. **External Engine Transfer Validation (ViZDoom):** Validated across $9,000$ discrete simulation episodes and an audited 50-arena unserviceable benchmark in headless C++ Doom, achieving **80.0% source-model repair**, **60.0% native ViZDoom rescue**, and **75.0% engine transfer efficiency** with full three-layer residual decomposition.
 
 ---
 
@@ -33,17 +44,19 @@ cd cut-the-cake
 pip install -e .
 ```
 
-### Running the Test Suite (74 Verification Gates)
+### Running the Test Suite (80 Verification Gates)
 
 ```bash
 pytest -v
 ```
 
-### Running the Inverse Repair Benchmark
+### Running the Canonical Inverse Repair Benchmark (Round 11.4A)
 
 ```bash
 python -m cut_the_cake.repair_benchmark
 ```
+
+See [**ROUND_11_4A_FREEZE.md**](results/repair/ROUND_11_4A_FREEZE.md) for the frozen scientific evidence and reproduction protocol.
 
 ---
 
