@@ -1,0 +1,190 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CADDocumentV1",
+  "description": "Tactical CAD Authoring Document Schema (v1.0) defining designer-authored geometry, routes, threats, and parameters with zero calculated metrics.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "document_id",
+    "name",
+    "units",
+    "player_model",
+    "geometry"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["cad_document_v1"]
+    },
+    "document_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "author": { "type": "string" },
+        "created_at": { "type": "string" },
+        "provenance": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "family": { "type": "string" },
+        "fixture_id": { "type": "string" }
+      }
+    },
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coordinates", "angles", "time"],
+      "properties": {
+        "coordinates": { "type": "string" },
+        "angles": { "type": "string" },
+        "time": { "type": "string" }
+      }
+    },
+    "player_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v_move_mps",
+        "omega_slew_deg_per_s",
+        "acquisition_latency_s",
+        "service_duration_s",
+        "initial_reticle_deg"
+      ],
+      "properties": {
+        "v_move_mps": { "type": "number", "exclusiveMinimum": 0 },
+        "omega_slew_deg_per_s": { "type": "number", "exclusiveMinimum": 0 },
+        "acquisition_latency_s": { "type": "number", "minimum": 0 },
+        "service_duration_s": { "type": "number", "minimum": 0 },
+        "initial_reticle_deg": { "type": "number" }
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boundary", "obstacles", "routes", "threats", "ports"],
+      "properties": {
+        "boundary": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "minItems": 3
+        },
+        "obstacles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "vertices"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "vertices": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": { "type": "number" },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 3
+              }
+            }
+          }
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "waypoints", "v_move_mps"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "waypoints": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": { "type": "number" },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 2
+              },
+              "v_move_mps": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          },
+          "minItems": 1
+        },
+        "threats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "polygon", "anchor", "due_window_s", "service_duration_s"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "polygon": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": { "type": "number" },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 3
+              },
+              "anchor": {
+                "type": "array",
+                "items": { "type": "number" },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "due_window_s": { "type": "number", "exclusiveMinimum": 0 },
+              "service_duration_s": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "segment", "port_type"],
+            "properties": {
+              "id": { "type": "string" },
+              "segment": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": { "type": "number" },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "port_type": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

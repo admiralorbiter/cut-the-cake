@@ -283,10 +283,10 @@ class ControllerPolicy(str, Enum):
 class SimulationController:
     """Base class for clearing agents executing inside the discrete ViZDoom loop."""
 
-    def __init__(self, policy: ControllerPolicy, params: TicCombatParameters):
+    def __init__(self, policy: ControllerPolicy, params: TicCombatParameters, initial_reticle_deg: float = 0.0):
         self.policy = policy
         self.params = params
-        self.reticle_deg: float = 0.0
+        self.reticle_deg: float = float(initial_reticle_deg)
         self.current_target_id: Optional[str] = None
         self.target_state: str = "IDLE"  # IDLE, ROTATING, ACQUIRING, SERVICING
         self.state_countdown_tics: int = 0
@@ -504,7 +504,8 @@ class DeterministicSimulationReferee:
         self,
         geo_module: GeometricModule,
         policy: ControllerPolicy = ControllerPolicy.ORACLE,
-        route_index: int = 0
+        route_index: int = 0,
+        initial_reticle_deg: float = 0.0
     ) -> SimulationEpisodeLog:
         """Run one synchronous deterministic episode."""
         route = geo_module.routes[route_index]
@@ -513,9 +514,9 @@ class DeterministicSimulationReferee:
         job_map = {j.id: j for j in jobs}
 
         # Solve scheduling oracle
-        sched_res = self.scheduler.solve(jobs, initial_reticle_deg=0.0)
+        sched_res = self.scheduler.solve(jobs, initial_reticle_deg=initial_reticle_deg)
 
-        controller = SimulationController(policy, self.params)
+        controller = SimulationController(policy, self.params, initial_reticle_deg=initial_reticle_deg)
         visible_threats: Dict[str, TicThreatJob] = {}
         threat_reveal_tics: Dict[str, int] = {}
         threat_clear_tics: Dict[str, int] = {}

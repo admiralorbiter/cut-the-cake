@@ -34,7 +34,8 @@ def test_adapter_zero_translation_matches_frozen_broken():
     assert res["r1_reveal_tic"] == 0
     assert res["r2_reveal_tic"] == 3
     assert res["stagger_gap_tics"] == 3
-    assert res["model_episode_survived"] is False
+    assert res["source_schedule_feasible"] is False
+    assert res["model_episode_survived"] is None
     assert res["external_engine_evidence"]["transfer_status"] == "not_run"
     assert res["external_engine_evidence"]["broken_engine_survived"] is None
 
@@ -54,7 +55,8 @@ def test_adapter_target_repair_translation_matches_frozen_repaired():
     assert res["r1_reveal_tic"] == 0
     assert res["r2_reveal_tic"] == 13
     assert res["stagger_gap_tics"] == 13
-    assert res["model_episode_survived"] is True
+    assert res["source_schedule_feasible"] is True
+    assert res["model_episode_survived"] is None
 
 
 def test_adapter_intermediate_monotonicity_sweep():
@@ -130,7 +132,7 @@ def test_adapter_geometric_rejection_of_invalid_translations():
         fixture_id="RepairPop_F1_StaggerDeficit_00",
         obstacle_id=0,
         translation_m=0.5,
-        axis="y"
+        axis="z"
     )
     assert res_axis["is_valid"] is False
     assert "axis" in res_axis["error_reason"].lower()

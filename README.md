@@ -47,18 +47,18 @@ pip install -e ".[cad]"
 ### Running the Test Suite
 
 ```bash
-# Run full test suite (96 tests at current HEAD)
+# Run full test suite (113 tests at current HEAD)
 pytest -v
 ```
 
-> **Note on Verification**: The frozen scientific core contains **80 tests** tagged at `round11.4a-freeze`. Current HEAD contains **96 tests** including Tactical CAD scene manifest schemas, adapter parity, live X-axis wall drag sweeps, deadline regression audits, and Flask CAD server endpoints.
+> **Note on Verification**: The frozen scientific core contains **80 tests** tagged at `round11.4a-freeze`. Current HEAD contains **113 tests** including `cad_document_v1` schemas with strict `additionalProperties: false`, fail-closed validation, raw JSON upload and active-document analyze endpoints, route-speed traversal overrides, structured generic diagnostics, and parameter-authority contracts.
 
-### Launching the Tactical CAD Workbench (Milestone 2A)
+### Launching the Tactical CAD Workbench (Milestone 2B.2)
 
 ```bash
 python -m cut_the_cake.cad_server --port 5000
 ```
-Open `http://127.0.0.1:5000/` in any modern web browser to interactively drag arena obstacles and inspect real-time authoritative Tactical Margin calculations.
+Open `http://127.0.0.1:5000/` in any modern web browser to interactively select and drag any obstacle in 2D (X and Y), commit cumulative multi-obstacle modifications, and inspect real-time sub-millisecond Tactical Margin calculations.
 
 ### Running the Canonical Inverse Repair Benchmark (Round 11.4A)
 
@@ -74,8 +74,8 @@ See [**ROUND_11_4A_FREEZE.md**](results/repair/ROUND_11_4A_FREEZE.md) for the fr
 
 ```
 cut-the-cake/
-├── src/cut_the_cake/           # Core Python engine, compiler, schedulers, adapter, and CAD server
-├── tests/                      # 96 comprehensive unit, PCG, ViZDoom, and CAD adapter tests
+├── src/cut_the_cake/           # Core Python engine, compiler, schedulers, CADDocument model, adapter, and CAD server
+├── tests/                      # 105 comprehensive unit, PCG, ViZDoom, CAD document, and adapter tests
 ├── cad/                        # Tactical CAD schemas, exports, and top-down 2D playback client
 ├── paper/                      # Academic manuscript, SVGs, and BibTeX references
 │   ├── manuscript.md
