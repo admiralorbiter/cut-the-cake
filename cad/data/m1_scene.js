@@ -1,5 +1,5 @@
 window.SCENE_MANIFEST = {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "provenance": {
     "scientific_freeze": "round11.4a-freeze",
     "commit_sha": "8a6b557",
@@ -25,7 +25,7 @@ window.SCENE_MANIFEST = {
     "service_duration_s": 0.1,
     "initial_reticle_deg": 0.0
   },
-  "geometry": {
+  "broken_geometry": {
     "boundary": [
       [
         0.0,
@@ -93,6 +93,7 @@ window.SCENE_MANIFEST = {
     "threats": [
       {
         "id": "F1_T1_L00",
+        "label": "Threat 1",
         "polygon": [
           [
             2.5,
@@ -124,6 +125,167 @@ window.SCENE_MANIFEST = {
       },
       {
         "id": "F1_T2_R00",
+        "label": "Threat 2",
+        "polygon": [
+          [
+            2.2,
+            2.1
+          ],
+          [
+            2.7,
+            2.1
+          ],
+          [
+            2.7,
+            2.6
+          ],
+          [
+            2.2,
+            2.6
+          ],
+          [
+            2.2,
+            2.1
+          ]
+        ],
+        "anchor": [
+          2.45,
+          2.35
+        ],
+        "due_window_s": 0.62,
+        "service_duration_s": 0.1
+      }
+    ],
+    "ports": [
+      {
+        "id": "PORT_IN",
+        "segment": [
+          [
+            0.0,
+            -1.0
+          ],
+          [
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "id": "PORT_OUT",
+        "segment": [
+          [
+            10.0,
+            -1.0
+          ],
+          [
+            10.0,
+            1.0
+          ]
+        ]
+      }
+    ]
+  },
+  "repaired_geometry": {
+    "boundary": [
+      [
+        0.0,
+        -3.0
+      ],
+      [
+        10.0,
+        -3.0
+      ],
+      [
+        10.0,
+        3.0
+      ],
+      [
+        0.0,
+        3.0
+      ],
+      [
+        0.0,
+        -3.0
+      ]
+    ],
+    "obstacles": [
+      {
+        "obstacle_id": 0,
+        "vertices": [
+          [
+            1.3,
+            0.25
+          ],
+          [
+            1.65,
+            0.25
+          ],
+          [
+            1.65,
+            1.8
+          ],
+          [
+            1.3,
+            1.8
+          ],
+          [
+            1.3,
+            0.25
+          ]
+        ]
+      }
+    ],
+    "route": {
+      "id": "main",
+      "waypoints": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          10.0,
+          0.0
+        ]
+      ],
+      "total_length_m": 10.0,
+      "v_move_mps": 4.5
+    },
+    "threats": [
+      {
+        "id": "F1_T1_L00",
+        "label": "Threat 1",
+        "polygon": [
+          [
+            2.5,
+            -1.8
+          ],
+          [
+            3.0,
+            -1.8
+          ],
+          [
+            3.0,
+            -1.3
+          ],
+          [
+            2.5,
+            -1.3
+          ],
+          [
+            2.5,
+            -1.8
+          ]
+        ],
+        "anchor": [
+          2.75,
+          -1.55
+        ],
+        "due_window_s": 0.62,
+        "service_duration_s": 0.1
+      },
+      {
+        "id": "F1_T2_R00",
+        "label": "Threat 2",
         "polygon": [
           [
             2.2,
@@ -188,11 +350,12 @@ window.SCENE_MANIFEST = {
     "tactical_margin_ms": -171.4,
     "l_star_tics": 6,
     "verdict": "unserviceable",
-    "engine_survived": false,
-    "death_tic": 25,
+    "model_episode_survived": false,
+    "model_death_tic": 25,
     "threat_jobs": [
       {
         "id": "F1_T1_L00",
+        "label": "Threat 1",
         "reveal_tic": 0,
         "reveal_s": 0.0,
         "due_window_tics": 22,
@@ -202,11 +365,13 @@ window.SCENE_MANIFEST = {
         "angle_deg": -29.41,
         "service_duration_tics": 4,
         "completion_tic": 13,
+        "service_complete_tic": 12,
         "completion_s": 0.3714,
         "lateness_tics": -9
       },
       {
         "id": "F1_T2_R00",
+        "label": "Threat 2",
         "reveal_tic": 3,
         "reveal_s": 0.0857,
         "due_window_tics": 22,
@@ -216,6 +381,7 @@ window.SCENE_MANIFEST = {
         "angle_deg": 48.7,
         "service_duration_tics": 4,
         "completion_tic": 31,
+        "service_complete_tic": 30,
         "completion_s": 0.8857,
         "lateness_tics": 6
       }
@@ -223,6 +389,7 @@ window.SCENE_MANIFEST = {
     "diagnostic": {
       "has_bottleneck": true,
       "critical_threat_id": "F1_T2_R00",
+      "critical_threat_label": "Threat 2",
       "controlling_occluder_obstacle_id": 0,
       "controlling_occluder_segment": [
         [
@@ -236,7 +403,7 @@ window.SCENE_MANIFEST = {
       ],
       "lateness_deficit_tics": 8,
       "lateness_deficit_ms": 228.6,
-      "explanation": "Threat 'F1_T2_R00' unoccludes too early along obstacle #0. Player requires +8 tics (+228.6ms) of additional delay to service prior threats without deadline breach."
+      "explanation": "Threat 2 ('F1_T2_R00') unoccludes too early along obstacle #0. Player requires +8 tics (+228.6ms) of additional delay to service prior threats without deadline breach."
     },
     "events": [
       {
@@ -244,49 +411,49 @@ window.SCENE_MANIFEST = {
         "time_s": 0.0,
         "type": "REVEAL",
         "threat_id": "F1_T1_L00",
-        "description": "Threat F1_T1_L00 becomes actionable / revealed at tic 0 (0.00s)"
+        "description": "Threat 1 becomes actionable / revealed at tic 0 (0.00s)"
       },
       {
         "tic": 3,
         "time_s": 0.0857,
         "type": "REVEAL",
         "threat_id": "F1_T2_R00",
-        "description": "Threat F1_T2_R00 becomes actionable / revealed at tic 3 (0.09s)"
+        "description": "Threat 2 becomes actionable / revealed at tic 3 (0.09s)"
       },
       {
         "tic": 8,
         "time_s": 0.2286,
         "type": "SERVICE_START",
         "threat_id": "F1_T1_L00",
-        "description": "Commenced fire / servicing threat F1_T1_L00 at tic 8"
+        "description": "Commenced fire / servicing Threat 1 at tic 8"
       },
       {
         "tic": 12,
         "time_s": 0.3429,
         "type": "SERVICE_COMPLETE",
         "threat_id": "F1_T1_L00",
-        "description": "Threat F1_T1_L00 neutralized at tic 12 (0.34s)"
+        "description": "Threat 1 neutralized at tic 12 (0.34s)"
       },
       {
         "tic": 22,
         "time_s": 0.6286,
         "type": "DEADLINE",
         "threat_id": "F1_T1_L00",
-        "description": "Threat F1_T1_L00 lethal deadline D_F1_T1_L00 at tic 22 (0.63s)"
+        "description": "Threat 1 lethal deadline D_F1_T1_L00 at tic 22 (0.63s)"
       },
       {
         "tic": 25,
         "time_s": 0.7143,
         "type": "DEADLINE",
         "threat_id": "F1_T2_R00",
-        "description": "Threat F1_T2_R00 lethal deadline D_F1_T2_R00 at tic 25 (0.71s)"
+        "description": "Threat 2 lethal deadline D_F1_T2_R00 at tic 25 (0.71s)"
       },
       {
         "tic": 25,
         "time_s": 0.7143,
         "type": "BREACH",
         "threat_id": "F1_T2_R00",
-        "description": "Lethal deadline breached by threat F1_T2_R00 at tic 25!"
+        "description": "Lethal deadline breached by Threat 2 at tic 25!"
       },
       {
         "tic": 25,
@@ -1183,7 +1350,7 @@ window.SCENE_MANIFEST = {
           "F1_T1_L00",
           "F1_T2_R00"
         ],
-        "active_target_id": "F1_T2_R00",
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1208,17 +1375,14 @@ window.SCENE_MANIFEST = {
         "tic": 26,
         "time_s": 0.7429,
         "player_pos": [
-          3.3429,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 3.3429,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1227,7 +1391,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1235,7 +1399,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1243,17 +1407,14 @@ window.SCENE_MANIFEST = {
         "tic": 27,
         "time_s": 0.7714,
         "player_pos": [
-          3.4714,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 3.4714,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1262,7 +1423,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1270,7 +1431,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1278,17 +1439,14 @@ window.SCENE_MANIFEST = {
         "tic": 28,
         "time_s": 0.8,
         "player_pos": [
-          3.6,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 3.6,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1297,7 +1455,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1305,7 +1463,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1313,17 +1471,14 @@ window.SCENE_MANIFEST = {
         "tic": 29,
         "time_s": 0.8286,
         "player_pos": [
-          3.7286,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 3.7286,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1332,7 +1487,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1340,7 +1495,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1348,17 +1503,14 @@ window.SCENE_MANIFEST = {
         "tic": 30,
         "time_s": 0.8571,
         "player_pos": [
-          3.8571,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 3.8571,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1367,7 +1519,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1375,7 +1527,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1383,17 +1535,14 @@ window.SCENE_MANIFEST = {
         "tic": 31,
         "time_s": 0.8857,
         "player_pos": [
-          3.9857,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 3.9857,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1402,7 +1551,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1410,7 +1559,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1418,17 +1567,14 @@ window.SCENE_MANIFEST = {
         "tic": 32,
         "time_s": 0.9143,
         "player_pos": [
-          4.1143,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 4.1143,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1437,7 +1583,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1445,7 +1591,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1453,17 +1599,14 @@ window.SCENE_MANIFEST = {
         "tic": 33,
         "time_s": 0.9429,
         "player_pos": [
-          4.2429,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 4.2429,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1472,7 +1615,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1480,7 +1623,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1488,17 +1631,14 @@ window.SCENE_MANIFEST = {
         "tic": 34,
         "time_s": 0.9714,
         "player_pos": [
-          4.3714,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 4.3714,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1507,7 +1647,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1515,7 +1655,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1523,17 +1663,14 @@ window.SCENE_MANIFEST = {
         "tic": 35,
         "time_s": 1.0,
         "player_pos": [
-          4.5,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 4.5,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1542,7 +1679,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1550,7 +1687,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1558,17 +1695,14 @@ window.SCENE_MANIFEST = {
         "tic": 36,
         "time_s": 1.0286,
         "player_pos": [
-          4.6286,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 4.6286,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1577,7 +1711,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1585,7 +1719,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1593,17 +1727,14 @@ window.SCENE_MANIFEST = {
         "tic": 37,
         "time_s": 1.0571,
         "player_pos": [
-          4.7571,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 4.7571,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1612,7 +1743,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1620,7 +1751,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1628,17 +1759,14 @@ window.SCENE_MANIFEST = {
         "tic": 38,
         "time_s": 1.0857,
         "player_pos": [
-          4.8857,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 4.8857,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1647,7 +1775,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1655,7 +1783,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1663,17 +1791,14 @@ window.SCENE_MANIFEST = {
         "tic": 39,
         "time_s": 1.1143,
         "player_pos": [
-          5.0143,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 5.0143,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1682,7 +1807,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1690,7 +1815,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1698,17 +1823,14 @@ window.SCENE_MANIFEST = {
         "tic": 40,
         "time_s": 1.1429,
         "player_pos": [
-          5.1429,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 5.1429,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1717,7 +1839,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1725,7 +1847,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1733,17 +1855,14 @@ window.SCENE_MANIFEST = {
         "tic": 41,
         "time_s": 1.1714,
         "player_pos": [
-          5.2714,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 5.2714,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1752,7 +1871,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1760,7 +1879,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1768,17 +1887,14 @@ window.SCENE_MANIFEST = {
         "tic": 42,
         "time_s": 1.2,
         "player_pos": [
-          5.4,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 5.4,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1787,7 +1903,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1795,7 +1911,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1803,17 +1919,14 @@ window.SCENE_MANIFEST = {
         "tic": 43,
         "time_s": 1.2286,
         "player_pos": [
-          5.5286,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 5.5286,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1822,7 +1935,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1830,7 +1943,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1838,17 +1951,14 @@ window.SCENE_MANIFEST = {
         "tic": 44,
         "time_s": 1.2571,
         "player_pos": [
-          5.6571,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 5.6571,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1857,7 +1967,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1865,7 +1975,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1873,17 +1983,14 @@ window.SCENE_MANIFEST = {
         "tic": 45,
         "time_s": 1.2857,
         "player_pos": [
-          5.7857,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 5.7857,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1892,7 +1999,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1900,7 +2007,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1908,17 +2015,14 @@ window.SCENE_MANIFEST = {
         "tic": 46,
         "time_s": 1.3143,
         "player_pos": [
-          5.9143,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 5.9143,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1927,7 +2031,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1935,7 +2039,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1943,17 +2047,14 @@ window.SCENE_MANIFEST = {
         "tic": 47,
         "time_s": 1.3429,
         "player_pos": [
-          6.0429,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 6.0429,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1962,7 +2063,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -1970,7 +2071,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -1978,17 +2079,14 @@ window.SCENE_MANIFEST = {
         "tic": 48,
         "time_s": 1.3714,
         "player_pos": [
-          6.1714,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 6.1714,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -1997,7 +2095,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2005,7 +2103,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2013,17 +2111,14 @@ window.SCENE_MANIFEST = {
         "tic": 49,
         "time_s": 1.4,
         "player_pos": [
-          6.3,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 6.3,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2032,7 +2127,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2040,7 +2135,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2048,17 +2143,14 @@ window.SCENE_MANIFEST = {
         "tic": 50,
         "time_s": 1.4286,
         "player_pos": [
-          6.4286,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 6.4286,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2067,7 +2159,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2075,7 +2167,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2083,17 +2175,14 @@ window.SCENE_MANIFEST = {
         "tic": 51,
         "time_s": 1.4571,
         "player_pos": [
-          6.5571,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 6.5571,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2102,7 +2191,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2110,7 +2199,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2118,17 +2207,14 @@ window.SCENE_MANIFEST = {
         "tic": 52,
         "time_s": 1.4857,
         "player_pos": [
-          6.6857,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 6.6857,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2137,7 +2223,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2145,7 +2231,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2153,17 +2239,14 @@ window.SCENE_MANIFEST = {
         "tic": 53,
         "time_s": 1.5143,
         "player_pos": [
-          6.8143,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 6.8143,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2172,7 +2255,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2180,7 +2263,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2188,17 +2271,14 @@ window.SCENE_MANIFEST = {
         "tic": 54,
         "time_s": 1.5429,
         "player_pos": [
-          6.9429,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 6.9429,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2207,7 +2287,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2215,7 +2295,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2223,17 +2303,14 @@ window.SCENE_MANIFEST = {
         "tic": 55,
         "time_s": 1.5714,
         "player_pos": [
-          7.0714,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 7.0714,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2242,7 +2319,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2250,7 +2327,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2258,17 +2335,14 @@ window.SCENE_MANIFEST = {
         "tic": 56,
         "time_s": 1.6,
         "player_pos": [
-          7.2,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 7.2,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2277,7 +2351,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2285,7 +2359,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2293,17 +2367,14 @@ window.SCENE_MANIFEST = {
         "tic": 57,
         "time_s": 1.6286,
         "player_pos": [
-          7.3286,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 7.3286,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2312,7 +2383,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2320,7 +2391,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2328,17 +2399,14 @@ window.SCENE_MANIFEST = {
         "tic": 58,
         "time_s": 1.6571,
         "player_pos": [
-          7.4571,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 7.4571,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2347,7 +2415,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2355,7 +2423,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2363,17 +2431,14 @@ window.SCENE_MANIFEST = {
         "tic": 59,
         "time_s": 1.6857,
         "player_pos": [
-          7.5857,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 7.5857,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2382,7 +2447,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2390,7 +2455,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2398,17 +2463,14 @@ window.SCENE_MANIFEST = {
         "tic": 60,
         "time_s": 1.7143,
         "player_pos": [
-          7.7143,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 7.7143,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2417,7 +2479,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2425,7 +2487,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2433,17 +2495,14 @@ window.SCENE_MANIFEST = {
         "tic": 61,
         "time_s": 1.7429,
         "player_pos": [
-          7.8429,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 7.8429,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2452,7 +2511,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2460,7 +2519,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2468,17 +2527,14 @@ window.SCENE_MANIFEST = {
         "tic": 62,
         "time_s": 1.7714,
         "player_pos": [
-          7.9714,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 7.9714,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2487,7 +2543,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2495,7 +2551,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2503,17 +2559,14 @@ window.SCENE_MANIFEST = {
         "tic": 63,
         "time_s": 1.8,
         "player_pos": [
-          8.1,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 8.1,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2522,7 +2575,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2530,7 +2583,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2538,17 +2591,14 @@ window.SCENE_MANIFEST = {
         "tic": 64,
         "time_s": 1.8286,
         "player_pos": [
-          8.2286,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 8.2286,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2557,7 +2607,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2565,7 +2615,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2573,17 +2623,14 @@ window.SCENE_MANIFEST = {
         "tic": 65,
         "time_s": 1.8571,
         "player_pos": [
-          8.3571,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 8.3571,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2592,7 +2639,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2600,7 +2647,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2608,17 +2655,14 @@ window.SCENE_MANIFEST = {
         "tic": 66,
         "time_s": 1.8857,
         "player_pos": [
-          8.4857,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 8.4857,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2627,7 +2671,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2635,7 +2679,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2643,17 +2687,14 @@ window.SCENE_MANIFEST = {
         "tic": 67,
         "time_s": 1.9143,
         "player_pos": [
-          8.6143,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 8.6143,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2662,7 +2703,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2670,7 +2711,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2678,17 +2719,14 @@ window.SCENE_MANIFEST = {
         "tic": 68,
         "time_s": 1.9429,
         "player_pos": [
-          8.7429,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 8.7429,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2697,7 +2735,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2705,7 +2743,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2713,17 +2751,14 @@ window.SCENE_MANIFEST = {
         "tic": 69,
         "time_s": 1.9714,
         "player_pos": [
-          8.8714,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 8.8714,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2732,7 +2767,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2740,7 +2775,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2748,17 +2783,14 @@ window.SCENE_MANIFEST = {
         "tic": 70,
         "time_s": 2.0,
         "player_pos": [
-          9.0,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 9.0,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2767,7 +2799,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2775,7 +2807,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2783,17 +2815,14 @@ window.SCENE_MANIFEST = {
         "tic": 71,
         "time_s": 2.0286,
         "player_pos": [
-          9.1286,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 9.1286,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2802,7 +2831,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2810,7 +2839,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2818,17 +2847,14 @@ window.SCENE_MANIFEST = {
         "tic": 72,
         "time_s": 2.0571,
         "player_pos": [
-          9.2571,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 9.2571,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2837,7 +2863,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2845,7 +2871,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2853,17 +2879,14 @@ window.SCENE_MANIFEST = {
         "tic": 73,
         "time_s": 2.0857,
         "player_pos": [
-          9.3857,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 9.3857,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2872,7 +2895,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2880,7 +2903,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2888,17 +2911,14 @@ window.SCENE_MANIFEST = {
         "tic": 74,
         "time_s": 2.1143,
         "player_pos": [
-          9.5143,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 9.5143,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2907,7 +2927,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2915,7 +2935,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2923,17 +2943,14 @@ window.SCENE_MANIFEST = {
         "tic": 75,
         "time_s": 2.1429,
         "player_pos": [
-          9.6429,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 9.6429,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2942,7 +2959,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2950,7 +2967,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2958,17 +2975,14 @@ window.SCENE_MANIFEST = {
         "tic": 76,
         "time_s": 2.1714,
         "player_pos": [
-          9.7714,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 9.7714,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -2977,7 +2991,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -2985,7 +2999,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -2993,17 +3007,14 @@ window.SCENE_MANIFEST = {
         "tic": 77,
         "time_s": 2.2,
         "player_pos": [
-          9.9,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 9.9,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -3012,7 +3023,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -3020,7 +3031,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       },
@@ -3028,17 +3039,14 @@ window.SCENE_MANIFEST = {
         "tic": 78,
         "time_s": 2.2286,
         "player_pos": [
-          10.0,
+          3.2143,
           0.0
         ],
-        "route_dist_m": 10.0,
+        "route_dist_m": 3.2143,
         "forward_heading_deg": 0.0,
         "reticle_heading_deg": 48.7,
-        "visible_threat_ids": [
-          "F1_T1_L00",
-          "F1_T2_R00"
-        ],
-        "active_target_id": "F1_T2_R00",
+        "visible_threat_ids": [],
+        "active_target_id": null,
         "controller_state": "DEAD",
         "los_rays": [
           {
@@ -3047,7 +3055,7 @@ window.SCENE_MANIFEST = {
               2.75,
               -1.55
             ],
-            "is_visible": true
+            "is_visible": false
           },
           {
             "threat_id": "F1_T2_R00",
@@ -3055,7 +3063,7 @@ window.SCENE_MANIFEST = {
               2.45,
               2.35
             ],
-            "is_visible": true
+            "is_visible": false
           }
         ]
       }
@@ -3078,11 +3086,12 @@ window.SCENE_MANIFEST = {
     "tactical_margin_ms": 57.1,
     "l_star_tics": -2,
     "verdict": "serviceable",
-    "engine_survived": true,
-    "death_tic": null,
+    "model_episode_survived": true,
+    "model_death_tic": null,
     "threat_jobs": [
       {
         "id": "F1_T1_L00",
+        "label": "Threat 1",
         "reveal_tic": 0,
         "reveal_s": 0.0,
         "due_window_tics": 22,
@@ -3092,11 +3101,13 @@ window.SCENE_MANIFEST = {
         "angle_deg": -29.41,
         "service_duration_tics": 4,
         "completion_tic": 13,
+        "service_complete_tic": 12,
         "completion_s": 0.3714,
         "lateness_tics": -9
       },
       {
         "id": "F1_T2_R00",
+        "label": "Threat 2",
         "reveal_tic": 13,
         "reveal_s": 0.3714,
         "due_window_tics": 22,
@@ -3106,6 +3117,7 @@ window.SCENE_MANIFEST = {
         "angle_deg": 71.67,
         "service_duration_tics": 4,
         "completion_tic": 33,
+        "service_complete_tic": 32,
         "completion_s": 0.9429,
         "lateness_tics": -2
       }
@@ -3113,6 +3125,7 @@ window.SCENE_MANIFEST = {
     "diagnostic": {
       "has_bottleneck": false,
       "critical_threat_id": null,
+      "critical_threat_label": null,
       "controlling_occluder_obstacle_id": null,
       "controlling_occluder_segment": null,
       "lateness_deficit_tics": 0,
@@ -3125,56 +3138,56 @@ window.SCENE_MANIFEST = {
         "time_s": 0.0,
         "type": "REVEAL",
         "threat_id": "F1_T1_L00",
-        "description": "Threat F1_T1_L00 becomes actionable / revealed at tic 0 (0.00s)"
+        "description": "Threat 1 becomes actionable / revealed at tic 0 (0.00s)"
       },
       {
         "tic": 8,
         "time_s": 0.2286,
         "type": "SERVICE_START",
         "threat_id": "F1_T1_L00",
-        "description": "Commenced fire / servicing threat F1_T1_L00 at tic 8"
+        "description": "Commenced fire / servicing Threat 1 at tic 8"
       },
       {
         "tic": 12,
         "time_s": 0.3429,
         "type": "SERVICE_COMPLETE",
         "threat_id": "F1_T1_L00",
-        "description": "Threat F1_T1_L00 neutralized at tic 12 (0.34s)"
+        "description": "Threat 1 neutralized at tic 12 (0.34s)"
       },
       {
         "tic": 13,
         "time_s": 0.3714,
         "type": "REVEAL",
         "threat_id": "F1_T2_R00",
-        "description": "Threat F1_T2_R00 becomes actionable / revealed at tic 13 (0.37s)"
+        "description": "Threat 2 becomes actionable / revealed at tic 13 (0.37s)"
       },
       {
         "tic": 22,
         "time_s": 0.6286,
         "type": "DEADLINE",
         "threat_id": "F1_T1_L00",
-        "description": "Threat F1_T1_L00 lethal deadline D_F1_T1_L00 at tic 22 (0.63s)"
+        "description": "Threat 1 lethal deadline D_F1_T1_L00 at tic 22 (0.63s)"
       },
       {
         "tic": 28,
         "time_s": 0.8,
         "type": "SERVICE_START",
         "threat_id": "F1_T2_R00",
-        "description": "Commenced fire / servicing threat F1_T2_R00 at tic 28"
+        "description": "Commenced fire / servicing Threat 2 at tic 28"
       },
       {
         "tic": 32,
         "time_s": 0.9143,
         "type": "SERVICE_COMPLETE",
         "threat_id": "F1_T2_R00",
-        "description": "Threat F1_T2_R00 neutralized at tic 32 (0.91s)"
+        "description": "Threat 2 neutralized at tic 32 (0.91s)"
       },
       {
         "tic": 35,
         "time_s": 1.0,
         "type": "DEADLINE",
         "threat_id": "F1_T2_R00",
-        "description": "Threat F1_T2_R00 lethal deadline D_F1_T2_R00 at tic 35 (1.00s)"
+        "description": "Threat 2 lethal deadline D_F1_T2_R00 at tic 35 (1.00s)"
       }
     ],
     "telemetry_frames": [
@@ -5932,9 +5945,12 @@ window.SCENE_MANIFEST = {
       }
     ]
   },
-  "external_engine_bridge": {
+  "external_engine_evidence": {
+    "evidence_source": "results/repair/results.json",
+    "evidence_tier": "native_engine_verified",
     "broken_engine_survived": false,
     "repaired_engine_survived": true,
+    "survival_flip": true,
     "delta_export_tics": 0,
     "delta_execution_tics": 0,
     "delta_total_tics": 0,

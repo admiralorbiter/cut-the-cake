@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "SceneManifestV1",
-  "description": "Tactical CAD Scene Manifest Schema (v1.0) defining the boundary between the frozen Python scientific core and browser telemetry playback clients.",
+  "description": "Tactical CAD Scene Manifest Schema (v1.1) defining the boundary between the frozen Python scientific core and browser telemetry playback clients.",
   "type": "object",
   "required": [
     "schema_version",
@@ -9,18 +9,17 @@
     "clock",
     "units",
     "source_parameters",
-    "geometry",
+    "broken_geometry",
+    "repaired_geometry",
     "broken_scenario",
     "repair",
     "repaired_scenario",
-    "external_engine_bridge"
+    "external_engine_evidence"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
-      "enum": [
-        "1.0"
-      ]
+      "enum": ["1.1", "1.0"]
     },
     "provenance": {
       "type": "object",
@@ -32,72 +31,33 @@
         "evidence_tier"
       ],
       "properties": {
-        "scientific_freeze": {
-          "type": "string"
-        },
-        "commit_sha": {
-          "type": "string"
-        },
-        "fixture_id": {
-          "type": "string"
-        },
-        "family": {
-          "type": "string"
-        },
+        "scientific_freeze": { "type": "string" },
+        "commit_sha": { "type": "string" },
+        "fixture_id": { "type": "string" },
+        "family": { "type": "string" },
         "evidence_tier": {
           "type": "string",
-          "enum": [
-            "source_model",
-            "engine_conditioned",
-            "native_engine_verified"
-          ]
+          "enum": ["source_model", "engine_conditioned", "native_engine_verified"]
         }
       }
     },
     "clock": {
       "type": "object",
-      "required": [
-        "ticrate_hz",
-        "dt_s",
-        "total_tics",
-        "total_duration_s"
-      ],
+      "required": ["ticrate_hz", "dt_s", "total_tics", "total_duration_s"],
       "properties": {
-        "ticrate_hz": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "dt_s": {
-          "type": "number",
-          "exclusiveMinimum": 0
-        },
-        "total_tics": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "total_duration_s": {
-          "type": "number",
-          "minimum": 0
-        }
+        "ticrate_hz": { "type": "integer", "minimum": 1 },
+        "dt_s": { "type": "number", "exclusiveMinimum": 0 },
+        "total_tics": { "type": "integer", "minimum": 0 },
+        "total_duration_s": { "type": "number", "minimum": 0 }
       }
     },
     "units": {
       "type": "object",
-      "required": [
-        "coordinates",
-        "angles",
-        "time"
-      ],
+      "required": ["coordinates", "angles", "time"],
       "properties": {
-        "coordinates": {
-          "type": "string"
-        },
-        "angles": {
-          "type": "string"
-        },
-        "time": {
-          "type": "string"
-        }
+        "coordinates": { "type": "string" },
+        "angles": { "type": "string" },
+        "time": { "type": "string" }
       }
     },
     "source_parameters": {
@@ -110,185 +70,18 @@
         "initial_reticle_deg"
       ],
       "properties": {
-        "v_move_mps": {
-          "type": "number",
-          "exclusiveMinimum": 0
-        },
-        "omega_slew_deg_per_s": {
-          "type": "number",
-          "exclusiveMinimum": 0
-        },
-        "acquisition_latency_s": {
-          "type": "number",
-          "minimum": 0
-        },
-        "service_duration_s": {
-          "type": "number",
-          "minimum": 0
-        },
-        "initial_reticle_deg": {
-          "type": "number"
-        }
+        "v_move_mps": { "type": "number", "exclusiveMinimum": 0 },
+        "omega_slew_deg_per_s": { "type": "number", "exclusiveMinimum": 0 },
+        "acquisition_latency_s": { "type": "number", "minimum": 0 },
+        "service_duration_s": { "type": "number", "minimum": 0 },
+        "initial_reticle_deg": { "type": "number" }
       }
     },
-    "geometry": {
-      "type": "object",
-      "required": [
-        "boundary",
-        "obstacles",
-        "route",
-        "threats",
-        "ports"
-      ],
-      "properties": {
-        "boundary": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            },
-            "minItems": 2,
-            "maxItems": 2
-          },
-          "minItems": 3
-        },
-        "obstacles": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "obstacle_id",
-              "vertices"
-            ],
-            "properties": {
-              "obstacle_id": {
-                "type": "integer"
-              },
-              "vertices": {
-                "type": "array",
-                "items": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  },
-                  "minItems": 2,
-                  "maxItems": 2
-                },
-                "minItems": 3
-              }
-            }
-          }
-        },
-        "route": {
-          "type": "object",
-          "required": [
-            "id",
-            "waypoints",
-            "total_length_m",
-            "v_move_mps"
-          ],
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "waypoints": {
-              "type": "array",
-              "items": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                },
-                "minItems": 2,
-                "maxItems": 2
-              },
-              "minItems": 2
-            },
-            "total_length_m": {
-              "type": "number",
-              "exclusiveMinimum": 0
-            },
-            "v_move_mps": {
-              "type": "number",
-              "exclusiveMinimum": 0
-            }
-          }
-        },
-        "threats": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "id",
-              "polygon",
-              "anchor",
-              "due_window_s",
-              "service_duration_s"
-            ],
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "polygon": {
-                "type": "array",
-                "items": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  },
-                  "minItems": 2,
-                  "maxItems": 2
-                },
-                "minItems": 3
-              },
-              "anchor": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                },
-                "minItems": 2,
-                "maxItems": 2
-              },
-              "due_window_s": {
-                "type": "number",
-                "exclusiveMinimum": 0
-              },
-              "service_duration_s": {
-                "type": "number",
-                "exclusiveMinimum": 0
-              }
-            }
-          }
-        },
-        "ports": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "id",
-              "segment"
-            ],
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "segment": {
-                "type": "array",
-                "items": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  },
-                  "minItems": 2,
-                  "maxItems": 2
-                },
-                "minItems": 2,
-                "maxItems": 2
-              }
-            }
-          }
-        }
-      }
+    "broken_geometry": {
+      "$ref": "#/definitions/geometry_data"
+    },
+    "repaired_geometry": {
+      "$ref": "#/definitions/geometry_data"
     },
     "broken_scenario": {
       "$ref": "#/definitions/scenario_data"
@@ -305,70 +98,158 @@
         "preservation_validated"
       ],
       "properties": {
-        "operator": {
-          "type": "string"
-        },
-        "obstacle_id": {
-          "type": "integer"
-        },
-        "displacement_m": {
-          "type": "number"
-        },
+        "operator": { "type": "string" },
+        "obstacle_id": { "type": "integer" },
+        "displacement_m": { "type": "number" },
         "direction": {
           "type": "array",
-          "items": {
-            "type": "number"
-          },
+          "items": { "type": "number" },
           "minItems": 2,
           "maxItems": 2
         },
-        "edit_distance_m": {
-          "type": "number"
-        },
-        "description": {
-          "type": "string"
-        },
-        "preservation_validated": {
-          "type": "boolean"
-        }
+        "edit_distance_m": { "type": "number" },
+        "description": { "type": "string" },
+        "preservation_validated": { "type": "boolean" }
       }
     },
     "repaired_scenario": {
       "$ref": "#/definitions/scenario_data"
     },
-    "external_engine_bridge": {
+    "external_engine_evidence": {
       "type": "object",
       "required": [
+        "evidence_source",
+        "evidence_tier",
         "broken_engine_survived",
         "repaired_engine_survived",
+        "survival_flip",
         "delta_export_tics",
         "delta_execution_tics",
         "delta_total_tics",
         "transfer_efficiency"
       ],
       "properties": {
-        "broken_engine_survived": {
-          "type": "boolean"
+        "evidence_source": { "type": "string" },
+        "evidence_tier": {
+          "type": "string",
+          "enum": ["source_model", "engine_conditioned", "native_engine_verified"]
         },
-        "repaired_engine_survived": {
-          "type": "boolean"
-        },
-        "delta_export_tics": {
-          "type": "integer"
-        },
-        "delta_execution_tics": {
-          "type": "integer"
-        },
-        "delta_total_tics": {
-          "type": "integer"
-        },
-        "transfer_efficiency": {
-          "type": "number"
-        }
+        "broken_engine_survived": { "type": "boolean" },
+        "repaired_engine_survived": { "type": "boolean" },
+        "survival_flip": { "type": "boolean" },
+        "delta_export_tics": { "type": "integer" },
+        "delta_execution_tics": { "type": "integer" },
+        "delta_total_tics": { "type": "integer" },
+        "transfer_efficiency": { "type": "number" }
       }
     }
   },
   "definitions": {
+    "geometry_data": {
+      "type": "object",
+      "required": ["boundary", "obstacles", "route", "threats", "ports"],
+      "properties": {
+        "boundary": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "minItems": 3
+        },
+        "obstacles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["obstacle_id", "vertices"],
+            "properties": {
+              "obstacle_id": { "type": "integer" },
+              "vertices": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": { "type": "number" },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 3
+              }
+            }
+          }
+        },
+        "route": {
+          "type": "object",
+          "required": ["id", "waypoints", "total_length_m", "v_move_mps"],
+          "properties": {
+            "id": { "type": "string" },
+            "waypoints": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": { "type": "number" },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "minItems": 2
+            },
+            "total_length_m": { "type": "number", "exclusiveMinimum": 0 },
+            "v_move_mps": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "threats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "polygon", "anchor", "due_window_s", "service_duration_s"],
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "polygon": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": { "type": "number" },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 3
+              },
+              "anchor": {
+                "type": "array",
+                "items": { "type": "number" },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "due_window_s": { "type": "number", "exclusiveMinimum": 0 },
+              "service_duration_s": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "segment"],
+            "properties": {
+              "id": { "type": "string" },
+              "segment": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": { "type": "number" },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          }
+        }
+      }
+    },
     "scenario_data": {
       "type": "object",
       "required": [
@@ -376,38 +257,24 @@
         "tactical_margin_ms",
         "l_star_tics",
         "verdict",
-        "engine_survived",
-        "death_tic",
+        "model_episode_survived",
+        "model_death_tic",
         "threat_jobs",
         "diagnostic",
         "events",
         "telemetry_frames"
       ],
       "properties": {
-        "tactical_margin_tics": {
-          "type": "integer"
-        },
-        "tactical_margin_ms": {
-          "type": "number"
-        },
-        "l_star_tics": {
-          "type": "integer"
-        },
+        "tactical_margin_tics": { "type": "integer" },
+        "tactical_margin_ms": { "type": "number" },
+        "l_star_tics": { "type": "integer" },
         "verdict": {
           "type": "string",
-          "enum": [
-            "serviceable",
-            "unserviceable"
-          ]
+          "enum": ["serviceable", "unserviceable"]
         },
-        "engine_survived": {
-          "type": "boolean"
-        },
-        "death_tic": {
-          "type": [
-            "integer",
-            "null"
-          ]
+        "model_episode_survived": { "type": "boolean" },
+        "model_death_tic": {
+          "type": ["integer", "null"]
         },
         "threat_jobs": {
           "type": "array",
@@ -415,6 +282,7 @@
             "type": "object",
             "required": [
               "id",
+              "label",
               "reveal_tic",
               "reveal_s",
               "due_window_tics",
@@ -424,136 +292,65 @@
               "angle_deg",
               "service_duration_tics",
               "completion_tic",
+              "service_complete_tic",
               "completion_s",
               "lateness_tics"
             ],
             "properties": {
-              "id": {
-                "type": "string"
-              },
-              "reveal_tic": {
-                "type": "integer"
-              },
-              "reveal_s": {
-                "type": "number"
-              },
-              "due_window_tics": {
-                "type": "integer"
-              },
-              "due_window_s": {
-                "type": "number"
-              },
-              "deadline_tic": {
-                "type": "integer"
-              },
-              "deadline_s": {
-                "type": "number"
-              },
-              "angle_deg": {
-                "type": "number"
-              },
-              "service_duration_tics": {
-                "type": "integer"
-              },
-              "completion_tic": {
-                "type": "integer"
-              },
-              "completion_s": {
-                "type": "number"
-              },
-              "lateness_tics": {
-                "type": "integer"
-              }
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "reveal_tic": { "type": "integer" },
+              "reveal_s": { "type": "number" },
+              "due_window_tics": { "type": "integer" },
+              "due_window_s": { "type": "number" },
+              "deadline_tic": { "type": "integer" },
+              "deadline_s": { "type": "number" },
+              "angle_deg": { "type": "number" },
+              "service_duration_tics": { "type": "integer" },
+              "completion_tic": { "type": "integer" },
+              "service_complete_tic": { "type": "integer" },
+              "completion_s": { "type": "number" },
+              "lateness_tics": { "type": "integer" }
             }
           }
         },
         "diagnostic": {
-          "type": [
-            "object",
-            "null"
-          ],
+          "type": ["object", "null"],
           "properties": {
-            "has_bottleneck": {
-              "type": "boolean"
-            },
-            "critical_threat_id": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "controlling_occluder_obstacle_id": {
-              "type": [
-                "integer",
-                "null"
-              ]
-            },
+            "has_bottleneck": { "type": "boolean" },
+            "critical_threat_id": { "type": ["string", "null"] },
+            "critical_threat_label": { "type": ["string", "null"] },
+            "controlling_occluder_obstacle_id": { "type": ["integer", "null"] },
             "controlling_occluder_segment": {
-              "type": [
-                "array",
-                "null"
-              ],
+              "type": ["array", "null"],
               "items": {
                 "type": "array",
-                "items": {
-                  "type": "number"
-                },
+                "items": { "type": "number" },
                 "minItems": 2,
                 "maxItems": 2
               },
               "minItems": 2,
               "maxItems": 2
             },
-            "lateness_deficit_tics": {
-              "type": "integer"
-            },
-            "lateness_deficit_ms": {
-              "type": "number"
-            },
-            "explanation": {
-              "type": "string"
-            }
+            "lateness_deficit_tics": { "type": "integer" },
+            "lateness_deficit_ms": { "type": "number" },
+            "explanation": { "type": "string" }
           }
         },
         "events": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "tic",
-              "time_s",
-              "type",
-              "threat_id",
-              "description"
-            ],
+            "required": ["tic", "time_s", "type", "threat_id", "description"],
             "properties": {
-              "tic": {
-                "type": "integer"
-              },
-              "time_s": {
-                "type": "number"
-              },
+              "tic": { "type": "integer" },
+              "time_s": { "type": "number" },
               "type": {
                 "type": "string",
-                "enum": [
-                  "REVEAL",
-                  "DEADLINE",
-                  "SERVICE_START",
-                  "SERVICE_COMPLETE",
-                  "BREACH",
-                  "DEATH",
-                  "SURVIVAL"
-                ]
+                "enum": ["REVEAL", "DEADLINE", "SERVICE_START", "SERVICE_COMPLETE", "BREACH", "DEATH", "SURVIVAL"]
               },
-              "threat_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "description": {
-                "type": "string"
-              }
+              "threat_id": { "type": ["string", "null"] },
+              "description": { "type": "string" }
             }
           }
         },
@@ -574,76 +371,42 @@
               "los_rays"
             ],
             "properties": {
-              "tic": {
-                "type": "integer"
-              },
-              "time_s": {
-                "type": "number"
-              },
+              "tic": { "type": "integer" },
+              "time_s": { "type": "number" },
               "player_pos": {
                 "type": "array",
-                "items": {
-                  "type": "number"
-                },
+                "items": { "type": "number" },
                 "minItems": 2,
                 "maxItems": 2
               },
-              "route_dist_m": {
-                "type": "number"
-              },
-              "forward_heading_deg": {
-                "type": "number"
-              },
-              "reticle_heading_deg": {
-                "type": "number"
-              },
+              "route_dist_m": { "type": "number" },
+              "forward_heading_deg": { "type": "number" },
+              "reticle_heading_deg": { "type": "number" },
               "visible_threat_ids": {
                 "type": "array",
-                "items": {
-                  "type": "string"
-                }
+                "items": { "type": "string" }
               },
               "active_target_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "controller_state": {
                 "type": "string",
-                "enum": [
-                  "IDLE",
-                  "SLEWING",
-                  "ACQUIRING",
-                  "SERVICING",
-                  "DEAD",
-                  "CLEARED"
-                ]
+                "enum": ["IDLE", "SLEWING", "ACQUIRING", "SERVICING", "DEAD", "CLEARED"]
               },
               "los_rays": {
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": [
-                    "threat_id",
-                    "target_pos",
-                    "is_visible"
-                  ],
+                  "required": ["threat_id", "target_pos", "is_visible"],
                   "properties": {
-                    "threat_id": {
-                      "type": "string"
-                    },
+                    "threat_id": { "type": "string" },
                     "target_pos": {
                       "type": "array",
-                      "items": {
-                        "type": "number"
-                      },
+                      "items": { "type": "number" },
                       "minItems": 2,
                       "maxItems": 2
                     },
-                    "is_visible": {
-                      "type": "boolean"
-                    }
+                    "is_visible": { "type": "boolean" }
                   }
                 }
               }

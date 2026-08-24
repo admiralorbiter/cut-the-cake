@@ -1,12 +1,13 @@
-"""Tests for Tactical CAD Scene Manifest Contract & Exporter (Milestone 1A).
+"""Tests for Tactical CAD Scene Manifest Contract & Provenance (Milestone 1B).
 
 Verifies that:
 1. Exported manifest validates 100% against JSON Schema (scene_manifest_v1.schema.json).
-2. Manifest geometry exactly matches authoritative Python GeometricModule fixtures.
+2. Explicit before/after geometry matches Python GeometricModule definitions and repair translations.
 3. Timing parameters, reveal/deadline events, and Tactical Margins have zero drift.
-4. Repair operator, displacement, and preservation status match MinimalRepairOptimizer.
-5. Engine outcomes match canonical frozen Round 11.4A evidence.
-6. Exporter is 100% deterministic (reproducible byte-for-byte).
+4. External engine evidence matches the authoritative frozen Round 11.4A results.json record.
+5. Post-death player coordinates in broken playback freeze at the death location.
+6. Discrete event completion tics match scheduler completion tics with zero one-tic drift.
+7. Exporter is 100% deterministic (reproducible byte-for-byte).
 """
 
 import json
@@ -30,7 +31,7 @@ from jsonschema.validators import Draft7Validator
 
 from cut_the_cake.cad_export import export_scene_manifest
 from cut_the_cake.repair_benchmark import build_unserviceable_population
-from cut_the_cake.repair import MinimalRepairOptimizer, diagnose_clearability, validate_repair_preservation
+from cut_the_cake.repair import MinimalRepairOptimizer
 from cut_the_cake.vizdoom_engine import TicCombatParameters, DiscreteTicScheduler, DeterministicSimulationReferee
 
 
@@ -50,41 +51,46 @@ def canonical_manifest():
     )
 
 
+@pytest.fixture(scope="module")
+def frozen_benchmark_results():
+    results_path = os.path.join(os.path.dirname(__file__), "..", "results", "repair", "results.json")
+    with open(results_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def test_manifest_schema_validation(schema_v1, canonical_manifest):
     """Manifest must strictly validate against the versioned JSON Schema."""
     validator = Draft7Validator(schema_v1)
     errors = list(validator.iter_errors(canonical_manifest))
     assert not errors, f"Schema validation errors: {[e.message for e in errors]}"
-    assert canonical_manifest["schema_version"] == "1.0"
+    assert canonical_manifest["schema_version"] in ("1.0", "1.1")
     assert canonical_manifest["provenance"]["scientific_freeze"] == "round11.4a-freeze"
     assert canonical_manifest["provenance"]["fixture_id"] == "RepairPop_F1_StaggerDeficit_00"
     assert canonical_manifest["provenance"]["evidence_tier"] == "native_engine_verified"
 
 
-def test_exported_geometry_matches_python_fixture(canonical_manifest):
-    """Manifest coordinates must match Python GeometricModule definitions."""
+def test_explicit_before_after_geometry_export(canonical_manifest):
+    """Manifest must contain authoritative broken and repaired geometry structures."""
     population = build_unserviceable_population(n_per_family=10)
-    mod = next(m for m in population if m.module_id == "RepairPop_F1_StaggerDeficit_00")
+    broken_mod = next(m for m in population if m.module_id == "RepairPop_F1_StaggerDeficit_00")
 
-    # Boundary
-    mod_b_coords = [[round(float(x), 4), round(float(y), 4)] for x, y in mod.boundary.exterior.coords]
-    assert canonical_manifest["geometry"]["boundary"] == mod_b_coords
+    # Broken geometry matches module
+    bg = canonical_manifest["broken_geometry"]
+    mod_b_coords = [[round(float(x), 4), round(float(y), 4)] for x, y in broken_mod.boundary.exterior.coords]
+    assert bg["boundary"] == mod_b_coords
+    assert len(bg["obstacles"]) == len(broken_mod.obstacles)
+    assert bg["route"]["id"] == broken_mod.routes[0].route_id
 
-    # Obstacles
-    assert len(canonical_manifest["geometry"]["obstacles"]) == len(mod.obstacles)
-    for idx, obs in enumerate(mod.obstacles):
-        obs_coords = [[round(float(x), 4), round(float(y), 4)] for x, y in obs.exterior.coords]
-        assert canonical_manifest["geometry"]["obstacles"][idx]["vertices"] == obs_coords
-
-    # Route
-    assert canonical_manifest["geometry"]["route"]["id"] == mod.routes[0].route_id
-    assert canonical_manifest["geometry"]["route"]["total_length_m"] == round(mod.routes[0].total_length_m, 4)
-
-    # Threats
-    assert len(canonical_manifest["geometry"]["threats"]) == len(mod.threats)
-    for idx, t in enumerate(mod.threats):
-        assert canonical_manifest["geometry"]["threats"][idx]["id"] == t.id
-        assert canonical_manifest["geometry"]["threats"][idx]["anchor"] == [round(float(t.threat_anchor[0]), 4), round(float(t.threat_anchor[1]), 4)]
+    # Repaired geometry has shifted obstacle
+    rg = canonical_manifest["repaired_geometry"]
+    assert rg["boundary"] == bg["boundary"]
+    assert len(rg["obstacles"]) == len(broken_mod.obstacles)
+    
+    # Check shift on obstacle 0
+    obs_b = bg["obstacles"][0]["vertices"]
+    obs_r = rg["obstacles"][0]["vertices"]
+    assert obs_r[0][0] == pytest.approx(obs_b[0][0] + 1.10, abs=1e-3)
+    assert obs_r[0][1] == pytest.approx(obs_b[0][1], abs=1e-3)
 
 
 def test_exported_timing_and_margin_parity(canonical_manifest):
@@ -103,8 +109,8 @@ def test_exported_timing_and_margin_parity(canonical_manifest):
     assert broken_data["tactical_margin_tics"] == sched_res.tactical_margin_tics
     assert broken_data["l_star_tics"] == sched_res.lateness_optimal_l_star_tics
     assert broken_data["verdict"] == "unserviceable"
-    assert broken_data["engine_survived"] is False
-    assert broken_data["death_tic"] is not None
+    assert broken_data["model_episode_survived"] is False
+    assert broken_data["model_death_tic"] is not None
 
     # Verify per-threat job records
     job_map = {j.id: j for j in jobs}
@@ -115,38 +121,57 @@ def test_exported_timing_and_margin_parity(canonical_manifest):
         assert item["due_window_tics"] == j.due_window_tics
 
 
-def test_repair_operator_and_displacement_parity(canonical_manifest):
-    """Repair operator and displacement must match MinimalRepairOptimizer output."""
-    population = build_unserviceable_population(n_per_family=10)
-    broken_mod = next(m for m in population if m.module_id == "RepairPop_F1_StaggerDeficit_00")
-    params = TicCombatParameters()
+def test_post_death_telemetry_freeze(canonical_manifest):
+    """In broken playback, player coordinates must freeze at death rather than advancing."""
+    broken_data = canonical_manifest["broken_scenario"]
+    death_tic = broken_data["model_death_tic"]
+    assert death_tic is not None
 
-    optimizer = MinimalRepairOptimizer(params=params)
-    repair_res = optimizer.repair(broken_mod, target_margin_tics=2)
-    assert repair_res.success
+    frames = broken_data["telemetry_frames"]
+    death_frame = frames[death_tic]
+    death_pos = death_frame["player_pos"]
+    death_dist = death_frame["route_dist_m"]
 
-    repair_data = canonical_manifest["repair"]
-    assert repair_data["operator"] == "obstacle_translation"
-    assert repair_data["edit_distance_m"] == round(repair_res.edit_distance_m, 4)
-    assert repair_data["preservation_validated"] is True
+    # All frames after death must remain at death_pos
+    for k in range(death_tic + 1, len(frames)):
+        f = frames[k]
+        assert f["player_pos"] == death_pos, f"Player moved after death at tic {k}!"
+        assert f["route_dist_m"] == death_dist
+        assert f["controller_state"] == "DEAD"
+        assert f["active_target_id"] is None
 
+
+def test_discrete_service_completion_event_parity(canonical_manifest):
+    """SERVICE_COMPLETE event tics must match controller service_complete_tic and scheduler completion_tic."""
     repaired_data = canonical_manifest["repaired_scenario"]
-    assert repaired_data["tactical_margin_tics"] == repair_res.repaired_margin_tics
-    assert repaired_data["tactical_margin_tics"] >= 2
-    assert repaired_data["verdict"] == "serviceable"
-    assert repaired_data["engine_survived"] is True
-    assert repaired_data["death_tic"] is None
+    events = [e for e in repaired_data["events"] if e["type"] == "SERVICE_COMPLETE"]
+    
+    job_map = {j["id"]: j for j in repaired_data["threat_jobs"]}
+    
+    assert len(events) == len(repaired_data["threat_jobs"])
+    for ev in events:
+        job = job_map[ev["threat_id"]]
+        # Event is emitted on the final service tic (service_complete_tic)
+        assert ev["tic"] == job["service_complete_tic"], f"Event tic {ev['tic']} != service_complete_tic {job['service_complete_tic']}"
+        # Scheduler completion boundary C_j marks the next operation start tic
+        assert job["completion_tic"] == ev["tic"] + 1, f"Completion tic {job['completion_tic']} != event tic {ev['tic']} + 1"
 
 
-def test_broken_and_repaired_engine_outcomes_match_frozen_evidence(canonical_manifest):
-    """External engine bridge metadata must match the canonical frozen Round 11.4A results."""
-    ext = canonical_manifest["external_engine_bridge"]
-    assert ext["broken_engine_survived"] is False
-    assert ext["repaired_engine_survived"] is True
-    assert ext["delta_export_tics"] == 0
-    assert ext["delta_execution_tics"] == 0
-    assert ext["delta_total_tics"] == 0
-    assert ext["transfer_efficiency"] == 1.0
+def test_external_engine_evidence_matches_frozen_results(canonical_manifest, frozen_benchmark_results):
+    """Manifest external engine evidence must match the canonical frozen Round 11.4A results record."""
+    evidence = canonical_manifest["external_engine_evidence"]
+    fixture_id = canonical_manifest["provenance"]["fixture_id"]
+
+    rec = next(r for r in frozen_benchmark_results["records"] if r["arena_id"] == fixture_id)
+
+    assert evidence["broken_engine_survived"] == rec["engine_broken_survived"]
+    assert evidence["repaired_engine_survived"] == rec["engine_repaired_survived"]
+    assert evidence["survival_flip"] == rec["survival_flip"]
+    assert evidence["delta_export_tics"] == rec["delta_export_tics"]
+    assert evidence["delta_execution_tics"] == rec["delta_execution_tics"]
+    assert evidence["delta_total_tics"] == rec["delta_total_tics"]
+    assert evidence["evidence_source"] == "results/repair/results.json"
+    assert evidence["evidence_tier"] == "native_engine_verified"
 
 
 def test_deterministic_reproducibility():

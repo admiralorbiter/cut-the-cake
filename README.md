@@ -44,11 +44,14 @@ cd cut-the-cake
 pip install -e .
 ```
 
-### Running the Test Suite (80 Verification Gates)
+### Running the Test Suite
 
 ```bash
+# Run full test suite (87 tests at current HEAD)
 pytest -v
 ```
+
+> **Note on Verification**: The frozen scientific core contains **80 tests** tagged at `round11.4a-freeze`. Current HEAD contains **87 tests** including Tactical CAD scene manifest schemas, geometry parity, post-death telemetry freeze, and frozen results contract tests.
 
 ### Running the Canonical Inverse Repair Benchmark (Round 11.4A)
 
@@ -65,7 +68,7 @@ See [**ROUND_11_4A_FREEZE.md**](results/repair/ROUND_11_4A_FREEZE.md) for the fr
 ```
 cut-the-cake/
 ├── src/cut_the_cake/           # Core Python engine, compiler, schedulers, and repair optimizer
-├── tests/                      # 80 comprehensive unit, PCG, and native ViZDoom tests
+├── tests/                      # 87 comprehensive unit, PCG, ViZDoom, and CAD manifest tests
 ├── cad/                        # Tactical CAD schemas, exports, and top-down 2D playback client
 ├── paper/                      # Academic manuscript, SVGs, and BibTeX references
 │   ├── manuscript.md

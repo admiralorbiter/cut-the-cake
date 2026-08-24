@@ -1,5 +1,5 @@
 /**
- * Tactical CAD (Cut the Cake) - Milestone 1A Telemetry Playback Engine
+ * Tactical CAD (Cut the Cake) - Milestone 1B Telemetry Playback Engine
  * 
  * Strict boundary:
  * - Browser is a dumb renderer for scientific telemetry.
@@ -29,6 +29,7 @@ const btnReset = document.getElementById('btnReset');
 const btnSpeed05 = document.getElementById('btnSpeed05');
 const btnSpeed10 = document.getElementById('btnSpeed10');
 const btnSpeed20 = document.getElementById('btnSpeed20');
+const btnJumpBottleneck = document.getElementById('btnJumpBottleneck');
 
 const timelineScrubber = document.getElementById('timelineScrubber');
 const timelineProgress = document.getElementById('timelineProgress');
@@ -47,9 +48,12 @@ const valMargin = document.getElementById('valMargin');
 const valMarginMs = document.getElementById('valMarginMs');
 const valLStar = document.getElementById('valLStar');
 const valEngineStatus = document.getElementById('valEngineStatus');
+const valEngineResidual = document.getElementById('valEngineResidual');
 const controllerStateBadge = document.getElementById('controllerStateBadge');
 const valActiveTarget = document.getElementById('valActiveTarget');
 const valRouteDist = document.getElementById('valRouteDist');
+const valMoveSpeed = document.getElementById('valMoveSpeed');
+const valSlewSpeed = document.getElementById('valSlewSpeed');
 
 const threatListContainer = document.getElementById('threatListContainer');
 const whyCard = document.getElementById('whyCard');
@@ -61,13 +65,26 @@ const tagPlayerPos = document.getElementById('tagPlayerPos');
 const tagReticle = document.getElementById('tagReticle');
 const tagLOS = document.getElementById('tagLOS');
 
-// Coordinate Transformation (Meters -> Canvas Pixels)
+// What Changed elements
+const wcT1Broken = document.getElementById('wcT1Broken');
+const wcT1Repaired = document.getElementById('wcT1Repaired');
+const wcT2Broken = document.getElementById('wcT2Broken');
+const wcT2Repaired = document.getElementById('wcT2Repaired');
+const wcGapBroken = document.getElementById('wcGapBroken');
+const wcGapRepaired = document.getElementById('wcGapRepaired');
+const wcMarginBroken = document.getElementById('wcMarginBroken');
+const wcMarginRepaired = document.getElementById('wcMarginRepaired');
+const wcShift = document.getElementById('wcShift');
+
+// Dynamic Coordinate Transformation (Meters -> Canvas Pixels)
 let viewTransform = {
-  scale: 60, // pixels per meter
+  scale: 60,
   offsetX: 80,
   offsetY: 250,
-  widthM: 10,
-  heightM: 6
+  minX: 0,
+  maxX: 10,
+  minY: -3,
+  maxY: 3
 };
 
 // Initialize Application
@@ -79,9 +96,11 @@ async function init() {
       const resp = await fetch('../data/m1_scene.json');
       manifest = await resp.json();
     }
+    setupDynamicBounds();
     setupUI();
     setupCanvas();
     renderTimelineEvents();
+    populateWhatChangedCard();
     updateView(0);
   } catch (err) {
     console.error('Failed to load scene manifest:', err);
@@ -89,38 +108,86 @@ async function init() {
   }
 }
 
+function getGeometry() {
+  return currentMode === 'broken' ? manifest.broken_geometry : manifest.repaired_geometry;
+}
+
 function getScenario() {
   return currentMode === 'broken' ? manifest.broken_scenario : manifest.repaired_scenario;
 }
 
-function getObstacles() {
-  if (currentMode === 'broken') {
-    return manifest.geometry.obstacles;
-  } else {
-    // In repaired mode, obstacle 0 is shifted by the repair operator
-    const repair = manifest.repair;
-    return manifest.geometry.obstacles.map(obs => {
-      if (obs.obstacle_id === repair.obstacle_id) {
-        const dx = repair.direction[0] * repair.displacement_m;
-        const dy = repair.direction[1] * repair.displacement_m;
-        return {
-          obstacle_id: obs.obstacle_id,
-          vertices: obs.vertices.map(([x, y]) => [x + dx, y + dy])
-        };
-      }
-      return obs;
+function setupDynamicBounds() {
+  const boundary = manifest.broken_geometry.boundary;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  
+  boundary.forEach(([x, y]) => {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  });
+
+  manifest.broken_geometry.threats.forEach(t => {
+    t.polygon.forEach(([x, y]) => {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
     });
-  }
+  });
+
+  viewTransform.minX = minX;
+  viewTransform.maxX = maxX;
+  viewTransform.minY = minY;
+  viewTransform.maxY = maxY;
+}
+
+function populateWhatChangedCard() {
+  const bJobs = manifest.broken_scenario.threat_jobs;
+  const rJobs = manifest.repaired_scenario.threat_jobs;
+  const repair = manifest.repair;
+  const dt = manifest.clock.dt_s;
+
+  const t1B = bJobs[0];
+  const t1R = rJobs[0];
+  const t2B = bJobs[1];
+  const t2R = rJobs[1];
+
+  wcT1Broken.textContent = `Tic ${t1B.reveal_tic} (${(t1B.reveal_tic * dt).toFixed(2)}s)`;
+  wcT1Repaired.textContent = `Tic ${t1R.reveal_tic} (${(t1R.reveal_tic * dt).toFixed(2)}s)`;
+
+  wcT2Broken.textContent = `Tic ${t2B.reveal_tic} (${(t2B.reveal_tic * dt).toFixed(2)}s)`;
+  const t2DeltaTics = t2R.reveal_tic - t2B.reveal_tic;
+  const t2DeltaMs = Math.round(t2DeltaTics * dt * 1000);
+  wcT2Repaired.textContent = `Tic ${t2R.reveal_tic} (${(t2R.reveal_tic * dt).toFixed(2)}s) [Delayed +${t2DeltaTics}t / +${t2DeltaMs}ms]`;
+
+  const gapB = Math.round((t2B.reveal_tic - t1B.reveal_tic) * dt * 1000);
+  const gapR = Math.round((t2R.reveal_tic - t1R.reveal_tic) * dt * 1000);
+  wcGapBroken.textContent = `${gapB} ms`;
+  wcGapRepaired.textContent = `${gapR} ms (+${gapR - gapB}ms)`;
+
+  wcMarginBroken.textContent = `${manifest.broken_scenario.tactical_margin_tics} tics (${manifest.broken_scenario.tactical_margin_ms}ms)`;
+  wcMarginRepaired.textContent = `+${manifest.repaired_scenario.tactical_margin_tics} tics (+${manifest.repaired_scenario.tactical_margin_ms}ms)`;
+
+  wcShift.textContent = `+${repair.displacement_m.toFixed(2)} m (${repair.direction[0] >= 0 ? '+x' : '-x'})`;
 }
 
 function setupUI() {
   fixtureBadge.textContent = manifest.provenance.fixture_id;
-  evidenceBadge.textContent = manifest.provenance.evidence_tier === 'native_engine_verified'
-    ? 'FROZEN EVIDENCE: SOURCE + VIZDOOM VERIFIED'
-    : 'SOURCE MODEL VERIFIED';
+  evidenceBadge.textContent = manifest.external_engine_evidence.evidence_tier === 'native_engine_verified'
+    ? 'EXTERNAL: NATIVE VIZDOOM VERIFIED'
+    : 'SOURCE MODEL PLAYBACK';
 
   readoutTotalTics.textContent = manifest.clock.total_tics;
   readoutTotalTime.textContent = manifest.clock.total_duration_s.toFixed(2) + 's';
+
+  const vMove = manifest.source_parameters.v_move_mps;
+  const movePerTic = (vMove / manifest.clock.ticrate_hz).toFixed(3);
+  valMoveSpeed.textContent = `${vMove.toFixed(1)} m/s (${movePerTic} m/tic)`;
+
+  const wSlew = manifest.source_parameters.omega_slew_deg_per_s;
+  const slewPerTic = (wSlew / manifest.clock.ticrate_hz).toFixed(2);
+  valSlewSpeed.textContent = `${wSlew.toFixed(0)}°/s (${slewPerTic}°/tic)`;
 
   // Mode Toggle Events
   btnModeBroken.addEventListener('click', () => switchMode('broken'));
@@ -131,6 +198,17 @@ function setupUI() {
   btnStepBack.addEventListener('click', () => stepTic(-1));
   btnStepFwd.addEventListener('click', () => stepTic(1));
   btnReset.addEventListener('click', () => setTic(0));
+
+  // Jump to Bottleneck
+  btnJumpBottleneck.addEventListener('click', () => {
+    if (currentMode === 'broken') {
+      const bJobs = manifest.broken_scenario.threat_jobs;
+      setTic(bJobs[1] ? bJobs[1].reveal_tic : 3);
+    } else {
+      const rJobs = manifest.repaired_scenario.threat_jobs;
+      setTic(rJobs[1] ? rJobs[1].reveal_tic : 13);
+    }
+  });
 
   // Speed Controls
   btnSpeed05.addEventListener('click', () => setSpeed(0.5, btnSpeed05));
@@ -155,11 +233,15 @@ function switchMode(mode) {
     btnModeRepaired.className = 'toggle-btn';
     repairCard.style.display = 'none';
     whyCard.style.display = 'block';
+    const bJobs = manifest.broken_scenario.threat_jobs;
+    btnJumpBottleneck.textContent = `⚡ Jump to Critical Bottleneck (Tic ${bJobs[1] ? bJobs[1].reveal_tic : 3})`;
   } else {
     btnModeBroken.className = 'toggle-btn';
     btnModeRepaired.className = 'toggle-btn active repaired';
     repairCard.style.display = 'block';
     whyCard.style.display = 'none';
+    const rJobs = manifest.repaired_scenario.threat_jobs;
+    btnJumpBottleneck.textContent = `⚡ Jump to Delayed Reveal (Tic ${rJobs[1] ? rJobs[1].reveal_tic : 13})`;
   }
   renderTimelineEvents();
   updateView(currentTic);
@@ -233,13 +315,15 @@ function resizeCanvas() {
   canvas.width = rect.width - 20;
   canvas.height = rect.height - 20;
   
-  // Arena is 10m x 6m (X: [0, 10], Y: [-3, 3])
-  const padding = 50;
-  const scaleX = (canvas.width - padding * 2) / 10.5;
-  const scaleY = (canvas.height - padding * 2) / 6.5;
+  const spanX = (viewTransform.maxX - viewTransform.minX) + 1.0;
+  const spanY = (viewTransform.maxY - viewTransform.minY) + 1.0;
+  
+  const padding = 55;
+  const scaleX = (canvas.width - padding * 2) / spanX;
+  const scaleY = (canvas.height - padding * 2) / spanY;
   viewTransform.scale = Math.min(scaleX, scaleY);
   
-  viewTransform.offsetX = padding + 15;
+  viewTransform.offsetX = padding + 15 - (viewTransform.minX * viewTransform.scale);
   viewTransform.offsetY = canvas.height / 2;
   
   drawMap();
@@ -303,9 +387,10 @@ function updateView(tic) {
     valMarginMs.textContent = `${scenario.tactical_margin_ms} ms`;
     valMarginMs.className = 'margin-status status-unserviceable';
     
-    valLStar.textContent = `+${scenario.l_star_tics} tics`;
-    valEngineStatus.textContent = `Fatal Death at Tic ${scenario.death_tic} (0 HP)`;
+    valLStar.textContent = `+${scenario.l_star_tics} tics (Late)`;
+    valEngineStatus.textContent = `Fatal Death (0 HP)`;
     valEngineStatus.style.color = 'var(--red)';
+    valEngineResidual.textContent = `${manifest.external_engine_evidence.delta_total_tics} tics (Zero Drift)`;
   } else {
     verdictBadge.textContent = 'SERVICEABLE';
     verdictBadge.className = 'badge verified';
@@ -316,8 +401,9 @@ function updateView(tic) {
     valMarginMs.className = 'margin-status status-serviceable';
     
     valLStar.textContent = `${scenario.l_star_tics} tics (On Time)`;
-    valEngineStatus.textContent = `100% Survival Rescued (100 HP)`;
+    valEngineStatus.textContent = `Rescued / Survived (100 HP)`;
     valEngineStatus.style.color = 'var(--green)';
+    valEngineResidual.textContent = `${manifest.external_engine_evidence.delta_total_tics} tics (Zero Drift)`;
   }
 
   // Controller State
@@ -336,8 +422,9 @@ function updateView(tic) {
     controllerStateBadge.style.color = 'var(--blue)';
   }
 
-  valActiveTarget.textContent = frame.active_target_id ? frame.active_target_id : 'None';
-  valRouteDist.textContent = `${frame.route_dist_m.toFixed(2)} m / 10.00 m`;
+  const actJob = scenario.threat_jobs.find(j => j.id === frame.active_target_id);
+  valActiveTarget.textContent = actJob ? `${actJob.label} (${actJob.id})` : 'None';
+  valRouteDist.textContent = `${frame.route_dist_m.toFixed(2)} m / ${getGeometry().route.total_length_m.toFixed(2)} m`;
 
   // Overlay Tags
   tagPlayerPos.textContent = `POS: (${frame.player_pos[0].toFixed(2)}m, ${frame.player_pos[1].toFixed(2)}m)`;
@@ -366,14 +453,17 @@ function renderThreatList(currentFrame) {
   scenario.threat_jobs.forEach(job => {
     const isVisible = currentFrame.visible_threat_ids.includes(job.id);
     const isTarget = currentFrame.active_target_id === job.id;
-    const isCleared = currentFrame.tic >= job.completion_tic && scenario.engine_survived;
+    const isCleared = currentFrame.tic >= job.service_complete_tic && scenario.model_episode_survived;
     const isBreached = currentFrame.tic >= job.deadline_tic && !isCleared;
 
     let statusTag = 'Occluded';
     let statusColor = 'var(--text-muted)';
+    let itemClass = 'threat-item';
+
     if (isCleared) {
-      statusTag = `Neutralized (Tic ${job.completion_tic})`;
+      statusTag = `Neutralized (Tic ${job.service_complete_tic})`;
       statusColor = 'var(--green)';
+      itemClass += ' neutralized';
     } else if (isBreached) {
       statusTag = `BREACHED (+${job.lateness_tics} tics)`;
       statusColor = 'var(--red)';
@@ -389,15 +479,16 @@ function renderThreatList(currentFrame) {
     }
 
     const item = document.createElement('div');
-    item.className = 'threat-item';
+    item.className = itemClass;
     item.innerHTML = `
       <div>
         <div class="threat-name">
           <div class="threat-pill" style="background: ${statusColor};"></div>
-          <span>${job.id}</span>
+          <span>${job.label}</span>
+          <span class="threat-sublabel">${job.id}</span>
         </div>
         <div class="threat-timing">
-          Reveal: r=${job.reveal_tic} | Deadline: D=${job.deadline_tic} | Angle: ${job.angle_deg}°
+          r=${job.reveal_tic} | D=${job.deadline_tic} | Angle: ${job.angle_deg}°
         </div>
       </div>
       <div class="threat-status-tag" style="color: ${statusColor};">${statusTag}</div>
@@ -410,22 +501,28 @@ function renderThreatList(currentFrame) {
 function drawMap(frame) {
   if (!manifest) return;
   const currentFrame = frame || getScenario().telemetry_frames[Math.min(currentTic, getScenario().telemetry_frames.length - 1)];
+  const currentGeo = getGeometry();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // 1. Draw Grid in Meters
   ctx.strokeStyle = '#121926';
   ctx.lineWidth = 1;
-  for (let x = 0; x <= 10; x += 1) {
+  const minX = Math.floor(viewTransform.minX);
+  const maxX = Math.ceil(viewTransform.maxX);
+  const minY = Math.floor(viewTransform.minY);
+  const maxY = Math.ceil(viewTransform.maxY);
+
+  for (let x = minX; x <= maxX; x += 1) {
     ctx.beginPath();
-    ctx.moveTo(toCanvasX(x), toCanvasY(-3));
-    ctx.lineTo(toCanvasX(x), toCanvasY(3));
+    ctx.moveTo(toCanvasX(x), toCanvasY(minY));
+    ctx.lineTo(toCanvasX(x), toCanvasY(maxY));
     ctx.stroke();
   }
-  for (let y = -3; y <= 3; y += 1) {
+  for (let y = minY; y <= maxY; y += 1) {
     ctx.beginPath();
-    ctx.moveTo(toCanvasX(0), toCanvasY(y));
-    ctx.lineTo(toCanvasX(10), toCanvasY(y));
+    ctx.moveTo(toCanvasX(minX), toCanvasY(y));
+    ctx.lineTo(toCanvasX(maxX), toCanvasY(y));
     ctx.stroke();
   }
 
@@ -434,7 +531,7 @@ function drawMap(frame) {
   ctx.lineWidth = 3;
   ctx.fillStyle = '#0a0e17';
   ctx.beginPath();
-  manifest.geometry.boundary.forEach(([x, y], idx) => {
+  currentGeo.boundary.forEach(([x, y], idx) => {
     if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
     else ctx.lineTo(toCanvasX(x), toCanvasY(y));
   });
@@ -447,43 +544,72 @@ function drawMap(frame) {
   ctx.lineWidth = 3;
   ctx.setLineDash([6, 6]);
   ctx.beginPath();
-  manifest.geometry.route.waypoints.forEach(([x, y], idx) => {
+  currentGeo.route.waypoints.forEach(([x, y], idx) => {
     if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
     else ctx.lineTo(toCanvasX(x), toCanvasY(y));
   });
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // 4. Ghosted Alternate Obstacle Outline
-  const repair = manifest.repair;
-  const ghostObstacles = currentMode === 'broken'
-    ? manifest.geometry.obstacles.map(obs => {
-        if (obs.obstacle_id === repair.obstacle_id) {
-          const dx = repair.direction[0] * repair.displacement_m;
-          const dy = repair.direction[1] * repair.displacement_m;
-          return { vertices: obs.vertices.map(([x, y]) => [x + dx, y + dy]) };
-        }
-        return null;
-      }).filter(Boolean)
-    : manifest.geometry.obstacles;
-
-  ghostObstacles.forEach(obs => {
-    ctx.strokeStyle = currentMode === 'broken' ? 'rgba(63, 185, 80, 0.4)' : 'rgba(248, 81, 73, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    obs.vertices.forEach(([x, y], idx) => {
-      if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
-      else ctx.lineTo(toCanvasX(x), toCanvasY(y));
+  // 4. Ghosted Alternate Obstacle Outline & Translation Arrow in Repaired Mode
+  if (currentMode === 'repaired') {
+    const ghostObstacles = manifest.broken_geometry.obstacles;
+    ghostObstacles.forEach(obs => {
+      ctx.strokeStyle = 'rgba(248, 81, 73, 0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      obs.vertices.forEach(([x, y], idx) => {
+        if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
+        else ctx.lineTo(toCanvasX(x), toCanvasY(y));
+      });
+      ctx.closePath();
+      ctx.stroke();
+      ctx.setLineDash([]);
     });
-    ctx.closePath();
-    ctx.stroke();
-    ctx.setLineDash([]);
-  });
+
+    // Draw Causal Translation Arrow from old obstacle to new obstacle
+    const oldObs = manifest.broken_geometry.obstacles[manifest.repair.obstacle_id];
+    const newObs = manifest.repaired_geometry.obstacles[manifest.repair.obstacle_id];
+    if (oldObs && newObs) {
+      const oldX = (oldObs.vertices[0][0] + oldObs.vertices[1][0]) / 2;
+      const oldY = (oldObs.vertices[0][1] + oldObs.vertices[2][1]) / 2;
+      const newX = (newObs.vertices[0][0] + newObs.vertices[1][0]) / 2;
+      const newY = (newObs.vertices[0][1] + newObs.vertices[2][1]) / 2;
+
+      const p1x = toCanvasX(oldX);
+      const p1y = toCanvasY(oldY);
+      const p2x = toCanvasX(newX);
+      const p2y = toCanvasY(newY);
+
+      // Arrow line
+      ctx.strokeStyle = '#3fb950';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(p1x, p1y);
+      ctx.lineTo(p2x, p2y);
+      ctx.stroke();
+
+      // Arrow head
+      const angle = Math.atan2(p2y - p1y, p2x - p1x);
+      const headLen = 10;
+      ctx.fillStyle = '#3fb950';
+      ctx.beginPath();
+      ctx.moveTo(p2x, p2y);
+      ctx.lineTo(p2x - headLen * Math.cos(angle - Math.PI / 6), p2y - headLen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(p2x - headLen * Math.cos(angle + Math.PI / 6), p2y - headLen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      // Label
+      ctx.fillStyle = '#3fb950';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText(`+${manifest.repair.displacement_m.toFixed(2)}m (Baffle Shift)`, (p1x + p2x) / 2 - 40, p1y - 14);
+    }
+  }
 
   // 5. Active Obstacles
-  const activeObstacles = getObstacles();
-  activeObstacles.forEach(obs => {
+  currentGeo.obstacles.forEach(obs => {
     ctx.fillStyle = currentMode === 'broken' ? '#1c2536' : '#142d2a';
     ctx.strokeStyle = currentMode === 'broken' ? '#4f688a' : '#3fb950';
     ctx.lineWidth = 2;
@@ -510,14 +636,27 @@ function drawMap(frame) {
   }
 
   // 6. Threats
-  manifest.geometry.threats.forEach(threat => {
+  const scenario = getScenario();
+  currentGeo.threats.forEach(threat => {
     const isVisible = currentFrame.visible_threat_ids.includes(threat.id);
     const isTarget = currentFrame.active_target_id === threat.id;
-    
+    const job = scenario.threat_jobs.find(j => j.id === threat.id);
+    const isNeutralized = job && currentFrame.tic >= job.service_complete_tic && scenario.model_episode_survived;
+
     // Draw threat bounding box
-    ctx.fillStyle = isVisible ? 'rgba(248, 81, 73, 0.25)' : 'rgba(248, 81, 73, 0.08)';
-    ctx.strokeStyle = isVisible ? '#f85149' : '#5c2528';
-    ctx.lineWidth = isTarget ? 3 : 1.5;
+    if (isNeutralized) {
+      ctx.fillStyle = 'rgba(63, 185, 80, 0.1)';
+      ctx.strokeStyle = '#238636';
+      ctx.lineWidth = 1.5;
+    } else if (isVisible) {
+      ctx.fillStyle = isTarget ? 'rgba(248, 81, 73, 0.35)' : 'rgba(248, 81, 73, 0.2)';
+      ctx.strokeStyle = '#f85149';
+      ctx.lineWidth = isTarget ? 3 : 1.5;
+    } else {
+      ctx.fillStyle = 'rgba(88, 166, 255, 0.05)';
+      ctx.strokeStyle = '#2a3a4f';
+      ctx.lineWidth = 1;
+    }
 
     ctx.beginPath();
     threat.polygon.forEach(([x, y], idx) => {
@@ -531,15 +670,16 @@ function drawMap(frame) {
     // Threat Anchor
     const ax = toCanvasX(threat.anchor[0]);
     const ay = toCanvasY(threat.anchor[1]);
-    ctx.fillStyle = isVisible ? '#f85149' : '#8b3a3e';
+    ctx.fillStyle = isNeutralized ? '#3fb950' : (isVisible ? '#f85149' : '#3b4b5e');
     ctx.beginPath();
     ctx.arc(ax, ay, 6, 0, Math.PI * 2);
     ctx.fill();
 
     // Label
-    ctx.fillStyle = '#f0f6fc';
+    ctx.fillStyle = isNeutralized ? '#3fb950' : '#f0f6fc';
     ctx.font = 'bold 11px monospace';
-    ctx.fillText(threat.id, ax - 20, ay - 12);
+    const displayTag = isNeutralized ? `✓ ${threat.label}` : threat.label;
+    ctx.fillText(displayTag, ax - 24, ay - 12);
   });
 
   // 7. LOS Rays from Player
@@ -549,13 +689,15 @@ function drawMap(frame) {
   currentFrame.los_rays.forEach(ray => {
     const tx = toCanvasX(ray.target_pos[0]);
     const ty = toCanvasY(ray.target_pos[1]);
+    const job = scenario.threat_jobs.find(j => j.id === ray.threat_id);
+    const isNeutralized = job && currentFrame.tic >= job.service_complete_tic && scenario.model_episode_survived;
 
-    if (ray.is_visible) {
+    if (ray.is_visible && !isNeutralized) {
       ctx.strokeStyle = currentFrame.active_target_id === ray.threat_id ? '#3fb950' : 'rgba(88, 166, 255, 0.6)';
       ctx.lineWidth = currentFrame.active_target_id === ray.threat_id ? 2.5 : 1;
       ctx.setLineDash([]);
     } else {
-      ctx.strokeStyle = 'rgba(248, 81, 73, 0.2)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
     }
@@ -568,32 +710,34 @@ function drawMap(frame) {
   });
 
   // 8. Player Body and Aim Laser
-  // View Cone
+  const isDead = currentFrame.controller_state === 'DEAD';
   const fwdAngleRad = (currentFrame.forward_heading_deg * Math.PI) / 180.0;
   const reticleAngleRad = (currentFrame.reticle_heading_deg * Math.PI) / 180.0;
   const fovRad = (90 * Math.PI) / 180.0;
 
-  ctx.fillStyle = 'rgba(88, 166, 255, 0.08)';
-  ctx.beginPath();
-  ctx.moveTo(px, py);
-  ctx.arc(px, py, 140, -reticleAngleRad - fovRad / 2, -reticleAngleRad + fovRad / 2);
-  ctx.closePath();
-  ctx.fill();
+  if (!isDead) {
+    // View Cone
+    ctx.fillStyle = 'rgba(88, 166, 255, 0.08)';
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.arc(px, py, 140, -reticleAngleRad - fovRad / 2, -reticleAngleRad + fovRad / 2);
+    ctx.closePath();
+    ctx.fill();
 
-  // Reticle Laser Pointer
-  const laserLen = 220;
-  const lx = px + Math.cos(reticleAngleRad) * laserLen;
-  const ly = py - Math.sin(reticleAngleRad) * laserLen; // flip y for canvas
+    // Reticle Laser Pointer
+    const laserLen = 220;
+    const lx = px + Math.cos(reticleAngleRad) * laserLen;
+    const ly = py - Math.sin(reticleAngleRad) * laserLen;
 
-  ctx.strokeStyle = currentFrame.controller_state === 'SERVICING' ? '#ffd33d' : '#58a6ff';
-  ctx.lineWidth = currentFrame.controller_state === 'SERVICING' ? 3 : 2;
-  ctx.beginPath();
-  ctx.moveTo(px, py);
-  ctx.lineTo(lx, ly);
-  ctx.stroke();
+    ctx.strokeStyle = currentFrame.controller_state === 'SERVICING' ? '#ffd33d' : '#58a6ff';
+    ctx.lineWidth = currentFrame.controller_state === 'SERVICING' ? 3 : 2;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(lx, ly);
+    ctx.stroke();
+  }
 
   // Player Circle
-  const isDead = currentFrame.controller_state === 'DEAD';
   ctx.fillStyle = isDead ? '#f85149' : '#58a6ff';
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2.5;
@@ -602,15 +746,27 @@ function drawMap(frame) {
   ctx.fill();
   ctx.stroke();
 
-  // Forward Heading Pointer
-  const hx = px + Math.cos(fwdAngleRad) * 16;
-  const hy = py - Math.sin(fwdAngleRad) * 16;
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(px, py);
-  ctx.lineTo(hx, hy);
-  ctx.stroke();
+  if (isDead) {
+    // Cross marker on dead player
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px - 5, py - 5);
+    ctx.lineTo(px + 5, py + 5);
+    ctx.moveTo(px + 5, py - 5);
+    ctx.lineTo(px - 5, py + 5);
+    ctx.stroke();
+  } else {
+    // Forward Heading Pointer
+    const hx = px + Math.cos(fwdAngleRad) * 16;
+    const hy = py - Math.sin(fwdAngleRad) * 16;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(hx, hy);
+    ctx.stroke();
+  }
 }
 
 // Start application
