@@ -1,1 +1,1213 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>05 — Tactical Margin</title><link rel='stylesheet' href='shared.css'></head><body><main class='wrap'><div class='top'><a class='back' href='index.html'>← prototypes</a><span class='pill'>teaching timeline</span></div><section class='hero'><div class='eyebrow'>05 · tactical margin</div><h1>What does Tactical Margin actually mean?</h1><p>It is just the signed amount of time left after the best clear finishes.</p></section><div class='card'><div class='label'>Your best clear always takes <b>650 ms</b>.</div><div class='controls'><label>Enemy deadline</label><input id='d' type='range' min='500' max='800' step='10' value='700'><span class='bigmetric' id='dv'>700 ms</span></div><div class='scene' style='min-height:220px'><svg id='v' viewBox='0 0 900 220'></svg></div><div class='grid2'><div class='card'><div class='label'>Tactical Margin</div><div id='m' class='bigmetric'></div></div><div class='card'><div class='label'>Meaning</div><div id='meaning' class='bigmetric'></div></div></div></div><div class='takeaway'>Margin asks: did the work fit before the deadline—and by how much?</div><details class='math'><summary>Show the math</summary><div class='eq'>M = −L* = D − C*</div><p>For this one-job teaching picture, the margin is simply deadline minus best completion time. In the full model, <b>L*</b> is the optimal maximum lateness across all threats.</p></details></main><script>const d=document.getElementById('d'),svg=document.getElementById('v'),C=650;function draw(){let D=+d.value,M=D-C;document.getElementById('dv').textContent=D+' ms';let mm=document.getElementById('m');mm.textContent=(M>0?'+':'')+M+' ms';mm.className='bigmetric '+(M>0?'good':M<0?'bad':'warn');let me=document.getElementById('meaning');me.textContent=M>0?'RESERVE':M<0?'TOO LATE':'BOUNDARY';me.className='bigmetric '+(M>0?'good':M<0?'bad':'warn');let x0=80,w=720,xc=x0+w*(C-450)/400,xd=x0+w*(D-450)/400;svg.innerHTML=`<line x1='${x0}' y1='110' x2='${x0+w}' y2='110' stroke='#33465d' stroke-width='8'/><rect x='${x0}' y='80' width='${xc-x0}' height='60' rx='8' fill='#58a6ff'/><text x='${(x0+xc)/2}' y='115' fill='white' text-anchor='middle' font-weight='900'>BEST CLEAR · 650 ms</text><line x1='${xd}' y1='50' x2='${xd}' y2='165' stroke='#f85149' stroke-width='5'/><text x='${xd}' y='38' fill='#f85149' text-anchor='middle' font-weight='900'>DEADLINE</text><line x1='${Math.min(xc,xd)}' y1='178' x2='${Math.max(xc,xd)}' y2='178' stroke='${M>=0?'#3fb950':'#f85149'}' stroke-width='5'/><text x='${(xc+xd)/2}' y='205' fill='${M>=0?'#3fb950':'#f85149'}' text-anchor='middle' font-weight='900'>${M>=0?'TIME LEFT':'TIME LATE'}: ${Math.abs(M)} ms</text>`}d.oninput=draw;draw()</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>05 — Tactical Margin & Error Budget</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .scene-svg {
+      width: 100%;
+      height: 250px;
+      display: block;
+      background: #070b11;
+      border-radius: 12px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .primer-box {
+      background: #0d1520;
+      border: 1px solid #1f3046;
+      border-radius: 14px;
+      padding: 20px;
+      margin: 20px 0 28px 0;
+    }
+    .primer-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #58a6ff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .primer-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .primer-step {
+      background: #111a26;
+      border: 1px solid #23364f;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .primer-step .step-num {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #8fa1b4;
+      text-transform: uppercase;
+    }
+    .primer-step .step-name {
+      font-size: 14px;
+      font-weight: 900;
+      color: #eef4fb;
+      margin: 4px 0;
+    }
+    .primer-step .step-time {
+      font-size: 12px;
+      font-family: monospace;
+      color: #58a6ff;
+      font-weight: 700;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .status-bad {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #f85149;
+    }
+    .status-good {
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+      color: #3fb950;
+    }
+    .status-warn {
+      background: rgba(210, 153, 34, 0.15);
+      border: 1px solid rgba(210, 153, 34, 0.4);
+      color: #d29922;
+    }
+    .timeline-bar {
+      display: flex;
+      height: 28px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 12px 0 6px 0;
+      background: #111822;
+      border: 1px solid #233142;
+      position: relative;
+    }
+    .seg-react {
+      background: #8957e5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .seg-delay {
+      background: #e36209;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .seg-slew {
+      background: #d29922;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .seg-service {
+      background: #1f6feb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .deadline-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #f85149;
+      box-shadow: 0 0 8px #f85149;
+      z-index: 10;
+    }
+    .deadline-label {
+      position: absolute;
+      top: -18px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #f85149;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .interactive-card {
+      margin-top: 24px;
+      background: #0f1622;
+      border: 1px solid #28374d;
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .preset-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 14px 0 18px 0;
+    }
+    .btn-preset {
+      background: #16202e;
+      border: 1px solid #2e4159;
+      color: #c9d1d9;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-preset:hover {
+      background: #223249;
+      color: #fff;
+      border-color: #58a6ff;
+    }
+    .btn-preset.active {
+      background: #1f6feb;
+      border-color: #58a6ff;
+      color: #fff;
+    }
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 16px 0 8px 0;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      color: #8fa1b4;
+    }
+    .slider-group label span {
+      color: #58a6ff;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #58a6ff;
+      cursor: pointer;
+    }
+    .metric-callout {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      background: #080d14;
+      border: 1px solid #1f2d3d;
+      padding: 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+    }
+    .metric-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .metric-box .lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: #8fa1b4;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .metric-box .val {
+      font-size: 18px;
+      font-weight: 900;
+      font-family: monospace;
+    }
+    .anim-btn-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      background: #0a111a;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid #1f2d3d;
+    }
+    .btn-anim {
+      background: #1c2738;
+      border: 1px solid #388bfd;
+      color: #58a6ff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .btn-anim:hover {
+      background: #263852;
+      color: #fff;
+    }
+    .btn-anim.playing {
+      background: #238636;
+      border-color: #3fb950;
+      color: #fff;
+    }
+    .verdict-banner {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.4;
+    }
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 10px;
+      font-size: 11.5px;
+      color: #8fa1b4;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-chip {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    @media (max-width: 1000px) {
+      .grid3 { grid-template-columns: 1fr; }
+      .primer-steps { grid-template-columns: 1fr 1fr; }
+      .metric-callout { grid-template-columns: 1fr 1fr; }
+      .slider-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <a class="back" href="index.html">← Concepts Index</a>
+      <span class="pill">Lesson 05 · Temporal Buffer & Margin</span>
+    </div>
+
+    <section class="hero">
+      <div class="eyebrow">05 · TACTICAL MARGIN & THE QUICK-DRAW RACE</div>
+      <h1>What does Tactical Margin actually mean?</h1>
+      <p>Tactical Margin is not a physical wall or room shape. It is a <strong>stopwatch race</strong>: the signed amount of time left over between when your bullet hits the enemy and when the enemy fires back at you.</p>
+    </section>
+
+    <!-- PLAIN-ENGLISH PRIMER: WHAT IS A CLEAR? -->
+    <div class="primer-box">
+      <div class="primer-title">
+        <span>⏱️</span>
+        <span>THE PHYSICAL ACTION: WHAT HAPPENS WHEN YOU "CLEAR" A CORNER?</span>
+      </div>
+      <p style="margin: 0; font-size: 14px; color: #8fa1b4; line-height: 1.5;">
+        The millisecond you step around a corner and an enemy enters your vision, a <strong>quick-draw duel starts at 0 ms</strong>. Your body and brain execute four physical steps to eliminate the threat:
+      </p>
+
+      <div class="primer-steps">
+        <div class="primer-step">
+          <div class="step-num">Step 1</div>
+          <div class="step-name">👁️ Visual Reveal</div>
+          <div class="step-time">t = 0 ms</div>
+          <div style="font-size: 11.5px; color: #8fa1b4; margin-top: 4px;">Enemy appears on your screen.</div>
+        </div>
+        <div class="primer-step">
+          <div class="step-num">Step 2</div>
+          <div class="step-name">🧠 Reaction Time (A)</div>
+          <div class="step-time">+150 ms</div>
+          <div style="font-size: 11.5px; color: #8fa1b4; margin-top: 4px;">Brain recognizes the threat.</div>
+        </div>
+        <div class="primer-step">
+          <div class="step-num">Step 3</div>
+          <div class="step-name">🎯 Crosshair Slew (q)</div>
+          <div class="step-time">+180 ms</div>
+          <div style="font-size: 11.5px; color: #8fa1b4; margin-top: 4px;">Hand rotates mouse to target.</div>
+        </div>
+        <div class="primer-step">
+          <div class="step-num">Step 4</div>
+          <div class="step-name">💥 Fire & Dwell (p)</div>
+          <div class="step-time">+100 ms</div>
+          <div style="font-size: 11.5px; color: #8fa1b4; margin-top: 4px;">Trigger clicked; shot strikes!</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(88, 166, 255, 0.08); border: 1px solid rgba(88, 166, 255, 0.25); border-radius: 8px; padding: 12px 16px; margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 13.5px; color: #eef4fb;"><strong>Your Total Elimination Time (C*):</strong> 150 + 180 + 100 = <strong style="color: #58a6ff; font-family: monospace;">430 ms</strong></span>
+        <span style="font-size: 13.5px; color: #eef4fb;"><strong>Enemy Deadline (D):</strong> Enemy fires back at <strong style="color: #f85149; font-family: monospace;">650 ms</strong></span>
+        <span style="font-size: 13.5px; color: #3fb950; font-weight: 800;">Margin (D − C*): +220 ms (YOU WIN!)</span>
+      </div>
+    </div>
+
+    <!-- SECTION 1: THE THREE TACTICAL REGIMES (DUAL-TRACK DUEL COMPARISON) -->
+    <div style="font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 4px;">The Three Tactical Outcomes (Duel Timelines)</div>
+    <p style="color: #8fa1b4; font-size: 14px; margin-top: 0;">Below are timeline graphs showing the race between your shot and the enemy's shot:</p>
+
+    <div class="grid3">
+      
+      <!-- CARD 1: POSITIVE MARGIN -->
+      <div class="card">
+        <div class="compare-title good">✓ 1. POSITIVE MARGIN (+150 ms)</div>
+        <div class="scene" style="min-height: 250px;">
+          <svg class="scene-svg" viewBox="0 0 320 250" style="height: 250px;">
+            <defs>
+              <pattern id="grid-c5-p1" width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="320" height="250" fill="url(#grid-c5-p1)"/>
+            <rect x="10" y="10" width="300" height="230" fill="none" stroke="#233142" stroke-width="1.5" rx="8"/>
+
+            <!-- Time Axis Header -->
+            <text x="25" y="32" fill="#8fa1b4" font-size="9.5" font-weight="900">TIMELINE (ms):</text>
+            <text x="60" y="32" fill="#58a6ff" font-size="9" font-family="monospace">0ms</text>
+            <text x="135" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">250ms</text>
+            <text x="210" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">500ms</text>
+            <text x="285" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">750ms</text>
+            <line x1="60" y1="38" x2="295" y2="38" stroke="#33465d" stroke-width="1.5"/>
+
+            <!-- Track 1: YOU -->
+            <text x="25" y="70" fill="#58a6ff" font-size="10" font-weight="900">YOU:</text>
+            <!-- You bar: 0 to 500ms (scale: 60px to 210px -> width 150px) -->
+            <rect x="60" y="55" width="150" height="24" rx="4" fill="#1f6feb"/>
+            <text x="135" y="71" fill="#fff" font-size="9.5" font-weight="900" text-anchor="middle">You Spot + Aim + Shoot (500ms)</text>
+            <circle cx="210" cy="67" r="6" fill="#3fb950" stroke="#fff" stroke-width="2"/>
+            <text x="210" y="92" fill="#3fb950" font-size="9.5" font-weight="900" text-anchor="middle">💥 YOUR SHOT</text>
+
+            <!-- Track 2: ENEMY -->
+            <text x="20" y="145" fill="#f85149" font-size="10" font-weight="900">ENEMY:</text>
+            <!-- Enemy bar: 0 to 650ms (scale: 60px to 255px -> width 195px) -->
+            <rect x="60" y="130" width="195" height="24" rx="4" fill="#2d1519" stroke="#f85149" stroke-width="1"/>
+            <text x="145" y="146" fill="#f85149" font-size="9.5" font-weight="bold" text-anchor="middle">Enemy Reacting (650ms Deadline)</text>
+            <circle cx="255" cy="142" r="6" fill="#f85149" stroke="#fff" stroke-width="2"/>
+            <text x="255" y="167" fill="#f85149" font-size="9.5" font-weight="900" text-anchor="middle">💀 ENEMY FIRES</text>
+
+            <!-- Reserve Buffer Bracket (from 210px to 255px -> 150ms buffer) -->
+            <rect x="210" y="105" width="45" height="18" rx="3" fill="rgba(63, 185, 80, 0.25)" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="2,2"/>
+            <line x1="210" y1="67" x2="210" y2="142" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="2,2"/>
+            <line x1="255" y1="67" x2="255" y2="142" stroke="#f85149" stroke-width="1.5" stroke-dasharray="2,2"/>
+            <text x="232" y="118" fill="#3fb950" font-size="9.5" font-weight="900" text-anchor="middle">+150ms</text>
+            
+            <text x="160" y="215" fill="#3fb950" font-size="11" font-weight="900" text-anchor="middle">✓ YOU SHOT 150 ms FIRST!</text>
+          </svg>
+        </div>
+
+        <div class="status-badge status-good">✓ SAFE RESERVE (+150ms)</div>
+        <p style="margin-top: 8px; font-size: 13px; color: #8fa1b4;"><strong>Clearable with error tolerance.</strong> You eliminate the threat before it fires. The encounter can absorb up to 150 ms of player hesitation or slight aim error without failure.</p>
+      </div>
+
+      <!-- CARD 2: ZERO MARGIN -->
+      <div class="card">
+        <div class="compare-title warn">⚖️ 2. ZERO MARGIN (0 ms)</div>
+        <div class="scene" style="min-height: 250px;">
+          <svg class="scene-svg" viewBox="0 0 320 250" style="height: 250px;">
+            <defs>
+              <pattern id="grid-c5-p2" width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="320" height="250" fill="url(#grid-c5-p2)"/>
+            <rect x="10" y="10" width="300" height="230" fill="none" stroke="#233142" stroke-width="1.5" rx="8"/>
+
+            <!-- Time Axis Header -->
+            <text x="25" y="32" fill="#8fa1b4" font-size="9.5" font-weight="900">TIMELINE (ms):</text>
+            <text x="60" y="32" fill="#58a6ff" font-size="9" font-family="monospace">0ms</text>
+            <text x="135" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">250ms</text>
+            <text x="210" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">500ms</text>
+            <text x="285" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">750ms</text>
+            <line x1="60" y1="38" x2="295" y2="38" stroke="#33465d" stroke-width="1.5"/>
+
+            <!-- Track 1: YOU -->
+            <text x="25" y="70" fill="#58a6ff" font-size="10" font-weight="900">YOU:</text>
+            <!-- You bar: 0 to 650ms (scale: 60px to 255px -> width 195px) -->
+            <rect x="60" y="55" width="195" height="24" rx="4" fill="#1f6feb"/>
+            <text x="155" y="71" fill="#fff" font-size="9.5" font-weight="900" text-anchor="middle">You Spot + Aim + Shoot (650ms)</text>
+            <circle cx="255" cy="67" r="6" fill="#d29922" stroke="#fff" stroke-width="2"/>
+            <text x="255" y="92" fill="#d29922" font-size="9.5" font-weight="900" text-anchor="middle">💥 SHOT @ 650ms</text>
+
+            <!-- Track 2: ENEMY -->
+            <text x="20" y="145" fill="#f85149" font-size="10" font-weight="900">ENEMY:</text>
+            <!-- Enemy bar: 0 to 650ms (scale: 60px to 255px -> width 195px) -->
+            <rect x="60" y="130" width="195" height="24" rx="4" fill="#2d1519" stroke="#d29922" stroke-width="1"/>
+            <text x="155" y="146" fill="#d29922" font-size="9.5" font-weight="bold" text-anchor="middle">Enemy Reacting (650ms Deadline)</text>
+            <circle cx="255" cy="142" r="6" fill="#d29922" stroke="#fff" stroke-width="2"/>
+            <text x="255" y="167" fill="#d29922" font-size="9.5" font-weight="900" text-anchor="middle">💀 ENEMY FIRES</text>
+
+            <!-- Zero Margin Alignment Line -->
+            <line x1="255" y1="55" x2="255" y2="155" stroke="#d29922" stroke-width="2.5" stroke-dasharray="3,2"/>
+            
+            <text x="160" y="215" fill="#d29922" font-size="11" font-weight="900" text-anchor="middle">⚖️ EXACT TIE (0 ms BUFFER)</text>
+          </svg>
+        </div>
+
+        <div class="status-badge status-warn">⚠️ KNIFE-EDGE BOUNDARY (0ms)</div>
+        <p style="margin-top: 8px; font-size: 13px; color: #8fa1b4;"><strong>Frame-perfect requirement.</strong> Clearable only under optimal reflexes with zero hesitation. Even a 10 ms delay causes a fatal deadline breach.</p>
+      </div>
+
+      <!-- CARD 3: NEGATIVE MARGIN -->
+      <div class="card">
+        <div class="compare-title bad">✗ 3. NEGATIVE MARGIN (−120 ms)</div>
+        <div class="scene" style="min-height: 250px;">
+          <svg class="scene-svg" viewBox="0 0 320 250" style="height: 250px;">
+            <defs>
+              <pattern id="grid-c5-p3" width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="320" height="250" fill="url(#grid-c5-p3)"/>
+            <rect x="10" y="10" width="300" height="230" fill="none" stroke="#233142" stroke-width="1.5" rx="8"/>
+
+            <!-- Time Axis Header -->
+            <text x="25" y="32" fill="#8fa1b4" font-size="9.5" font-weight="900">TIMELINE (ms):</text>
+            <text x="60" y="32" fill="#58a6ff" font-size="9" font-family="monospace">0ms</text>
+            <text x="135" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">250ms</text>
+            <text x="210" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">500ms</text>
+            <text x="285" y="32" fill="#8fa1b4" font-size="9" font-family="monospace">750ms</text>
+            <line x1="60" y1="38" x2="295" y2="38" stroke="#33465d" stroke-width="1.5"/>
+
+            <!-- Track 1: YOU -->
+            <text x="25" y="70" fill="#58a6ff" font-size="10" font-weight="900">YOU:</text>
+            <!-- You bar: 0 to 650ms (scale: 60px to 255px -> width 195px) -->
+            <rect x="60" y="55" width="195" height="24" rx="4" fill="#1f6feb"/>
+            <text x="155" y="71" fill="#fff" font-size="9.5" font-weight="900" text-anchor="middle">You Spot + Aim + Shoot (650ms)</text>
+            <circle cx="255" cy="67" r="6" fill="#8fa1b4" stroke="#fff" stroke-width="2"/>
+            <text x="255" y="92" fill="#8fa1b4" font-size="9.5" font-weight="900" text-anchor="middle">SHOT @ 650ms</text>
+
+            <!-- Track 2: ENEMY -->
+            <text x="20" y="145" fill="#f85149" font-size="10" font-weight="900">ENEMY:</text>
+            <!-- Enemy bar: 0 to 530ms (scale: 60px to 219px -> width 159px) -->
+            <rect x="60" y="130" width="159" height="24" rx="4" fill="#4d1519" stroke="#f85149" stroke-width="1.5"/>
+            <text x="135" y="146" fill="#fff" font-size="9.5" font-weight="900" text-anchor="middle">Enemy Fires Fast (530ms!)</text>
+            <circle cx="219" cy="142" r="6" fill="#f85149" stroke="#fff" stroke-width="2"/>
+            <text x="219" y="167" fill="#f85149" font-size="9.5" font-weight="900" text-anchor="middle">💀 ENEMY FIRES FIRST</text>
+
+            <!-- Deficit Overrun Bracket (from 219px to 255px -> -120ms deficit) -->
+            <rect x="219" y="105" width="36" height="18" rx="3" fill="rgba(248, 81, 73, 0.3)" stroke="#f85149" stroke-width="1.5" stroke-dasharray="2,2"/>
+            <line x1="219" y1="67" x2="219" y2="142" stroke="#f85149" stroke-width="1.5" stroke-dasharray="2,2"/>
+            <line x1="255" y1="67" x2="255" y2="142" stroke="#8fa1b4" stroke-width="1.5" stroke-dasharray="2,2"/>
+            <text x="237" y="118" fill="#f85149" font-size="9.5" font-weight="900" text-anchor="middle">−120ms</text>
+            
+            <text x="160" y="215" fill="#f85149" font-size="11" font-weight="900" text-anchor="middle">💀 ENEMY SHOT YOU 120 ms FIRST!</text>
+          </svg>
+        </div>
+
+        <div class="status-badge status-bad">💀 UNSERVICEABLE (−120ms)</div>
+        <p style="margin-top: 8px; font-size: 13px; color: #8fa1b4;"><strong>Structurally impossible.</strong> The enemy fires 120 ms before your crosshair can finish moving and shoot. You are guaranteed to take damage regardless of skill.</p>
+      </div>
+
+    </div>
+
+    <!-- SECTION 2: INTERACTIVE CLEARANCE LAB & ERROR BUDGET STRESS TESTER -->
+    <div class="interactive-card">
+      <div class="eyebrow">INTERACTIVE LAB · PHYSICAL ROOM VS STOPWATCH DUEL</div>
+      <h2 style="margin: 8px 0;">Test how much human delay a room can absorb</h2>
+      <p style="color: #8fa1b4; font-size: 14px;">
+        Adjust the enemy reaction deadline and your own hesitation delay. Watch how the physical encounter in the room directly maps to the stopwatch duel timeline below!
+      </p>
+
+      <!-- Preset Buttons -->
+      <div class="preset-bar">
+        <span style="font-size: 12px; font-weight: 700; color: #8fa1b4; display: flex; align-items: center;">Presets:</span>
+        <button class="btn-preset active" id="preset-casual">🎮 Casual Buffer (+220 ms)</button>
+        <button class="btn-preset" id="preset-comp">⚔️ Competitive Clutch (+60 ms)</button>
+        <button class="btn-preset" id="preset-knife">⚡ Knife-Edge (0 ms)</button>
+        <button class="btn-preset" id="preset-lethal">💀 Lethal Trap (−140 ms)</button>
+      </div>
+
+      <!-- Live Dual Visual: Physical Arena + Duel Timeline -->
+      <div class="grid2">
+        
+        <!-- Left: Physical Room SVG -->
+        <div class="card" style="background: #080d14; padding: 14px;">
+          <div style="font-size: 12px; font-weight: 800; color: #58a6ff; margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>🏢 PHYSICAL SPACE (TOP-DOWN ROOM)</span>
+            <span style="color: #8fa1b4;">Geometry & Movement</span>
+          </div>
+          <div class="scene" style="min-height: 240px;">
+            <svg id="svg-arena" class="scene-svg" viewBox="0 0 460 240" style="height: 240px;"></svg>
+          </div>
+        </div>
+
+        <!-- Right: Stopwatch Timeline Breakdown -->
+        <div class="card" style="background: #080d14; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: #3fb950; margin-bottom: 8px; display: flex; justify-content: space-between;">
+              <span>⏱️ STOPWATCH CLOCK (DUEL TIMELINE)</span>
+              <span style="color: #8fa1b4;">Temporal Workload</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #8fa1b4; margin-top: 10px;">
+              <span>Your Elimination Time: <span id="val-clear-dur" style="color: #58a6ff; font-family: monospace;">430 ms</span></span>
+              <span style="color: #f85149;">Enemy Deadline: <span id="val-deadline-dur" style="font-family: monospace;">650 ms</span></span>
+            </div>
+
+            <!-- Dynamic Multi-Segment Timeline Bar -->
+            <div class="timeline-bar" id="dyn-timeline-bar">
+              <div id="bar-react" class="seg-react" style="width: 35%;">A: 150ms</div>
+              <div id="bar-delay" class="seg-delay" style="width: 0%; display: none;">Δt: 0ms</div>
+              <div id="bar-slew" class="seg-slew" style="width: 40%;">q: 180ms</div>
+              <div id="bar-service" class="seg-service" style="width: 25%;">p: 100ms</div>
+              <div id="bar-deadline-marker" class="deadline-marker" style="left: 85%;">
+                <span class="deadline-label" id="bar-deadline-txt">DEADLINE (650ms)</span>
+              </div>
+            </div>
+
+            <!-- Signed Margin Visualizer Bar -->
+            <div style="margin-top: 12px;">
+              <div style="font-size: 11px; font-weight: 700; color: #8fa1b4; margin-bottom: 4px;">Tactical Margin Gap (Deadline − Elimination Time):</div>
+              <div style="height: 28px; border-radius: 6px; background: #111822; border: 1px solid #233142; display: flex; align-items: center; padding: 0 10px;" id="margin-gap-bar">
+                <span id="margin-gap-txt" style="font-size: 12px; font-weight: 900; font-family: monospace; color: #3fb950;">+220 ms (RESERVE BUFFER)</span>
+              </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="legend-row">
+              <div class="legend-item"><span class="legend-chip" style="background:#8957e5;"></span> A: Reaction (150ms)</div>
+              <div class="legend-item"><span class="legend-chip" style="background:#e36209;"></span> Δt: Hesitation</div>
+              <div class="legend-item"><span class="legend-chip" style="background:#d29922;"></span> q: Slew (180ms)</div>
+              <div class="legend-item"><span class="legend-chip" style="background:#1f6feb;"></span> p: Fire (100ms)</div>
+            </div>
+          </div>
+
+          <!-- Bottom Live Status -->
+          <div style="background: #0d1520; border: 1px solid #1f2d3d; border-radius: 6px; padding: 8px 12px; margin-top: 10px; font-size: 12px;">
+            <span style="color: #8fa1b4;">Workload Formula:</span> <strong style="color: #58a6ff; font-family: monospace;">Elimination Time (C*) = A + Δt + q + p</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="anim-btn-bar">
+        <button id="btn-toggle-anim" class="btn-anim">▶ Play Clearance Duel</button>
+        <div style="flex: 1; margin-left: 20px; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 12px; font-weight: 700; color: #8fa1b4; min-width: 125px;">Stopwatch Clock (t):</span>
+          <input type="range" id="slider-progress" min="0" max="100" step="1" value="0">
+          <span id="val-progress" style="font-family: monospace; color: #58a6ff; font-weight: bold; min-width: 55px;">0 ms</span>
+        </div>
+      </div>
+
+      <!-- Control Sliders -->
+      <div class="slider-row">
+        <div class="slider-group">
+          <label><span>Enemy Reaction Deadline (D):</span> <span id="val-slider-d">650 ms</span></label>
+          <input type="range" id="slider-d" min="300" max="850" step="10" value="650">
+        </div>
+        <div class="slider-group">
+          <label><span>Player Delay / Hesitation (Δt):</span> <span id="val-slider-delay">0 ms</span></label>
+          <input type="range" id="slider-delay" min="0" max="300" step="10" value="0">
+        </div>
+      </div>
+
+      <!-- Live Metrics Callout -->
+      <div class="metric-callout">
+        <div class="metric-box">
+          <span class="lbl">Your Elimination Time (C*)</span>
+          <span class="val" id="metric-c" style="color: #58a6ff;">430 ms</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">Enemy Deadline (D)</span>
+          <span class="val" id="metric-d" style="color: #f85149;">650 ms</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">Tactical Margin (M = D − C*)</span>
+          <span class="val" id="metric-m" style="color: #3fb950;">+220 ms</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">Duel Verdict</span>
+          <span class="val" id="metric-verdict" style="color: #3fb950;">SURVIVES (RESERVE)</span>
+        </div>
+      </div>
+
+      <!-- Verdict Banner -->
+      <div id="verdict-banner" class="verdict-banner status-good">
+        <span>✓ <strong>POSITIVE MARGIN (+220 ms):</strong> You eliminate the threat with 220 ms to spare. This room allows comfortable human reaction and aiming tolerance.</span>
+      </div>
+    </div>
+
+    <!-- SECTION 3: THE MULTI-THREAT BOTTLENECK INSIGHT -->
+    <div class="interactive-card" style="margin-top: 24px;">
+      <div class="eyebrow">THE BOTTLENECK PRINCIPLE · MULTI-THREAT CLEARANCE</div>
+      <h2 style="margin: 8px 0;">Why Tactical Margin is a Bottleneck (Not an Average)</h2>
+      <p style="color: #8fa1b4; font-size: 14px;">
+        In a room with multiple threats, Tactical Margin is <strong>not</strong> the average slack across enemies. It is strictly determined by the <strong>worst-case threat (the critical bottleneck)</strong>. If even one threat breaches its deadline, the room is lost.
+      </p>
+
+      <div class="grid2" style="margin-top: 16px;">
+        
+        <!-- CARD: ORDER 1 (EDF / OPTIMAL) -->
+        <div class="card" style="background: #080d14; border: 1px solid #1f2d3d;">
+          <div class="compare-title good" style="font-size: 15px;">✓ OPTIMAL SCHEDULE (T1 First → T2 Second)</div>
+          
+          <!-- Top-Down SVG Map for Optimal Schedule -->
+          <div class="scene" style="min-height: 180px; margin-top: 10px;">
+            <svg class="scene-svg" viewBox="0 0 340 180" style="height: 180px;">
+              <defs>
+                <pattern id="grid-b-opt" width="14" height="14" patternUnits="userSpaceOnUse">
+                  <path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+                </pattern>
+                <pattern id="hatch-opt" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(88, 166, 255, 0.2)" stroke-width="1.5"/>
+                </pattern>
+              </defs>
+              <rect width="340" height="180" fill="url(#grid-b-opt)"/>
+              
+              <!-- Room Walls -->
+              <rect x="15" y="15" width="310" height="150" fill="none" stroke="#233142" stroke-width="2" rx="6"/>
+              <!-- Doorway at bottom -->
+              <line x1="145" y1="165" x2="195" y2="165" stroke="#080d14" stroke-width="4"/>
+
+              <!-- Threat 1 (Urgent: Left) -->
+              <rect x="35" y="35" width="24" height="24" rx="5" fill="#1b4728" stroke="#3fb950" stroke-width="2"/>
+              <text x="47" y="51" fill="#fff" font-size="10" font-weight="900" text-anchor="middle">✓</text>
+              <text x="47" y="28" fill="#3fb950" font-size="9.5" font-weight="900" text-anchor="middle">T1 (Urgent: 380ms)</text>
+
+              <!-- Threat 2 (Relaxed: Deep Right) -->
+              <rect x="275" y="35" width="24" height="24" rx="5" fill="#1b4728" stroke="#3fb950" stroke-width="2"/>
+              <text x="287" y="51" fill="#fff" font-size="10" font-weight="900" text-anchor="middle">✓</text>
+              <text x="287" y="28" fill="#8fa1b4" font-size="9.5" font-weight="900" text-anchor="middle">T2 (Relaxed: 850ms)</text>
+
+              <!-- Player -->
+              <circle cx="170" cy="148" r="9" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+              <text x="170" y="168" fill="#58a6ff" font-size="9" font-weight="bold" text-anchor="middle">YOU</text>
+
+              <!-- Shot 1: To T1 -->
+              <line x1="170" y1="148" x2="47" y2="47" stroke="#3fb950" stroke-width="2.5" stroke-linecap="round"/>
+              <rect x="80" y="90" width="70" height="16" rx="4" fill="#0d1f14" stroke="#3fb950" stroke-width="1"/>
+              <text x="115" y="102" fill="#3fb950" font-size="8.5" font-weight="bold" text-anchor="middle">1st: Hit @ 340ms</text>
+
+              <!-- Slew Arc from T1 to T2 -->
+              <path d="M 100 80 Q 170 50 230 75" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="3,3"/>
+              <text x="170" y="62" fill="#58a6ff" font-size="8" font-weight="bold" text-anchor="middle">Turn Reticle ↷</text>
+
+              <!-- Shot 2: To T2 -->
+              <line x1="170" y1="148" x2="287" y2="47" stroke="#3fb950" stroke-width="2" stroke-linecap="round"/>
+              <rect x="195" y="90" width="70" height="16" rx="4" fill="#0d1f14" stroke="#3fb950" stroke-width="1"/>
+              <text x="230" y="102" fill="#3fb950" font-size="8.5" font-weight="bold" text-anchor="middle">2nd: Hit @ 590ms</text>
+            </svg>
+          </div>
+          
+          <div style="background: #0d1520; padding: 12px; border-radius: 8px; margin-top: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: #8fa1b4; margin-bottom: 6px; text-transform: uppercase;">Per-Target Margins:</div>
+            <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 4px;">
+              <span>Threat 1 (Urgent): D₁ = 380ms, C₁ = 340ms</span>
+              <strong style="color: #3fb950; font-family: monospace;">M₁ = +40 ms (Bottleneck!)</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+              <span>Threat 2 (Relaxed): D₂ = 850ms, C₂ = 590ms</span>
+              <strong style="color: #3fb950; font-family: monospace;">M₂ = +260 ms</strong>
+            </div>
+          </div>
+
+          <div class="status-badge status-good" style="margin-top: 10px;">
+            Room Margin: <strong>M* = min(+40ms, +260ms) = +40 ms</strong>
+          </div>
+          <p style="font-size: 13px; color: #8fa1b4; margin-top: 8px;">
+            Even though Threat 2 has a large +260 ms buffer, the room's true Tactical Margin is <strong>+40 ms</strong> because Threat 1 is the weakest link.
+          </p>
+        </div>
+
+        <!-- CARD: ORDER 2 (MISTAKE / TUNNEL VISION) -->
+        <div class="card" style="background: #080d14; border: 1px solid #1f2d3d;">
+          <div class="compare-title bad" style="font-size: 15px;">✗ TUNNEL VISION (T2 First → T1 Second)</div>
+          
+          <!-- Top-Down SVG Map for Tunnel Vision Mistake -->
+          <div class="scene" style="min-height: 180px; margin-top: 10px;">
+            <svg class="scene-svg" viewBox="0 0 340 180" style="height: 180px;">
+              <defs>
+                <pattern id="grid-b-bad" width="14" height="14" patternUnits="userSpaceOnUse">
+                  <path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+                </pattern>
+              </defs>
+              <rect width="340" height="180" fill="url(#grid-b-bad)"/>
+              
+              <!-- Room Walls -->
+              <rect x="15" y="15" width="310" height="150" fill="none" stroke="#233142" stroke-width="2" rx="6"/>
+              <!-- Doorway at bottom -->
+              <line x1="145" y1="165" x2="195" y2="165" stroke="#080d14" stroke-width="4"/>
+
+              <!-- Threat 1 (Urgent: Left - Kills Player!) -->
+              <rect x="35" y="35" width="24" height="24" rx="5" fill="#4d1519" stroke="#f85149" stroke-width="2"/>
+              <text x="47" y="51" fill="#fff" font-size="11" font-weight="900" text-anchor="middle">💀</text>
+              <text x="47" y="28" fill="#f85149" font-size="9.5" font-weight="900" text-anchor="middle">T1 Fires @ 380ms!</text>
+
+              <!-- Threat 2 (Relaxed: Deep Right) -->
+              <rect x="275" y="35" width="24" height="24" rx="5" fill="#21262d" stroke="#d29922" stroke-width="1.5"/>
+              <text x="287" y="51" fill="#d29922" font-size="10" font-weight="900" text-anchor="middle">T2</text>
+              <text x="287" y="28" fill="#8fa1b4" font-size="9.5" font-weight="900" text-anchor="middle">T2 (Hit @ 340ms)</text>
+
+              <!-- Player (Shot!) -->
+              <circle cx="170" cy="148" r="9" fill="#f85149" stroke="#fff" stroke-width="2"/>
+              <text x="170" y="168" fill="#f85149" font-size="9" font-weight="bold" text-anchor="middle">ELIMINATED</text>
+
+              <!-- Shot 1: Tunnel Vision to T2 -->
+              <line x1="170" y1="148" x2="287" y2="47" stroke="#d29922" stroke-width="2" stroke-linecap="round"/>
+              <rect x="195" y="90" width="80" height="16" rx="4" fill="#1c160c" stroke="#d29922" stroke-width="1"/>
+              <text x="235" y="102" fill="#d29922" font-size="8.5" font-weight="bold" text-anchor="middle">1st: Hit T2 @ 340ms</text>
+
+              <!-- Fatal Shot from T1 into Player -->
+              <line x1="47" y1="47" x2="170" y2="148" stroke="#f85149" stroke-width="3" stroke-linecap="round"/>
+              <rect x="60" y="90" width="85" height="16" rx="4" fill="#380d10" stroke="#f85149" stroke-width="1"/>
+              <text x="102" y="102" fill="#f85149" font-size="8.5" font-weight="900" text-anchor="middle">💥 T1 KILLS YOU @ 380ms</text>
+            </svg>
+          </div>
+          
+          <div style="background: #0d1520; padding: 12px; border-radius: 8px; margin-top: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: #8fa1b4; margin-bottom: 6px; text-transform: uppercase;">Per-Target Margins:</div>
+            <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 4px;">
+              <span>Threat 2 (Relaxed): D₂ = 850ms, C₂ = 340ms</span>
+              <strong style="color: #3fb950; font-family: monospace;">M₂ = +510 ms</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+              <span>Threat 1 (Urgent): D₁ = 380ms, C₁ = 590ms</span>
+              <strong style="color: #f85149; font-family: monospace;">M₁ = −210 ms (BREACH!)</strong>
+            </div>
+          </div>
+
+          <div class="status-badge status-bad" style="margin-top: 10px;">
+            Room Margin: <strong>M = min(+510ms, −210ms) = −210 ms 💀</strong>
+          </div>
+          <p style="font-size: 13px; color: #8fa1b4; margin-top: 8px;">
+            The player wasted time shooting the easy threat first. Threat 1 breached its deadline by 210 ms, making the encounter lethal.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 4: HUMAN CAPABILITY ENVELOPE -->
+    <div class="interactive-card" style="margin-top: 24px;">
+      <div class="eyebrow">DESIGN IMPLICATION · THE CAPABILITY ENVELOPE</div>
+      <h2 style="margin: 8px 0;">Tactical Margin Bridges Geometry to Human Player Skill</h2>
+      <p style="color: #8fa1b4; font-size: 14px;">
+        A room does not have a single absolute clearability in a vacuum; it is clearable <em>relative to a player capability model</em> <strong><i>C</i> = (<i>A</i>, <i>ω</i><sub>aim</sub>, <i>p</i>)</strong>. Tactical Margin measures who can survive the layout:
+      </p>
+
+      <div class="grid2" style="margin-top: 14px;">
+        <div style="background: #080d14; border: 1px solid #1f2d3d; border-radius: 10px; padding: 16px;">
+          <div style="color: #58a6ff; font-weight: 800; font-size: 15px; margin-bottom: 6px;">🏆 Pro Esports Athlete (<i>A</i> = 140 ms, <i>ω</i> = 400°/s)</div>
+          <p style="font-size: 13.5px; color: #8fa1b4; margin: 0 0 8px 0;">Fast reaction and snappy crosshair flicking give this player <strong><i>M</i> = +85 ms</strong> on high-stress competitive angles.</p>
+          <span class="status-badge status-good">✓ INSIDE CAPABILITY ENVELOPE</span>
+        </div>
+        <div style="background: #080d14; border: 1px solid #1f2d3d; border-radius: 10px; padding: 16px;">
+          <div style="color: #d29922; font-weight: 800; font-size: 15px; margin-bottom: 6px;">🎮 Casual Player (<i>A</i> = 240 ms, <i>ω</i> = 280°/s)</div>
+          <p style="font-size: 13.5px; color: #8fa1b4; margin: 0 0 8px 0;">Standard reaction speed and slower turning turn the exact same room into <strong><i>M</i> = −35 ms</strong> (impossible without prior knowledge).</p>
+          <span class="status-badge status-bad">✗ OUTSIDE CAPABILITY ENVELOPE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Takeaway Banner -->
+    <div class="takeaway">Tactical Margin is your error budget: it measures how much human hesitation a room can absorb before failure.</div>
+
+    <!-- Collapsible Research Mathematics -->
+    <details class="math">
+      <summary>📐 Show the research mathematics & scheduling foundations</summary>
+      
+      <div class="eq" style="font-size: 19px;">
+        <i>L</i><sub><i>j</i></sub><sup>&pi;</sup> = <i>C</i><sub><i>j</i></sub><sup>&pi;</sup> &minus; <i>D</i><sub><i>j</i></sub>
+        &nbsp;&nbsp;&implies;&nbsp;&nbsp;
+        <i>L</i>*(&gamma;) = min<sub>&pi; &isin; &Pi;</sub> max<sub><i>j</i>=1..<i>N</i></sub> ( <i>C</i><sub><i>j</i></sub><sup>&pi;</sup> &minus; <i>D</i><sub><i>j</i></sub> )
+      </div>
+      <div class="eq" style="font-size: 22px; color: #58a6ff; margin-top: 8px;">
+        <b><i>M</i></b>(&gamma;) = &minus;<b><i>L</i>*</b>(&gamma;)
+      </div>
+
+      <p>In our formal framework:</p>
+      <ul>
+        <li><strong>Lateness <i>L</i><sub><i>j</i></sub><sup>&pi;</sup>:</strong> For threat <i>j</i> under clearing sequence &pi;, lateness is the difference between weapon service completion <i>C</i><sub><i>j</i></sub><sup>&pi;</sup> and hostile response deadline <i>D</i><sub><i>j</i></sub>. If <i>L</i><sub><i>j</i></sub> &gt; 0, the deadline is breached.</li>
+        <li><strong>Optimal Maximum Lateness <i>L</i>*(&gamma;):</strong> The worst lateness across all threats under the optimal clearance permutation &pi;*.</li>
+        <li><strong>Tactical Margin <i>M</i> = &minus;<i>L</i>*:</strong> By negating maximum lateness, positive values indicate a temporal safety reserve (<i>M</i> &ge; 0), while negative values indicate an unavoidable deadline failure (<i>M</i> &lt; 0).</li>
+        <li><strong>Engine Deployment Reserve (&epsilon;<sub>deploy</sub>):</strong> In our native headless ViZDoom validation (ZDoom 35 Hz logic clock), an empirical safety reserve of &epsilon;<sub>deploy</sub> = 3 tics &approx; 85.7 ms guarantees 100% survival against game engine physics and discrete simulation jitter.</li>
+      </ul>
+    </details>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const NS = 'http://www.w3.org/2000/svg';
+    const svgEl = (tag, attrs = {}) => {
+      const n = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
+      return n;
+    };
+
+    // Fixed model parameters for this single-threat teaching encounter
+    const paramA = 150;     // Reaction latency (ms)
+    const paramSlewDeg = 65;// Reticle slew angle (deg)
+    const paramOmega = 360; // Slew velocity (deg/s -> 0.36 deg/ms)
+    const paramQ = Math.round(paramSlewDeg / 0.36); // 180 ms
+    const paramP = 100;     // Inspection/firing dwell (ms)
+
+    let animProgress = 0.0; // 0.0 to 1.0 (maps to 0ms to 1000ms max scale)
+    let isAnimating = false;
+    const maxSimTime = 1000; // ms
+
+    function getEncounterState() {
+      const deadlineD = parseInt($('slider-d').value, 10);
+      const delayDt = parseInt($('slider-delay').value, 10);
+      
+      const completionC = paramA + delayDt + paramQ + paramP;
+      const marginM = deadlineD - completionC;
+
+      return { deadlineD, delayDt, completionC, marginM };
+    }
+
+    function updateView() {
+      const { deadlineD, delayDt, completionC, marginM } = getEncounterState();
+
+      // Update Slider Label Displays
+      $('val-slider-d').textContent = `${deadlineD} ms`;
+      $('val-slider-delay').textContent = `${delayDt} ms`;
+      $('val-clear-dur').textContent = `${completionC} ms`;
+      $('val-deadline-dur').textContent = `${deadlineD} ms`;
+
+      // Update HUD Metrics
+      $('metric-c').textContent = `${completionC} ms`;
+      $('metric-d').textContent = `${deadlineD} ms`;
+      
+      const mEl = $('metric-m');
+      const vEl = $('metric-verdict');
+      const banner = $('verdict-banner');
+      const gapTxt = $('margin-gap-txt');
+
+      if (marginM > 25) {
+        mEl.textContent = `+${marginM} ms`;
+        mEl.style.color = '#3fb950';
+        vEl.textContent = 'SURVIVES (RESERVE)';
+        vEl.style.color = '#3fb950';
+        banner.className = 'verdict-banner status-good';
+        banner.innerHTML = `<span>✓ <strong>POSITIVE MARGIN (+${marginM} ms):</strong> You eliminate the threat with ${marginM} ms to spare. The room can absorb up to ${marginM} ms of hesitation or mechanical delay before failing.</span>`;
+        gapTxt.textContent = `+${marginM} ms (RESERVE BUFFER)`;
+        gapTxt.style.color = '#3fb950';
+      } else if (marginM >= 0) {
+        mEl.textContent = `${marginM === 0 ? '0' : '+' + marginM} ms`;
+        mEl.style.color = '#d29922';
+        vEl.textContent = 'KNIFE-EDGE (0ms)';
+        vEl.style.color = '#d29922';
+        banner.className = 'verdict-banner status-warn';
+        banner.innerHTML = `<span>⚖️ <strong>KNIFE-EDGE BOUNDARY (${marginM} ms):</strong> Frame-perfect execution! Any microsecond of delay (even +${marginM + 10} ms) causes a fatal deadline breach.</span>`;
+        gapTxt.textContent = `${marginM} ms (EXACT BOUNDARY)`;
+        gapTxt.style.color = '#d29922';
+      } else {
+        mEl.textContent = `${marginM} ms`;
+        mEl.style.color = '#f85149';
+        vEl.textContent = 'DEADLINE BREACH 💀';
+        vEl.style.color = '#f85149';
+        banner.className = 'verdict-banner status-bad';
+        banner.innerHTML = `<span>💀 <strong>NEGATIVE MARGIN (${marginM} ms):</strong> The enemy fires ${Math.abs(marginM)} ms before your shot completes. This encounter is structurally unserviceable under these parameters.</span>`;
+        gapTxt.textContent = `${marginM} ms (DEADLINE OVERRUN)`;
+        gapTxt.style.color = '#f85149';
+      }
+
+      // Update Dynamic Multi-Segment Timeline Bar
+      const totalBarScale = Math.max(850, Math.max(deadlineD, completionC) + 80);
+      const pctReact = (paramA / totalBarScale) * 100;
+      const pctDelay = (delayDt / totalBarScale) * 100;
+      const pctSlew = (paramQ / totalBarScale) * 100;
+      const pctService = (paramP / totalBarScale) * 100;
+      const pctDeadline = (deadlineD / totalBarScale) * 100;
+
+      $('bar-react').style.width = `${pctReact}%`;
+      
+      const barDelay = $('bar-delay');
+      if (delayDt > 0) {
+        barDelay.style.display = 'flex';
+        barDelay.style.width = `${pctDelay}%`;
+        barDelay.textContent = `Δt: ${delayDt}ms`;
+      } else {
+        barDelay.style.display = 'none';
+        barDelay.style.width = '0%';
+      }
+
+      $('bar-slew').style.width = `${pctSlew}%`;
+      $('bar-service').style.width = `${pctService}%`;
+
+      const marker = $('bar-deadline-marker');
+      marker.style.left = `${pctDeadline}%`;
+      $('bar-deadline-txt').textContent = `DEADLINE (${deadlineD}ms)`;
+
+      // Render Top-Down Arena View
+      renderArena(completionC, deadlineD, marginM);
+    }
+
+    function renderArena(completionC, deadlineD, marginM) {
+      const svg = $('svg-arena');
+      svg.innerHTML = '';
+
+      const defs = svgEl('defs');
+      defs.innerHTML = `
+        <pattern id="arena-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+        </pattern>
+        <pattern id="arena-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+        </pattern>
+      `;
+      svg.append(defs);
+
+      svg.append(svgEl('rect', { width: 460, height: 240, fill: 'url(#arena-grid)' }));
+
+      // Walls & Geometry
+      svg.append(svgEl('rect', { x: 15, y: 15, width: 430, height: 20, fill: '#161e2b', stroke: '#58a6ff', 'stroke-width': 1.5, rx: 2 }));
+      svg.append(svgEl('rect', { x: 17, y: 17, width: 426, height: 16, fill: 'url(#arena-hatch)', opacity: 0.5 }));
+
+      svg.append(svgEl('rect', { x: 15, y: 35, width: 20, height: 190, fill: '#161e2b', stroke: '#58a6ff', 'stroke-width': 1.5, rx: 2 }));
+      svg.append(svgEl('rect', { x: 17, y: 37, width: 16, height: 186, fill: 'url(#arena-hatch)', opacity: 0.5 }));
+
+      svg.append(svgEl('rect', { x: 140, y: 100, width: 305, height: 125, fill: '#161e2b', stroke: '#58a6ff', 'stroke-width': 1.5, rx: 2 }));
+      svg.append(svgEl('rect', { x: 142, y: 102, width: 301, height: 121, fill: 'url(#arena-hatch)', opacity: 0.5 }));
+
+      // Corner Apex
+      svg.append(svgEl('circle', { cx: 140, cy: 100, r: 4, fill: '#58a6ff', stroke: '#fff', 'stroke-width': 1.5 }));
+      const apexTxt = svgEl('text', { x: 148, y: 114, fill: '#8fa1b4', 'font-size': 9, 'font-weight': 'bold' });
+      apexTxt.textContent = 'CORNER APEX';
+      svg.append(apexTxt);
+
+      // Traversal Track (Player path moving up corridor)
+      svg.append(svgEl('line', {
+        x1: 80, y1: 215, x2: 80, y2: 45,
+        stroke: '#283b52', 'stroke-width': 2, 'stroke-dasharray': '4,4'
+      }));
+
+      const pathTxt = svgEl('text', { x: 55, y: 210, fill: '#58a6ff', 'font-size': 8.5, 'font-weight': 'bold' });
+      pathTxt.textContent = 'PATH ▲';
+      svg.append(pathTxt);
+
+      // Target Coordinates
+      const tx = 360, ty = 60;
+
+      // Current Animation Time
+      const curT = animProgress * maxSimTime;
+      $('val-progress').textContent = `${Math.round(curT)} ms`;
+
+      // Phased status
+      const delayDt = parseInt($('slider-delay').value, 10);
+      const tReactEnd = paramA;
+      const tDelayEnd = paramA + delayDt;
+      const tSlewEnd = tDelayEnd + paramQ;
+      const tFireEnd = completionC;
+
+      // Dynamic Player Kinematics: Walks forward up corridor towards corner
+      // At t = 0ms: starts at y = 175
+      // Over 800ms: advances forward to y = 65 (near corner turn)
+      const moveProgress = Math.min(1.0, curT / 800);
+      const px = 80;
+      const py = 175 - moveProgress * 110;
+
+      // Check combat resolution at current time
+      const playerFired = curT >= tFireEnd;
+      const enemyFired = curT >= deadlineD;
+
+      // Dynamic Reticle Angle:
+      // Neutral: aiming straight ahead up the hallway (-90 deg)
+      // Target: angle towards enemy in the room from player's current (px, py)
+      const neutralAngleDeg = -90;
+      const targetAngleDeg = Math.atan2(ty - py, tx - px) * (180 / Math.PI);
+      let curAimAngle = neutralAngleDeg;
+
+      if (curT <= tDelayEnd) {
+        curAimAngle = neutralAngleDeg;
+      } else if (curT < tSlewEnd) {
+        const slewFrac = (curT - tDelayEnd) / paramQ;
+        curAimAngle = neutralAngleDeg + slewFrac * (targetAngleDeg - neutralAngleDeg);
+      } else {
+        curAimAngle = targetAngleDeg;
+      }
+
+      // Draw Sightlines
+      const aimRad = curAimAngle * (Math.PI / 180);
+      const reticleLen = 75;
+      const rx = px + Math.cos(aimRad) * reticleLen;
+      const ry = py + Math.sin(aimRad) * reticleLen;
+
+      // Player Aim Ray
+      svg.append(svgEl('line', {
+        x1: px, y1: py, x2: rx, y2: ry,
+        stroke: playerFired ? '#3fb950' : '#58a6ff',
+        'stroke-width': playerFired ? 3 : 2,
+        'stroke-dasharray': playerFired ? 'none' : '4,2'
+      }));
+
+      // If player fired, draw full laser beam to target
+      if (playerFired && (!enemyFired || completionC <= deadlineD)) {
+        svg.append(svgEl('line', {
+          x1: px, y1: py, x2: tx, y2: ty,
+          stroke: '#3fb950',
+          'stroke-width': 3.5,
+          'stroke-linecap': 'round'
+        }));
+      }
+
+      // If enemy deadline expired and player hadn't fired yet, enemy shoots player
+      if (enemyFired && (!playerFired || deadlineD < completionC)) {
+        svg.append(svgEl('line', {
+          x1: tx, y1: ty, x2: px, y2: py,
+          stroke: '#f85149',
+          'stroke-width': 3.5,
+          'stroke-linecap': 'round'
+        }));
+      }
+
+      // Target Entity
+      const targetDead = playerFired && (completionC <= deadlineD);
+      const targetColor = targetDead ? '#3fb950' : (enemyFired ? '#f85149' : '#21262d');
+      
+      svg.append(svgEl('rect', {
+        x: tx - 14, y: ty - 14, width: 28, height: 28,
+        fill: targetColor,
+        stroke: targetDead ? '#3fb950' : (enemyFired ? '#f85149' : '#8fa1b4'),
+        'stroke-width': 2, rx: 6
+      }));
+
+      const tText = svgEl('text', { x: tx, y: ty + 4, fill: '#fff', 'font-size': 11, 'font-weight': '900', 'text-anchor': 'middle' });
+      tText.textContent = targetDead ? '✓' : (enemyFired ? '💀' : 'T1');
+      svg.append(tText);
+
+      // Target Label
+      const tLabel = svgEl('text', { x: tx, y: ty - 20, fill: '#8fa1b4', 'font-size': 10, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      tLabel.textContent = `DEADLINE: ${deadlineD}ms`;
+      svg.append(tLabel);
+
+      // Player Entity (Moving along corridor)
+      const playerDead = enemyFired && (deadlineD < completionC);
+      const pColor = playerDead ? '#f85149' : (playerFired ? '#3fb950' : '#58a6ff');
+
+      // Player Body Token with Shoulders
+      svg.append(svgEl('circle', {
+        cx: px, cy: py, r: 10,
+        fill: pColor,
+        stroke: '#fff', 'stroke-width': 2
+      }));
+
+      const pText = svgEl('text', { x: px, y: py + 22, fill: '#fff', 'font-size': 10, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      pText.textContent = playerDead ? 'ELIMINATED' : (playerFired ? 'SHOT FIRED' : 'YOU');
+      svg.append(pText);
+
+      // Status HUD on SVG
+      const hudBox = svgEl('rect', { x: 25, y: 25, width: 220, height: 32, fill: 'rgba(15, 22, 34, 0.92)', stroke: '#28374d', rx: 6 });
+      svg.append(hudBox);
+
+      const hudText = svgEl('text', { x: 35, y: 46, fill: '#c9d1d9', 'font-size': 11, 'font-weight': 'bold' });
+      let phaseName = '1. Advancing & Reacting (A)';
+      if (curT > tReactEnd && curT <= tDelayEnd) phaseName = '2. Hesitating (Δt)';
+      else if (curT > tDelayEnd && curT < tSlewEnd) phaseName = '3. Snapping Crosshair (q)';
+      else if (curT >= tSlewEnd && curT < tFireEnd) phaseName = '4. Firing Trigger (p)';
+      else if (curT >= tFireEnd) phaseName = '5. Complete!';
+
+      hudText.textContent = `t = ${Math.round(curT)}ms · ${phaseName}`;
+      svg.append(hudText);
+    }
+
+    // Animation Loop
+    function runSimAnim() {
+      if (!isAnimating) return;
+      animProgress += 0.008;
+      if (animProgress > 1.0) {
+        animProgress = 1.0;
+        isAnimating = false;
+        $('btn-toggle-anim').classList.remove('playing');
+        $('btn-toggle-anim').textContent = '▶ Replay Clearance Duel';
+      }
+      $('slider-progress').value = Math.round(animProgress * 100);
+      updateView();
+
+      if (isAnimating) {
+        requestAnimationFrame(runSimAnim);
+      }
+    }
+
+    $('btn-toggle-anim').onclick = () => {
+      if (isAnimating) {
+        isAnimating = false;
+        $('btn-toggle-anim').classList.remove('playing');
+        $('btn-toggle-anim').textContent = '▶ Play Clearance Duel';
+      } else {
+        if (animProgress >= 1.0) animProgress = 0.0;
+        isAnimating = true;
+        $('btn-toggle-anim').classList.add('playing');
+        $('btn-toggle-anim').textContent = '⏸ Pause';
+        requestAnimationFrame(runSimAnim);
+      }
+    };
+
+    $('slider-progress').addEventListener('input', (e) => {
+      animProgress = parseFloat(e.target.value) / 100.0;
+      isAnimating = false;
+      $('btn-toggle-anim').classList.remove('playing');
+      $('btn-toggle-anim').textContent = '▶ Play Clearance Duel';
+      updateView();
+    });
+
+    $('slider-d').addEventListener('input', updateView);
+    $('slider-delay').addEventListener('input', updateView);
+
+    // Preset Handlers
+    function setPreset(dVal, delayVal, btnId) {
+      $('slider-d').value = dVal;
+      $('slider-delay').value = delayVal;
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      $(btnId).classList.add('active');
+      animProgress = 0.0;
+      $('slider-progress').value = 0;
+      isAnimating = false;
+      $('btn-toggle-anim').classList.remove('playing');
+      $('btn-toggle-anim').textContent = '▶ Play Clearance Duel';
+      updateView();
+    }
+
+    $('preset-casual').onclick = () => setPreset(650, 0, 'preset-casual');
+    $('preset-comp').onclick = () => setPreset(490, 0, 'preset-comp');
+    $('preset-knife').onclick = () => setPreset(430, 0, 'preset-knife');
+    $('preset-lethal').onclick = () => setPreset(350, 60, 'preset-lethal');
+
+    // Initial draw
+    updateView();
+  </script>
+</body>
+</html>

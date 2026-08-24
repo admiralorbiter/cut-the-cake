@@ -355,23 +355,23 @@ def build_parametric_wall_arena(wall_x_m: float, name_suffix: str = "") -> Geome
 
 def build_disagreement_arena_kici_blindspot() -> GeometricModule:
     """[A ∩ B ∩ ¬C]: K_static <= 2, but L*_tic > 0 (Deadly trap accepted by static concurrency)."""
-    boundary = Polygon([(0.0, -2.5), (10.0, -2.5), (10.0, 2.5), (0.0, 2.5)])
+    boundary = Polygon([(0.0, -3.0), (10.0, -3.0), (10.0, 3.0), (0.0, 3.0)])
     obs = [
         Polygon([(2.5, 0.2), (3.0, 0.2), (3.0, 2.0), (2.5, 2.0)]),
         Polygon([(4.0, -2.0), (4.5, -2.0), (4.5, -0.2), (4.0, -0.2)])
     ]
     threat1 = GeometricThreat(
         id="T1_LeftCross",
-        polygon=Polygon([(3.5, 1.5), (4.1, 1.5), (4.1, 2.1), (3.5, 2.1)]),
-        threat_anchor=(3.8, 1.8),
-        authored_due_window_s=0.55,
+        polygon=Polygon([(3.5, 2.1), (4.1, 2.1), (4.1, 2.7), (3.5, 2.7)]),
+        threat_anchor=(3.8, 2.4),
+        authored_due_window_s=0.62,
         service_duration_s=0.10
     )
     threat2 = GeometricThreat(
         id="T2_RightCross",
-        polygon=Polygon([(5.0, -2.1), (5.6, -2.1), (5.6, -1.5), (5.0, -1.5)]),
-        threat_anchor=(5.3, -1.8),
-        authored_due_window_s=0.55,
+        polygon=Polygon([(5.0, -2.7), (5.6, -2.7), (5.6, -2.1), (5.0, -2.1)]),
+        threat_anchor=(5.3, -2.4),
+        authored_due_window_s=0.62,
         service_duration_s=0.10
     )
     port_in = GeometricPort("PORT_IN", LineString([(0.0, -1.0), (0.0, 1.0)]))

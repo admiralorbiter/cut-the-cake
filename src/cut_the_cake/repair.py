@@ -279,6 +279,79 @@ def diagnose_clearability(
     )
 
 
+
+# =============================================================================
+# STRICT GEOMETRIC PRESERVATION VALIDATOR
+# =============================================================================
+
+def validate_repair_preservation(
+    orig_module: GeometricModule,
+    candidate_module: GeometricModule,
+    port_tol_m: float = 0.10
+) -> List[str]:
+    """Verify that geometric perturbations preserve boundary, topology, routes, threats, and obstacle validity."""
+    errors: List[str] = []
+
+    # 1. Boundary preservation
+    if not candidate_module.boundary.equals_exact(orig_module.boundary, 1e-4):
+        if not candidate_module.boundary.equals(orig_module.boundary):
+            errors.append(f"Module boundary modified during repair for {candidate_module.module_id}")
+
+    # 2. Obstacle count and area preservation
+    if len(candidate_module.obstacles) != len(orig_module.obstacles):
+        errors.append(f"Obstacle count changed from {len(orig_module.obstacles)} to {len(candidate_module.obstacles)}")
+    for i, (orig_obs, cand_obs) in enumerate(zip(orig_module.obstacles, candidate_module.obstacles)):
+        if not cand_obs.is_valid or cand_obs.is_empty:
+            errors.append(f"Candidate obstacle #{i} is geometrically invalid or empty")
+        elif abs(cand_obs.area - orig_obs.area) > 1e-3:
+            errors.append(f"Candidate obstacle #{i} area changed from {orig_obs.area:.4f} to {cand_obs.area:.4f}")
+
+    # 3. Obstacle containment within floorplan boundary
+    for i, obs in enumerate(candidate_module.obstacles):
+        if not candidate_module.boundary.buffer(1e-4).contains(obs):
+            errors.append(f"Candidate obstacle #{i} extends outside module boundary")
+
+    # 4. Obstacle disjointness (no interior overlap between obstacles)
+    for i in range(len(candidate_module.obstacles)):
+        for j in range(i + 1, len(candidate_module.obstacles)):
+            inter = candidate_module.obstacles[i].intersection(candidate_module.obstacles[j])
+            if inter.area > 1e-4:
+                errors.append(f"Candidate obstacles #{i} and #{j} overlap (area={inter.area:.4f}m^2)")
+
+    # 5. Route preservation and non-clipping
+    if len(candidate_module.routes) != len(orig_module.routes):
+        errors.append(f"Route count changed from {len(orig_module.routes)} to {len(candidate_module.routes)}")
+    for orig_r, cand_r in zip(orig_module.routes, candidate_module.routes):
+        if orig_r.route_id != cand_r.route_id or orig_r.waypoints != cand_r.waypoints:
+            errors.append(f"Route definition modified for route {cand_r.route_id}")
+        r_line = LineString(cand_r.waypoints)
+        for i, obs in enumerate(candidate_module.obstacles):
+            obs_interior = obs.buffer(-1e-3)
+            if not obs_interior.is_empty and r_line.intersects(obs_interior):
+                errors.append(f"Route {cand_r.route_id} clips through candidate obstacle #{i}")
+
+    # 6. Threat preservation and non-overlap
+    if len(candidate_module.threats) != len(orig_module.threats):
+        errors.append(f"Threat count changed from {len(orig_module.threats)} to {len(candidate_module.threats)}")
+    for orig_t, cand_t in zip(orig_module.threats, candidate_module.threats):
+        if orig_t.id != cand_t.id or orig_t.threat_anchor != cand_t.threat_anchor:
+            errors.append(f"Threat definition modified for threat {cand_t.id}")
+        for i, obs in enumerate(candidate_module.obstacles):
+            if obs.intersects(cand_t.polygon):
+                inter = obs.intersection(cand_t.polygon)
+                if inter.area > 1e-4:
+                    errors.append(f"Candidate obstacle #{i} clips into threat polygon {cand_t.id}")
+
+    # 7. Port preservation
+    if len(candidate_module.ports) != len(orig_module.ports):
+        errors.append(f"Port count changed from {len(orig_module.ports)} to {len(candidate_module.ports)}")
+    for orig_p, cand_p in zip(orig_module.ports, candidate_module.ports):
+        if orig_p.id != cand_p.id or list(orig_p.segment.coords) != list(cand_p.segment.coords):
+            errors.append(f"Port definition modified for port {cand_p.id}")
+
+    return errors
+
+
 # =============================================================================
 # MINIMAL TACTICAL REPAIR OPTIMIZER
 # =============================================================================
@@ -295,10 +368,11 @@ class RepairResult:
     runtime_ms: float
     diagnosis: TacticalDiagnostic
     repair_description: str
+    no_repair_needed: bool = False
 
 
 class MinimalRepairOptimizer:
-    """Inverse tactical repair solver finding minimal geometric perturbations G* subject to M(G*) >= epsilon."""
+    """Grid-minimal inverse tactical repair solver over declared obstacle-translation operator set T_obs."""
 
     def __init__(self, params: Optional[TicCombatParameters] = None):
         self.params = params or TicCombatParameters()
@@ -309,11 +383,11 @@ class MinimalRepairOptimizer:
         self,
         geo_module: GeometricModule,
         target_margin_tics: int = 2,
-        max_perturbation_m: float = 1.20,
-        search_resolution_m: float = 0.02,
+        max_perturbation_m: float = 1.80,
+        search_resolution_m: float = 0.05,
         route_index: int = 0
     ) -> RepairResult:
-        """Find the minimal geometric perturbation of the controlling obstacle that achieves M(G*) >= target_margin."""
+        """Find the grid-minimal perturbation in declared translation operator set achieving M(G*) >= target_margin."""
         t_start = time.perf_counter()
 
         diag = diagnose_clearability(
@@ -326,7 +400,7 @@ class MinimalRepairOptimizer:
         if diag.is_serviceable:
             t_end = time.perf_counter()
             return RepairResult(
-                success=True,
+                success=False,
                 repaired_module=geo_module,
                 edit_distance_m=0.0,
                 initial_margin_tics=diag.initial_margin_tics,
@@ -334,7 +408,8 @@ class MinimalRepairOptimizer:
                 evaluations_count=1,
                 runtime_ms=(t_end - t_start) * 1000.0,
                 diagnosis=diag,
-                repair_description="Module already meets tactical margin target. No repair needed."
+                repair_description="Module already meets tactical margin target. No repair needed.",
+                no_repair_needed=True
             )
 
         if diag.controlling_obstacle_idx is None or not geo_module.obstacles:
@@ -348,16 +423,12 @@ class MinimalRepairOptimizer:
                 evaluations_count=1,
                 runtime_ms=(t_end - t_start) * 1000.0,
                 diagnosis=diag,
-                repair_description="Failed: No controlling obstacle found to perturb."
+                repair_description="Failed: No controlling obstacle found to perturb.",
+                no_repair_needed=False
             )
 
-        # Determine candidate obstacle indices to try (prioritizing diagnostic controlling obstacle)
-        candidate_obs_indices = []
-        if diag.controlling_obstacle_idx is not None:
-            candidate_obs_indices.append(diag.controlling_obstacle_idx)
-        for idx in range(len(geo_module.obstacles)):
-            if idx not in candidate_obs_indices:
-                candidate_obs_indices.append(idx)
+        # Candidate obstacle indices: evaluate all declared obstacles in module
+        candidate_obs_indices = list(range(len(geo_module.obstacles)))
 
         best_repaired_mod = None
         best_edit_dist = float('inf')
@@ -365,28 +436,32 @@ class MinimalRepairOptimizer:
         best_desc = ""
         total_evals = 1
 
+        norm_x, norm_y = diag.suggested_perturbation_normal or (1.0, 0.0)
+
+        # Declared candidate perturbation search directions
+        candidate_directions = [
+            (norm_x, norm_y),             # Along computed normal towards route
+            (-norm_x, -norm_y),           # Reverse normal
+            (1.0, 0.0), (-1.0, 0.0),      # Coordinate X translations (+X shifts walls downstream)
+            (0.0, 1.0), (0.0, -1.0)       # Coordinate Y translations
+        ]
+
         for obs_idx in candidate_obs_indices:
             orig_obs = geo_module.obstacles[obs_idx]
-            norm_x, norm_y = diag.suggested_perturbation_normal or (1.0, 0.0)
-
-            # Candidate perturbation search directions
-            candidate_directions = [
-                (norm_x, norm_y),             # Along computed normal towards route
-                (-norm_x, -norm_y),           # Reverse normal
-                (1.0, 0.0), (-1.0, 0.0),      # Coordinate X translations (+X shifts walls downstream)
-                (0.0, 1.0), (0.0, -1.0)       # Coordinate Y translations
-            ]
 
             for dir_x, dir_y in candidate_directions:
-                # 1D line search along candidate direction
                 low_d = search_resolution_m
                 high_d = max_perturbation_m
 
-                displacements = np.arange(low_d, high_d + search_resolution_m, search_resolution_m)
+                displacements = np.arange(low_d, high_d + 1e-6, search_resolution_m)
                 for d in displacements:
+                    d_float = round(float(d), 4)
+                    if d_float >= best_edit_dist:
+                        break
+
                     total_evals += 1
-                    dx = float(d * dir_x)
-                    dy = float(d * dir_y)
+                    dx = float(d_float * dir_x)
+                    dy = float(d_float * dir_y)
 
                     # Translate obstacle
                     new_obs_poly = translate(orig_obs, xoff=dx, yoff=dy)
@@ -395,7 +470,7 @@ class MinimalRepairOptimizer:
 
                     candidate_mod = GeometricModule(
                         module_id=f"{geo_module.module_id}_repaired",
-                        name=f"{geo_module.name} (Repaired: d={d:.2f}m)",
+                        name=f"{geo_module.name} (Repaired: d={d_float:.2f}m)",
                         boundary=geo_module.boundary,
                         obstacles=new_obstacles,
                         ports=geo_module.ports,
@@ -405,9 +480,12 @@ class MinimalRepairOptimizer:
                         description=f"{geo_module.description} [Repaired with shift ({dx:+.2f}m, {dy:+.2f}m)]"
                     )
 
-                    # Check geometric and physical integrity
+                    # Check geometric integrity & strict preservation invariants
                     errors = validate_geometry_integrity(candidate_mod)
                     if errors:
+                        continue
+                    pres_errs = validate_repair_preservation(geo_module, candidate_mod)
+                    if pres_errs:
                         continue
 
                     # Compile and check tactical margin
@@ -416,20 +494,13 @@ class MinimalRepairOptimizer:
                     cand_margin = sched_res.tactical_margin_tics
 
                     if cand_margin >= target_margin_tics:
-                        edit_dist = float(d)
-                        if edit_dist < best_edit_dist:
-                            best_edit_dist = edit_dist
+                        if d_float < best_edit_dist or (abs(d_float - best_edit_dist) < 1e-6 and cand_margin > best_margin):
+                            best_edit_dist = d_float
                             best_repaired_mod = candidate_mod
                             best_margin = cand_margin
-                            best_desc = f"Shift obstacle #{obs_idx} by {d:.2f}m along vector ({dir_x:+.2f}, {dir_y:+.2f}) -> Margin M = {cand_margin} tics."
-                        # Found minimal satisfying displacement along this direction
+                            best_desc = f"Shift obstacle #{obs_idx} by {d_float:.2f}m along vector ({dir_x:+.2f}, {dir_y:+.2f}) -> Margin M = {cand_margin} tics."
+                        # Found minimal satisfying displacement along this specific direction
                         break
-
-                if best_repaired_mod is not None:
-                    break
-
-            if best_repaired_mod is not None:
-                break
 
         t_end = time.perf_counter()
         runtime_ms = (t_end - t_start) * 1000.0
@@ -444,7 +515,8 @@ class MinimalRepairOptimizer:
                 evaluations_count=total_evals,
                 runtime_ms=runtime_ms,
                 diagnosis=diag,
-                repair_description=best_desc
+                repair_description=best_desc,
+                no_repair_needed=False
             )
         else:
             return RepairResult(
@@ -456,5 +528,6 @@ class MinimalRepairOptimizer:
                 evaluations_count=total_evals,
                 runtime_ms=runtime_ms,
                 diagnosis=diag,
-                repair_description=f"Repair failed: Could not achieve M >= {target_margin_tics} tics within {max_perturbation_m}m perturbation budget."
+                repair_description=f"Repair failed: Could not achieve M >= {target_margin_tics} tics within {max_perturbation_m}m perturbation budget.",
+                no_repair_needed=False
             )

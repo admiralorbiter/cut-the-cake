@@ -3,15 +3,265 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>06 — Map Knowledge</title>
+  <title>06 — Map Knowledge & Pre-Aiming</title>
   <link rel="stylesheet" href="shared.css">
   <style>
     .scene-svg {
       width: 100%;
-      height: 280px;
+      height: 250px;
       display: block;
-      background: #070b10;
+      background: #070b11;
       border-radius: 12px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .primer-box {
+      background: #0d1520;
+      border: 1px solid #1f3046;
+      border-radius: 14px;
+      padding: 20px;
+      margin: 20px 0 28px 0;
+    }
+    .primer-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #58a6ff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .primer-steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .primer-step {
+      background: #111a26;
+      border: 1px solid #23364f;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .primer-step.bad {
+      border-color: rgba(248, 81, 73, 0.4);
+      background: rgba(248, 81, 73, 0.05);
+    }
+    .primer-step.good {
+      border-color: rgba(63, 185, 80, 0.4);
+      background: rgba(63, 185, 80, 0.05);
+    }
+    .primer-step .step-tag {
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .primer-step.bad .step-tag { color: #f85149; }
+    .primer-step.good .step-tag { color: #3fb950; }
+    .primer-step .step-desc {
+      font-size: 13px;
+      color: #8fa1b4;
+      line-height: 1.5;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .status-bad {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #f85149;
+    }
+    .status-good {
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+      color: #3fb950;
+    }
+    .status-warn {
+      background: rgba(210, 153, 34, 0.15);
+      border: 1px solid rgba(210, 153, 34, 0.4);
+      color: #d29922;
+    }
+    .interactive-card {
+      margin-top: 24px;
+      background: #0f1622;
+      border: 1px solid #28374d;
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .preset-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 14px 0 18px 0;
+    }
+    .btn-preset {
+      background: #16202e;
+      border: 1px solid #2e4159;
+      color: #c9d1d9;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-preset:hover {
+      background: #223249;
+      color: #fff;
+      border-color: #58a6ff;
+    }
+    .btn-preset.active {
+      background: #1f6feb;
+      border-color: #58a6ff;
+      color: #fff;
+    }
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 16px 0 12px 0;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      color: #8fa1b4;
+    }
+    .slider-group label span {
+      color: #58a6ff;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #58a6ff;
+      cursor: pointer;
+    }
+    .metric-callout {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      background: #080d14;
+      border: 1px solid #1f2d3d;
+      padding: 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+    }
+    .metric-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .metric-box .lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: #8fa1b4;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .metric-box .val {
+      font-size: 17px;
+      font-weight: 900;
+      font-family: monospace;
+    }
+    .timeline-split-bar {
+      display: flex;
+      height: 32px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 14px 0 6px 0;
+      background: #080d14;
+      border: 1px solid #233142;
+      position: relative;
+    }
+    .zone-cover {
+      background: rgba(88, 166, 255, 0.15);
+      border-right: 2px dashed #58a6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #58a6ff;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      position: relative;
+    }
+    .zone-open {
+      flex: 1;
+      display: flex;
+      position: relative;
+      background: #111822;
+    }
+    .seg-slew-open {
+      background: #d29922;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .seg-fire-open {
+      background: #1f6feb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .deadline-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #f85149;
+      box-shadow: 0 0 8px #f85149;
+      z-index: 10;
+    }
+    .verdict-banner {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.4;
+    }
+    @media (max-width: 1000px) {
+      .grid3 { grid-template-columns: 1fr; }
+      .primer-steps { grid-template-columns: 1fr; }
+      .metric-callout { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -19,152 +269,618 @@
   <main class="wrap">
     <div class="top">
       <a class="back" href="index.html">← Concepts Index</a>
-      <span class="pill">Lesson 06 · Advance Information</span>
+      <span class="pill">Lesson 06 · Advance Information & Actionability</span>
     </div>
 
     <section class="hero">
       <div class="eyebrow">06 · MAP KNOWLEDGE & PRE-ALIGNMENT</div>
       <h1>What does knowing the map buy you?</h1>
-      <p>Map knowledge does not eliminate the enemy. It allows you to execute reticle setup time <em>before</em> line-of-sight is established, so your crosshairs are already on target at the moment of reveal.</p>
+      <p>Map knowledge does not eliminate the enemy or change the physical walls. It allows you to <strong>pay the rotational aiming cost while safely behind solid cover</strong>, so your crosshairs are already locked on target at the moment of reveal.</p>
     </section>
 
-    <div class="card">
-      <div class="controls">
-        <label>Advance Warning / Lead Time (ℓ):</label>
-        <input id="l" type="range" min="0" max="200" step="14.3" value="0">
-        <span class="bigmetric" id="lv">0 ms</span>
+    <!-- PLAIN-ENGLISH PRIMER: BLIND VS PRE-AIMED -->
+    <div class="primer-box">
+      <div class="primer-title">
+        <span>👁️</span>
+        <span>THE TACTICAL DIFFERENCE: BLIND PEEK VS PRE-AIMED PEEK</span>
       </div>
 
-      <div class="grid2">
-        <div class="card">
-          <div class="compare-title">1. BEFORE REVEAL (BEHIND CORNER COVER)</div>
-          <div class="scene">
-            <svg id="pre" class="scene-svg" viewBox="0 0 500 280"></svg>
+      <div class="primer-steps">
+        <div class="primer-step bad">
+          <div class="step-tag">❌ Blind Peeker (0 ms Advance Warning)</div>
+          <div class="step-desc">
+            You step around the corner blind. You spot the enemy, then spend <strong>180 ms turning your crosshair in full view</strong>. The enemy shoots you before your crosshair can reach their body.
           </div>
         </div>
-
-        <div class="card">
-          <div class="compare-title">2. AT REVEAL (STEPPING PAST CORNER)</div>
-          <div class="scene">
-            <svg id="rev" class="scene-svg" viewBox="0 0 500 280"></svg>
+        <div class="primer-step good">
+          <div class="step-tag">✓ Map-Knowledge Pre-Aimer (≥ 114 ms Advance Warning)</div>
+          <div class="step-desc">
+            You rotate your crosshairs to the exact target bearing <strong>while safely behind the solid wall</strong>. When you peek the corner, you are already aiming at their head $\to$ instant shot!
           </div>
-        </div>
-      </div>
-
-      <div class="grid2" style="margin-top: 16px;">
-        <div class="card">
-          <div class="label">Reticle Readiness at Reveal</div>
-          <div class="bigmetric" id="ready">STILL TURNING</div>
-        </div>
-        <div class="card">
-          <div class="label">Tactical Feasibility</div>
-          <div class="bigmetric" id="status">114 ms SHORT</div>
         </div>
       </div>
     </div>
 
+    <!-- SECTION 1: INTERACTIVE PRE-AIM LAB & ADVANCE LEAD SIMULATOR -->
+    <div class="interactive-card">
+      <div class="eyebrow">INTERACTIVE LAB · ADVANCE ACTIONABILITY LEAD (ℓ)</div>
+      <h2 style="margin: 8px 0;">Slide Advance Warning to shift aiming time into cover</h2>
+      <p style="color: #8fa1b4; font-size: 14px;">
+        Adjust the advance lead slider (<strong style="color: #58a6ff;">ℓ</strong>). Watch how pre-rotating behind the wall reduces the reticle misalignment at the instant of corner reveal, turning a fatal ambush into a clearable kill!
+      </p>
+
+      <!-- Preset Buttons -->
+      <div class="preset-bar">
+        <span style="font-size: 12px; font-weight: 700; color: #8fa1b4; display: flex; align-items: center;">Presets:</span>
+        <button class="btn-preset active" id="preset-blind">🚫 Blind Peek (ℓ = 0 ms)</button>
+        <button class="btn-preset" id="preset-partial">⚠️ Partial Cue (ℓ = 60 ms)</button>
+        <button class="btn-preset" id="preset-threshold">⚡ Critical Lead ℓ* (ℓ = 114 ms / 4 tics)</button>
+        <button class="btn-preset" id="preset-master">🏆 Master Pre-Aim (ℓ = 180 ms)</button>
+      </div>
+
+      <!-- Slider Control -->
+      <div class="slider-row">
+        <div class="slider-group">
+          <label>
+            <span>Advance Warning Lead Time (ℓ):</span>
+            <span id="val-slider-l">0 ms (Blind Reveal)</span>
+          </label>
+          <input type="range" id="slider-l" min="0" max="200" step="5" value="0">
+        </div>
+      </div>
+
+      <!-- Dual Visual Panels: Behind Cover vs At Corner Reveal -->
+      <div class="grid2">
+        
+        <!-- Panel 1: Behind Cover (t = -ℓ) -->
+        <div class="card" style="background: #080d14; padding: 14px;">
+          <div style="font-size: 12px; font-weight: 800; color: #58a6ff; margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>1. BEHIND COVER (BEFORE REVEAL)</span>
+            <span style="color: #8fa1b4;">Safe Pre-Rotation</span>
+          </div>
+          <div class="scene" style="min-height: 240px;">
+            <svg id="svg-pre" class="scene-svg" viewBox="0 0 420 240" style="height: 240px;"></svg>
+          </div>
+        </div>
+
+        <!-- Panel 2: At Corner Reveal (t = 0 ms) -->
+        <div class="card" style="background: #080d14; padding: 14px;">
+          <div style="font-size: 12px; font-weight: 800; color: #3fb950; margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>2. AT CORNER REVEAL (t = 0 ms)</span>
+            <span id="txt-rev-header-status" style="color: #f85149;">Vulnerable (Misaligned)</span>
+          </div>
+          <div class="scene" style="min-height: 240px;">
+            <svg id="svg-rev" class="scene-svg" viewBox="0 0 420 240" style="height: 240px;"></svg>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Dual-Zone Timeline Workload Bar -->
+      <div style="margin-top: 18px; background: #080d14; border: 1px solid #1f2d3d; border-radius: 10px; padding: 14px;">
+        <div style="font-size: 12px; font-weight: 800; color: #8fa1b4; margin-bottom: 6px; display: flex; justify-content: space-between;">
+          <span>TEMPORAL WORKLOAD SHIFT: COVER ZONE (t &lt; 0) vs OPEN COMBAT (t &ge; 0)</span>
+          <span style="color: #58a6ff;" id="txt-cover-gain">0 ms shifted into cover</span>
+        </div>
+
+        <div class="timeline-split-bar">
+          <!-- Cover Zone (t < 0) -->
+          <div class="zone-cover" id="bar-cover-zone" style="width: 15%;">
+            <span id="bar-cover-lbl">Cover: 0ms</span>
+          </div>
+          <!-- Open Combat Zone (t >= 0) -->
+          <div class="zone-open" id="bar-open-zone">
+            <div id="bar-slew-open" class="seg-slew-open" style="width: 55%;">Open Slew: 180ms</div>
+            <div id="bar-fire-open" class="seg-fire-open" style="width: 25%;">Fire: 100ms</div>
+            <div id="bar-deadline" class="deadline-marker" style="left: 65%;"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #8fa1b4; margin-top: 6px;">
+          <span>← Safely behind solid wall in cover (t &lt; 0)</span>
+          <span style="color: #58a6ff; font-weight: bold;">| CORNER PEEK (t = 0 ms) |</span>
+          <span style="color: #f85149;">In hostile sightline (t &ge; 0) →</span>
+        </div>
+      </div>
+
+      <!-- HUD Metrics Callout -->
+      <div class="metric-callout">
+        <div class="metric-box">
+          <span class="lbl">Advance Lead (ℓ)</span>
+          <span class="val" id="metric-lead" style="color: #58a6ff;">0 ms</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">Reticle Misalignment at Peek</span>
+          <span class="val" id="metric-angle" style="color: #f85149;">38.0° (Misaligned)</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">In-Open Time to Fire (C*)</span>
+          <span class="val" id="metric-c" style="color: #f85149;">544 ms</span>
+        </div>
+        <div class="metric-box">
+          <span class="lbl">Tactical Margin M(ℓ)</span>
+          <span class="val" id="metric-m" style="color: #f85149;">−114 ms (LETHAL TRAP)</span>
+        </div>
+      </div>
+
+      <!-- Live Verdict Banner -->
+      <div id="verdict-banner" class="verdict-banner status-bad">
+        <span>💀 <strong>LETHAL TRAP (ℓ = 0 ms):</strong> Blind peek fails. The enemy shoots you 114 ms before your crosshair can finish rotating in the open.</span>
+      </div>
+    </div>
+
+    <!-- SECTION 2: THE TRIPARTITE EPISTEMIC TAXONOMY -->
+    <div class="interactive-card" style="margin-top: 24px;">
+      <div class="eyebrow">THE THREE EPISTEMIC CLASSES · RESEARCH TAXONOMY</div>
+      <h2 style="margin: 8px 0;">How Geometry Dictates the Need for Map Knowledge</h2>
+      <p style="color: #8fa1b4; font-size: 14px;">
+        Not all encounters require map knowledge. Our research partitions all procedural combat encounters into three fundamental epistemic classes:
+      </p>
+
+      <div class="grid3" style="margin-top: 16px;">
+        
+        <!-- CARD 1: BLIND-CLEARABLE -->
+        <div class="card" style="background: #080d14; border: 1px solid #1f2d3d;">
+          <div class="compare-title good" style="font-size: 14px;">1. BLIND-CLEARABLE (ℓ* = 0 ms)</div>
+          
+          <div class="scene" style="min-height: 160px; margin-top: 8px;">
+            <svg class="scene-svg" viewBox="0 0 280 160" style="height: 160px;">
+              <defs>
+                <pattern id="grid-c6-1" width="14" height="14" patternUnits="userSpaceOnUse">
+                  <path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+                </pattern>
+              </defs>
+              <rect width="280" height="160" fill="url(#grid-c6-1)"/>
+              <rect x="10" y="10" width="260" height="140" fill="none" stroke="#233142" stroke-width="1.5" rx="6"/>
+              
+              <!-- Shallow corner wall -->
+              <rect x="10" y="10" width="80" height="70" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+              
+              <!-- Enemy at shallow 18 deg angle -->
+              <rect x="180" y="30" width="22" height="22" rx="4" fill="#1b4728" stroke="#3fb950" stroke-width="1.5"/>
+              <text x="191" y="45" fill="#fff" font-size="9" font-weight="900" text-anchor="middle">✓</text>
+              <text x="191" y="24" fill="#8fa1b4" font-size="8.5" font-weight="bold" text-anchor="middle">D = 650ms</text>
+
+              <!-- Player -->
+              <circle cx="100" cy="120" r="8" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+              <text x="100" y="138" fill="#58a6ff" font-size="8.5" font-weight="bold" text-anchor="middle">YOU</text>
+
+              <!-- Shallow angle laser -->
+              <line x1="100" y1="120" x2="191" y2="41" stroke="#3fb950" stroke-width="2" stroke-dasharray="3,2"/>
+              <text x="165" y="90" fill="#3fb950" font-size="8.5" font-weight="bold">Shallow Angle (18°)</text>
+            </svg>
+          </div>
+
+          <div class="status-badge status-good" style="margin-top: 8px;">✓ Clearable Blind (M = +180ms)</div>
+          <p style="font-size: 12.5px; color: #8fa1b4; margin-top: 6px;">
+            The enemy is near your natural forward sightline with a generous deadline. You can react and eliminate the threat on first sight with <strong>0 ms advance warning</strong>.
+          </p>
+        </div>
+
+        <!-- CARD 2: KNOWLEDGE-RESCUABLE -->
+        <div class="card" style="background: #080d14; border: 1px solid #1f2d3d;">
+          <div class="compare-title warn" style="font-size: 14px;">2. KNOWLEDGE-RESCUABLE (0 &lt; ℓ* &lt; ∞)</div>
+          
+          <div class="scene" style="min-height: 160px; margin-top: 8px;">
+            <svg class="scene-svg" viewBox="0 0 280 160" style="height: 160px;">
+              <defs>
+                <pattern id="grid-c6-2" width="14" height="14" patternUnits="userSpaceOnUse">
+                  <path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+                </pattern>
+              </defs>
+              <rect width="280" height="160" fill="url(#grid-c6-2)"/>
+              <rect x="10" y="10" width="260" height="140" fill="none" stroke="#233142" stroke-width="1.5" rx="6"/>
+              
+              <!-- Sharp corner wall -->
+              <rect x="10" y="10" width="110" height="85" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+              
+              <!-- Enemy at sharp 65 deg off-angle (STIM_07) -->
+              <rect x="235" y="25" width="22" height="22" rx="4" fill="#2d1519" stroke="#d29922" stroke-width="1.5"/>
+              <text x="246" y="40" fill="#d29922" font-size="9" font-weight="900" text-anchor="middle">T</text>
+              <text x="246" y="20" fill="#d29922" font-size="8.5" font-weight="bold" text-anchor="middle">STIM_07 (D=430ms)</text>
+
+              <!-- Player -->
+              <circle cx="125" cy="125" r="8" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
+              <text x="125" y="143" fill="#58a6ff" font-size="8.5" font-weight="bold" text-anchor="middle">YOU</text>
+
+              <!-- Sharp slew arc -->
+              <path d="M 125 105 A 20 20 0 0 1 142 112" fill="none" stroke="#d29922" stroke-width="2"/>
+              <text x="175" y="95" fill="#d29922" font-size="8.5" font-weight="bold">Sharp 65° Ambush</text>
+            </svg>
+          </div>
+
+          <div class="status-badge status-warn" style="margin-top: 8px;">⚡ Rescuable (ℓ* = 114 ms / 4 tics)</div>
+          <p style="font-size: 12.5px; color: #8fa1b4; margin-top: 6px;">
+            A lethal trap if entered blind (−114 ms deficit), but rendered <strong>100% tactically clearable</strong> if the player has at least 114 ms (4 tics) of advance pre-aim warning.
+          </p>
+        </div>
+
+        <!-- CARD 3: STRUCTURALLY OVERLOADED -->
+        <div class="card" style="background: #080d14; border: 1px solid #1f2d3d;">
+          <div class="compare-title bad" style="font-size: 14px;">3. OVERLOADED (ℓ* = ∞)</div>
+          
+          <div class="scene" style="min-height: 160px; margin-top: 8px;">
+            <svg class="scene-svg" viewBox="0 0 280 160" style="height: 160px;">
+              <defs>
+                <pattern id="grid-c6-3" width="14" height="14" patternUnits="userSpaceOnUse">
+                  <path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+                </pattern>
+              </defs>
+              <rect width="280" height="160" fill="url(#grid-c6-3)"/>
+              <rect x="10" y="10" width="260" height="140" fill="none" stroke="#233142" stroke-width="1.5" rx="6"/>
+              
+              <!-- 2 Simultaneous crossfire threats -->
+              <rect x="35" y="25" width="20" height="20" rx="4" fill="#4d1519" stroke="#f85149" stroke-width="1.5"/>
+              <text x="45" y="39" fill="#fff" font-size="9" font-weight="900" text-anchor="middle">T1</text>
+
+              <rect x="225" y="25" width="20" height="20" rx="4" fill="#4d1519" stroke="#f85149" stroke-width="1.5"/>
+              <text x="235" y="39" fill="#fff" font-size="9" font-weight="900" text-anchor="middle">T2</text>
+
+              <!-- Player trapped in middle -->
+              <circle cx="140" cy="125" r="8" fill="#f85149" stroke="#fff" stroke-width="2"/>
+              <text x="140" y="143" fill="#f85149" font-size="8.5" font-weight="bold" text-anchor="middle">CROSSFIRE</text>
+
+              <!-- Hostile Crossfire lines -->
+              <line x1="45" y1="35" x2="140" y2="125" stroke="#f85149" stroke-width="2" stroke-dasharray="2,2"/>
+              <line x1="235" y1="35" x2="140" y2="125" stroke="#f85149" stroke-width="2" stroke-dasharray="2,2"/>
+            </svg>
+          </div>
+
+          <div class="status-badge status-bad" style="margin-top: 8px;">💀 Structurally Overloaded (ℓ* = ∞)</div>
+          <p style="font-size: 12.5px; color: #8fa1b4; margin-top: 6px;">
+            Opposing simultaneous deadlines create an inescapable crossfire. Impossible with gunplay alone even under omniscient pre-aim ($\mathcal{M}(\infty) &lt; 0$).
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 3: DECOUPLING TOTAL GAIN VS TEMPORAL URGENCY -->
+    <div class="interactive-card" style="margin-top: 24px;">
+      <div class="eyebrow">RESEARCH INSIGHT · CANONICAL BENCHMARK DISAGREEMENT</div>
+      <h2 style="margin: 8px 0;">Total Knowledge Gain (ΔM) ≠ Temporal Urgency (ℓ*)</h2>
+      <p style="color: #8fa1b4; font-size: 14px;">
+        A major contribution of our mathematical model is proving that the <em>total capacity benefit of knowledge</em> (<strong style="color: #58a6ff;">ΔM<sub>knowledge</sub></strong>) is mathematically decoupled from the <em>temporal urgency</em> (<strong style="color: #d29922;">ℓ*</strong>):
+      </p>
+
+      <div class="grid2" style="margin-top: 14px;">
+        
+        <!-- Fixture 1: STIM_07 -->
+        <div style="background: #080d14; border: 1px solid #1f2d3d; border-radius: 10px; padding: 16px;">
+          <div style="color: #3fb950; font-weight: 900; font-size: 15px; margin-bottom: 6px;">Canonical Fixture STIM_07</div>
+          <div style="font-size: 13px; color: #8fa1b4; line-height: 1.5;">
+            • Total Knowledge Gain: <strong style="color: #58a6ff; font-family: monospace;">ΔM = +7 tics (+200 ms)</strong><br>
+            • Critical Lead Required: <strong style="color: #3fb950; font-family: monospace;">ℓ* = 4 tics (114.3 ms)</strong><br>
+            <div style="background: #0d1520; padding: 8px 12px; border-radius: 6px; margin-top: 8px; font-size: 12px; color: #3fb950;">
+              ✓ <strong>Low Urgency:</strong> Even a faint, split-second audio cue right before the corner is enough to achieve survival.
+            </div>
+          </div>
+        </div>
+
+        <!-- Fixture 2: STIM_11 -->
+        <div style="background: #080d14; border: 1px solid #1f2d3d; border-radius: 10px; padding: 16px;">
+          <div style="color: #d29922; font-weight: 900; font-size: 15px; margin-bottom: 6px;">Canonical Fixture STIM_11</div>
+          <div style="font-size: 13px; color: #8fa1b4; line-height: 1.5;">
+            • Total Knowledge Gain: <strong style="color: #58a6ff; font-family: monospace;">ΔM = +7 tics (+200 ms)</strong><br>
+            • Critical Lead Required: <strong style="color: #d29922; font-family: monospace;">ℓ* = 6 tics (171.4 ms)</strong><br>
+            <div style="background: #0d1520; padding: 8px 12px; border-radius: 6px; margin-top: 8px; font-size: 12px; color: #d29922;">
+              ⚠️ <strong>High Urgency:</strong> Demands 50% more advance warning lead time (171 ms vs 114 ms) despite identical full-knowledge gain!
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Takeaway Banner -->
     <div class="takeaway">Knowledge does not remove the enemy. It moves rotational setup time into cover.</div>
 
+    <!-- Collapsible Research Mathematics -->
     <details class="math">
-      <summary>📐 Show the research mathematics</summary>
-      <div class="eq">a_j(\ell) = \max(0, r_j - \ell)</div>
-      <div class="eq">\ell^* = \min \{ \ell : M(\ell) \ge 0 \}</div>
-      <p>This teaching control uses a $114\text{ ms}$ threshold to illustrate the intuition behind the canonical <code>STIM_07</code> critical lead time. In the complete scheduling model, advance knowledge shifts the arrival of setup work into the pre-exposure interval before the threat's response clock begins.</p>
+      <summary>📐 Show the research mathematics & actionability formulations</summary>
+      
+      <div class="eq" style="font-size: 20px;">
+        a<sub>j</sub>(&ell;) = max(0, &nbsp; r<sub>j</sub> &minus; &ell;)
+      </div>
+      <div class="eq" style="font-size: 20px; color: #58a6ff; margin-top: 8px;">
+        &ell;*<sub>uniform</sub> = inf { &ell; &ge; 0 : <b><i>M</i></b>(&ell;) &ge; 0 }
+      </div>
+      <div class="eq" style="font-size: 18px; color: #8fa1b4; margin-top: 8px;">
+        &Delta;<b><i>M</i></b><sub>knowledge</sub> = <b><i>M</i></b><sub>preaim</sub> &minus; <b><i>M</i></b><sub>reveal</sub> = L*<sub>reveal</sub> &minus; L*<sub>preaim</sub> &ge; 0
+      </div>
+
+      <p>In our formal scheduling framework:</p>
+      <ul>
+        <li><strong>Actionability Timestamp a<sub>j</sub>(&ell;):</strong> Under an advance actionability lead &ell;, the player is permitted to begin rotating the crosshairs toward threat <i>j</i> at time a<sub>j</sub>(&ell;), safely behind cover prior to stepping into view at r<sub>j</sub>.</li>
+        <li><strong>Proposition 1 (Monotonic Actionability):</strong> For any trajectory &gamma;, tactical margin <b><i>M</i></b>(&ell;) is strictly monotone non-decreasing in &ell; (&ell;<sub>2</sub> &ge; &ell;<sub>1</sub> &implies; <b><i>M</i></b>(&ell;<sub>2</sub>) &ge; <b><i>M</i></b>(&ell;<sub>1</sub>)). Evaluated across all 72 experimental instances in the paper, monotonicity is verified across 100% of cases.</li>
+        <li><strong>Deterministic Engine Verification:</strong> Tested in native headless C++ ViZDoom across a full integer lead sweep (&ell; &isin; [0, 9] tics = 40 deterministic game runs), the mathematical threshold &ell;* perfectly predicts live bot survival inside the real game engine.</li>
+      </ul>
     </details>
   </main>
 
   <script>
-    const l = document.getElementById('l');
-    const TH = 114;
+    const $ = id => document.getElementById(id);
+    const NS = 'http://www.w3.org/2000/svg';
+    const svgEl = (tag, attrs = {}) => {
+      const n = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
+      return n;
+    };
 
-    function scene(id, isPre, lead) {
-      const s = document.getElementById(id);
-      const pct = Math.min(1, lead / TH);
+    // Model parameters matching canonical STIM_07 fixture
+    const maxSlewTime = 180; // ms
+    const fireDwell = 100;   // ms
+    const deadlineD = 430;   // ms
+    const criticalLead = 114;// ms (4 tics approx 114.3 ms)
+    const totalMisalignDeg = 58.2; // Angle from corridor forward (-90 deg) to enemy bearing (-31.8 deg)
 
-      // Target angle towards enemy in room (~ -35 degrees)
-      const targetAngDeg = -38;
-      // Starting neutral angle (straight ahead along corridor, 0 deg)
-      const currentAngDeg = targetAngDeg * pct;
-      const rad = currentAngDeg * Math.PI / 180;
+    function updatePreAimView() {
+      const lead = parseInt($('slider-l').value, 10);
+      $('val-slider-l').textContent = lead === 0 ? '0 ms (Blind Reveal)' : `${lead} ms advance lead`;
 
-      const cornerX = 220, cornerY = 150;
-      const px = isPre ? 140 : 235;
-      const py = isPre ? 220 : 160;
+      // Fraction of rotational slew completed behind cover (0.0 to 1.0)
+      const coverSlewFrac = Math.min(1.0, lead / maxSlewTime);
+      const remainingSlewTime = Math.round(maxSlewTime * (1.0 - coverSlewFrac));
+      const shiftedCoverTime = Math.round(maxSlewTime * coverSlewFrac);
 
-      const reticleLen = 70;
-      const rx = px + Math.cos(rad) * reticleLen;
-      const ry = py + Math.sin(rad) * reticleLen;
+      // Remaining misalignment angle at reveal
+      const angleAtReveal = totalMisalignDeg * (1.0 - coverSlewFrac);
 
-      const enemyX = 390, enemyY = 60;
+      // In-open completion time C* = remainingSlew + fireDwell (reaction is already done or masked)
+      const openReaction = 264; // reaction component in blind open peek
+      const inOpenC = (openReaction - Math.min(openReaction, lead)) + remainingSlewTime + fireDwell;
+      const marginM = deadlineD - inOpenC;
 
-      s.innerHTML = `
-        <defs>
-          <pattern id="grid-${id}" width="16" height="16" patternUnits="userSpaceOnUse">
-            <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
-          </pattern>
-          <pattern id="wall-${id}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
-          </pattern>
-        </defs>
-
-        <rect width="500" height="280" fill="url(#grid-${id})"/>
-
-        <!-- Top-Left Solid Obstacle Wall -->
-        <rect x="0" y="0" width="${cornerX}" height="${cornerY}" fill="#161b22" stroke="#58a6ff" stroke-width="2"/>
-        <rect x="2" y="2" width="${cornerX - 4}" height="${cornerY - 4}" fill="url(#wall-${id})" opacity="0.6"/>
-        <text x="${cornerX / 2}" y="${cornerY / 2 + 5}" fill="#8fa1b4" font-size="11" font-weight="bold" text-anchor="middle">SOLID WALL</text>
-
-        <!-- Corner Apex -->
-        <circle cx="${cornerX}" cy="${cornerY}" r="4" fill="#58a6ff" stroke="#fff" stroke-width="1.5"/>
-
-        <!-- Enemy E -->
-        <rect x="${enemyX}" y="${enemyY}" width="28" height="28" fill="${isPre ? '#21262d' : '#f85149'}" stroke="${isPre ? '#484f58' : '#fff'}" stroke-width="${isPre ? 1.5 : 2}" rx="5"/>
-        <text x="${enemyX + 14}" y="${enemyY + 18}" fill="${isPre ? '#8fa1b4' : '#fff'}" font-size="11" font-weight="900" text-anchor="middle">E</text>
-        <text x="${enemyX + 36}" y="${enemyY + 18}" fill="${isPre ? '#8fa1b4' : '#f85149'}" font-size="10" font-weight="bold">${isPre ? 'OCCLUDED' : 'EXPOSED'}</text>
-
-        <!-- Player -->
-        <circle cx="${px}" cy="${py}" r="9" fill="#58a6ff" stroke="#fff" stroke-width="2"/>
-        <text x="${px}" y="${py + 20}" fill="#58a6ff" font-size="10" font-weight="bold" text-anchor="middle">${isPre ? 'BEHIND COVER' : 'ON PIVOT'}</text>
-
-        <!-- Reticle aim vector -->
-        <line x1="${px}" y1="${py}" x2="${rx}" y2="${ry}" stroke="${lead >= TH ? '#3fb950' : '#58a6ff'}" stroke-width="4"/>
-        <circle cx="${rx}" cy="${ry}" r="4" fill="${lead >= TH ? '#3fb950' : '#58a6ff'}"/>
-
-        <!-- Sightline at reveal -->
-        ${!isPre ? `
-          <line x1="${px}" y1="${py}" x2="${enemyX + 14}" y2="${enemyY + 14}" stroke="${lead >= TH ? '#3fb950' : '#f85149'}" stroke-width="2" stroke-dasharray="4,2"/>
-        ` : ''}
-
-        <text x="250" y="260" fill="#93a4b7" text-anchor="middle" font-size="13">
-          ${isPre ? (lead >= TH ? '✓ Reticle fully pre-aimed behind cover' : 'Pre-rotating aim towards expected angle...') : (lead >= TH ? '✓ Already on crosshairs at instant of reveal!' : '⚠️ Revealing while still turning reticle (vulnerable)')}
-        </text>
-      `;
-    }
-
-    function draw() {
-      const v = Math.round(+l.value);
-      document.getElementById('lv').textContent = v + ' ms';
-      scene('pre', true, v);
-      scene('rev', false, v);
-
-      const r = document.getElementById('ready');
-      const st = document.getElementById('status');
-
-      if (v >= TH) {
-        r.textContent = 'ON ANGLE';
-        r.className = 'bigmetric good';
-        st.textContent = 'FEASIBLE (0 ms DEFICIT)';
-        st.className = 'bigmetric good';
+      // Update HUD metrics
+      $('metric-lead').textContent = `${lead} ms`;
+      
+      const angleEl = $('metric-angle');
+      if (angleAtReveal <= 0.5) {
+        angleEl.textContent = '0.0° (Locked On)';
+        angleEl.style.color = '#3fb950';
       } else {
-        r.textContent = 'STILL TURNING';
-        r.className = 'bigmetric bad';
-        st.textContent = (TH - v) + ' ms DEFICIT';
-        st.className = 'bigmetric bad';
+        angleEl.textContent = `${angleAtReveal.toFixed(1)}° (Misaligned)`;
+        angleEl.style.color = lead >= criticalLead ? '#d29922' : '#f85149';
       }
+
+      $('metric-c').textContent = `${inOpenC} ms`;
+      
+      const mEl = $('metric-m');
+      const banner = $('verdict-banner');
+      const revHdr = $('txt-rev-header-status');
+
+      if (marginM >= 25) {
+        mEl.textContent = `+${marginM} ms (SAFE BUFFER)`;
+        mEl.style.color = '#3fb950';
+        banner.className = 'verdict-banner status-good';
+        banner.innerHTML = `<span>✓ <strong>SURVIVES WITH BUFFER (+${marginM} ms):</strong> Pre-aiming behind the wall shifted ${shiftedCoverTime} ms of aiming into cover. You eliminate the enemy comfortably before their deadline.</span>`;
+        revHdr.textContent = '✓ Pre-Aimed & Locked';
+        revHdr.style.color = '#3fb950';
+      } else if (marginM >= 0) {
+        mEl.textContent = `${marginM === 0 ? '0' : '+' + marginM} ms (RESCUED!)`;
+        mEl.style.color = '#d29922';
+        banner.className = 'verdict-banner status-warn';
+        banner.innerHTML = `<span>⚡ <strong>CRITICAL RESCUE THRESHOLD (ℓ = ${lead} ms):</strong> The ${lead} ms warning is just enough to shift critical slew time into cover, neutralizing the lethal ambush at the exact deadline boundary.</span>`;
+        revHdr.textContent = '⚡ Near Target (Feasible)';
+        revHdr.style.color = '#d29922';
+      } else {
+        mEl.textContent = `${marginM} ms (LETHAL TRAP)`;
+        mEl.style.color = '#f85149';
+        banner.className = 'verdict-banner status-bad';
+        banner.innerHTML = `<span>💀 <strong>LETHAL TRAP (${marginM} ms):</strong> Insufficient lead time. The enemy shoots you ${Math.abs(marginM)} ms before your crosshair can finish moving in the open.</span>`;
+        revHdr.textContent = `⚠️ Still Turning (${angleAtReveal.toFixed(0)}° off)`;
+        revHdr.style.color = '#f85149';
+      }
+
+      // Update Dual-Zone Timeline Bar
+      $('txt-cover-gain').textContent = `${shiftedCoverTime} ms shifted into cover`;
+      const coverPct = Math.max(8, (shiftedCoverTime / 250) * 100);
+      $('bar-cover-zone').style.width = `${coverPct}%`;
+      $('bar-cover-lbl').textContent = shiftedCoverTime > 0 ? `Cover: -${shiftedCoverTime}ms` : 'Cover: 0ms';
+
+      const openSlewPct = (remainingSlewTime / 450) * 100;
+      const openFirePct = (fireDwell / 450) * 100;
+      const deadlinePct = (deadlineD / 600) * 100;
+
+      $('bar-slew-open').style.width = `${openSlewPct}%`;
+      $('bar-slew-open').textContent = remainingSlewTime > 0 ? `Open Slew: ${remainingSlewTime}ms` : 'Slew: 0ms (Pre-Aimed!)';
+      $('bar-fire-open').style.width = `${openFirePct}%`;
+      $('bar-deadline').style.left = `${deadlinePct}%`;
+
+      // Render SVGs
+      renderPreScene(lead, coverSlewFrac);
+      renderRevScene(lead, coverSlewFrac, marginM);
     }
 
-    l.oninput = draw;
-    draw();
+    // Render Panel 1: Behind Cover
+    function renderPreScene(lead, coverSlewFrac) {
+      const svg = $('svg-pre');
+      svg.innerHTML = '';
+
+      const defs = svgEl('defs');
+      defs.innerHTML = `
+        <pattern id="grid-pre" width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+        </pattern>
+        <pattern id="wall-pre" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+        </pattern>
+      `;
+      svg.append(defs);
+
+      svg.append(svgEl('rect', { width: 420, height: 240, fill: 'url(#grid-pre)' }));
+
+      const cornerX = 180, cornerY = 130;
+      const px = 100, py = 190;
+      const ex = 340, ey = 50;
+
+      // Solid Corner Wall
+      svg.append(svgEl('rect', { x: 0, y: 0, width: cornerX, height: cornerY, fill: '#161b22', stroke: '#58a6ff', 'stroke-width': 2 }));
+      svg.append(svgEl('rect', { x: 2, y: 2, width: cornerX - 4, height: cornerY - 4, fill: 'url(#wall-pre)', opacity: 0.6 }));
+      
+      const wallTxt = svgEl('text', { x: cornerX / 2, y: cornerY / 2 + 5, fill: '#8fa1b4', 'font-size': 11, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      wallTxt.textContent = 'SOLID WALL (BLOCKS VISION)';
+      svg.append(wallTxt);
+
+      // Corner Apex
+      svg.append(svgEl('circle', { cx: cornerX, cy: cornerY, r: 4, fill: '#58a6ff', stroke: '#fff', 'stroke-width': 1.5 }));
+
+      // Hidden Enemy behind wall
+      svg.append(svgEl('rect', { x: ex - 12, y: ey - 12, width: 24, height: 24, fill: '#161b22', stroke: '#484f58', 'stroke-width': 1.5, rx: 5 }));
+      const eTxt = svgEl('text', { x: ex, y: ey + 4, fill: '#8fa1b4', 'font-size': 10, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      eTxt.textContent = 'E';
+      svg.append(eTxt);
+
+      const eGhost = svgEl('text', { x: ex, y: ey - 18, fill: '#8fa1b4', 'font-size': 9, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      eGhost.textContent = 'HIDDEN ENEMY (BEHIND WALL)';
+      svg.append(eGhost);
+
+      // Target Direction Line through wall
+      if (lead > 0) {
+        svg.append(svgEl('line', {
+          x1: px, y1: py, x2: ex, y2: ey,
+          stroke: '#58a6ff', 'stroke-width': 1.5, 'stroke-dasharray': '3,3', opacity: 0.45
+        }));
+      }
+
+      // Exact Trigonometry:
+      // Neutral heading: -90 deg (straight UP the corridor along negative Y)
+      // Target bearing: atan2(50 - 190, 340 - 100) = atan2(-140, 240) approx -30.3 deg (up and to the right)
+      const neutralHeadingDeg = -90;
+      const targetBearingDeg = Math.atan2(ey - py, ex - px) * (180 / Math.PI);
+      const curAimDeg = neutralHeadingDeg + coverSlewFrac * (targetBearingDeg - neutralHeadingDeg);
+      
+      const aimRad = curAimDeg * (Math.PI / 180);
+      const retLen = 65;
+      const rx = px + Math.cos(aimRad) * retLen;
+      const ry = py + Math.sin(aimRad) * retLen;
+
+      // Player Aim Ray
+      const isPreAimed = coverSlewFrac >= 0.95;
+      svg.append(svgEl('line', {
+        x1: px, y1: py, x2: rx, y2: ry,
+        stroke: isPreAimed ? '#3fb950' : '#58a6ff',
+        'stroke-width': 3.5, 'stroke-linecap': 'round'
+      }));
+
+      // Player Token
+      svg.append(svgEl('circle', { cx: px, cy: py, r: 9, fill: '#58a6ff', stroke: '#fff', 'stroke-width': 2 }));
+      const pTxt = svgEl('text', { x: px, y: py + 22, fill: '#58a6ff', 'font-size': 10, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      pTxt.textContent = 'BEHIND COVER';
+      svg.append(pTxt);
+
+      // Status text at bottom of SVG
+      const statTxt = svgEl('text', { x: 210, y: 220, fill: isPreAimed ? '#3fb950' : '#8fa1b4', 'font-size': 11, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      statTxt.textContent = lead === 0 ? '• Blind: Crosshair points straight forward up hallway' : (isPreAimed ? '✓ Crosshair pre-aimed directly at enemy through wall!' : `Pre-rotating crosshairs towards enemy (${Math.round(coverSlewFrac * 100)}%)...`);
+      svg.append(statTxt);
+    }
+
+    // Render Panel 2: At Corner Reveal (Peek)
+    function renderRevScene(lead, coverSlewFrac, marginM) {
+      const svg = $('svg-rev');
+      svg.innerHTML = '';
+
+      const defs = svgEl('defs');
+      defs.innerHTML = `
+        <pattern id="grid-rev" width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(88, 166, 255, 0.04)" stroke-width="1"/>
+        </pattern>
+        <pattern id="wall-rev" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(88, 166, 255, 0.25)" stroke-width="2"/>
+        </pattern>
+      `;
+      svg.append(defs);
+
+      svg.append(svgEl('rect', { width: 420, height: 240, fill: 'url(#grid-rev)' }));
+
+      const cornerX = 180, cornerY = 130;
+      const px = 195, py = 140; // Player stepped past apex onto corner pivot
+      const ex = 340, ey = 50;
+
+      // Solid Corner Wall
+      svg.append(svgEl('rect', { x: 0, y: 0, width: cornerX, height: cornerY, fill: '#161b22', stroke: '#58a6ff', 'stroke-width': 2 }));
+      svg.append(svgEl('rect', { x: 2, y: 2, width: cornerX - 4, height: cornerY - 4, fill: 'url(#wall-rev)', opacity: 0.6 }));
+
+      // Corner Apex
+      svg.append(svgEl('circle', { cx: cornerX, cy: cornerY, r: 4, fill: '#58a6ff', stroke: '#fff', 'stroke-width': 1.5 }));
+
+      // Enemy Exposed
+      const isDead = marginM >= 0;
+      const eColor = isDead ? '#3fb950' : '#f85149';
+
+      svg.append(svgEl('rect', { x: ex - 12, y: ey - 12, width: 24, height: 24, fill: isDead ? '#1b4728' : '#4d1519', stroke: eColor, 'stroke-width': 2, rx: 5 }));
+      const eTxt = svgEl('text', { x: ex, y: ey + 4, fill: '#fff', 'font-size': 10, 'font-weight': '900', 'text-anchor': 'middle' });
+      eTxt.textContent = isDead ? '✓' : '💀';
+      svg.append(eTxt);
+
+      const eTag = svgEl('text', { x: ex, y: ey - 18, fill: eColor, 'font-size': 9, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      eTag.textContent = isDead ? 'TARGET ELIMINATED' : 'ENEMY FIRES (380ms)';
+      svg.append(eTag);
+
+      // Player on Pivot
+      const pColor = isDead ? '#3fb950' : '#f85149';
+      svg.append(svgEl('circle', { cx: px, cy: py, r: 9, fill: pColor, stroke: '#fff', 'stroke-width': 2 }));
+      const pTxt = svgEl('text', { x: px, y: py + 22, fill: pColor, 'font-size': 10, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      pTxt.textContent = isDead ? 'ON TARGET' : 'TOO SLOW';
+      svg.append(pTxt);
+
+      // Exact Trigonometry at corner peek:
+      // Neutral heading: -90 deg
+      // Target bearing: atan2(50 - 140, 340 - 195) = atan2(-90, 145) approx -31.8 deg
+      const neutralHeadingDeg = -90;
+      const targetBearingDeg = Math.atan2(ey - py, ex - px) * (180 / Math.PI);
+      const curAimDeg = neutralHeadingDeg + coverSlewFrac * (targetBearingDeg - neutralHeadingDeg);
+
+      const aimRad = curAimDeg * (Math.PI / 180);
+      const retLen = 70;
+      const rx = px + Math.cos(aimRad) * retLen;
+      const ry = py + Math.sin(aimRad) * retLen;
+
+      // Reticle ray
+      svg.append(svgEl('line', {
+        x1: px, y1: py, x2: rx, y2: ry,
+        stroke: isDead ? '#3fb950' : '#f85149',
+        'stroke-width': 3.5, 'stroke-linecap': 'round'
+      }));
+
+      // If pre-aimed / survived, draw full laser beam to target
+      if (isDead) {
+        svg.append(svgEl('line', {
+          x1: px, y1: py, x2: ex, y2: ey,
+          stroke: '#3fb950', 'stroke-width': 2.5, 'stroke-linecap': 'round'
+        }));
+      } else {
+        // Enemy fatal laser into player
+        svg.append(svgEl('line', {
+          x1: ex, y1: ey, x2: px, y2: py,
+          stroke: '#f85149', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-dasharray': '4,2'
+        }));
+      }
+
+      // Status text
+      const statTxt = svgEl('text', { x: 210, y: 220, fill: isDead ? '#3fb950' : '#f85149', 'font-size': 11, 'font-weight': 'bold', 'text-anchor': 'middle' });
+      statTxt.textContent = isDead ? '✓ Crosshair locked on target at instant of peek!' : '⚠️ Revealing while crosshair still turning in open (Lethal)';
+      svg.append(statTxt);
+    }
+
+    // Slider Event Listener
+    $('slider-l').addEventListener('input', updatePreAimView);
+
+    // Preset Handlers
+    function setPreset(lVal, btnId) {
+      $('slider-l').value = lVal;
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      $(btnId).classList.add('active');
+      updatePreAimView();
+    }
+
+    $('preset-blind').onclick = () => setPreset(0, 'preset-blind');
+    $('preset-partial').onclick = () => setPreset(60, 'preset-partial');
+    $('preset-threshold').onclick = () => setPreset(114, 'preset-threshold');
+    $('preset-master').onclick = () => setPreset(180, 'preset-master');
+
+    // Initial draw
+    updatePreAimView();
   </script>
 </body>
 </html>

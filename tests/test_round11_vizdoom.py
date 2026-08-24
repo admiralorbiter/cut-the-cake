@@ -309,14 +309,17 @@ def test_round11_2_real_vizdoom_c_engine_bridge_12_arenas():
     suite = build_12_arena_bridge_suite()
     assert len(suite) == 12
 
-    for arena in suite:
-        log = bridge.run_engine_episode(arena, policy=ControllerPolicy.ORACLE)
-        
-        # Deep margin assertions in real C++ Doom engine
-        if log.tactical_margin_tics >= 6:
-            assert log.engine_player_survived, f"Real Doom engine execution of {arena.module_id} (M={log.tactical_margin_tics}) must survive!"
-        elif log.tactical_margin_tics <= -4:
-            assert not log.engine_player_survived, f"Real Doom engine execution of {arena.module_id} (M={log.tactical_margin_tics}) must die!"
+    try:
+        for arena in suite:
+            log = bridge.run_engine_episode(arena, policy=ControllerPolicy.ORACLE)
+            
+            # Deep margin assertions in real C++ Doom engine
+            if log.tactical_margin_tics >= 6:
+                assert log.engine_player_survived, f"Real Doom engine execution of {arena.module_id} (M={log.tactical_margin_tics}) must survive!"
+            elif log.tactical_margin_tics <= -4:
+                assert not log.engine_player_survived, f"Real Doom engine execution of {arena.module_id} (M={log.tactical_margin_tics}) must die!"
+    finally:
+        bridge.close()
 
 
 @pytest.mark.engine
@@ -356,17 +359,20 @@ def test_f3_preaim_vs_revealgated_in_real_vizdoom():
     bridge = ViZDoomRealBridge()
     mod = build_family3_aperture_congestion(stagger_m=1.40, index=2)
 
-    # 1. Reveal-Gated Oracle (a_1 = r_1) -> Infeasible (L* = +4, M = -4) -> Dies in native Doom
-    log_reveal = bridge.run_engine_episode(mod, policy=ControllerPolicy.ORACLE, regime=InformationRegime.REVEAL_GATED)
-    assert not log_reveal.engine_player_survived
-    assert log_reveal.death_tic in (69, 70)
-    assert log_reveal.tactical_margin_tics == -4
+    try:
+        # 1. Reveal-Gated Oracle (a_1 = r_1) -> Infeasible (L* = +4, M = -4) -> Dies in native Doom
+        log_reveal = bridge.run_engine_episode(mod, policy=ControllerPolicy.ORACLE, regime=InformationRegime.REVEAL_GATED)
+        assert not log_reveal.engine_player_survived
+        assert log_reveal.death_tic in (69, 70)
+        assert log_reveal.tactical_margin_tics == -4
 
-    # 2. Pre-Aim Oracle (a_1 = 0) -> Feasible (L* = -2, M = +2) -> Survives in native Doom
-    log_preaim = bridge.run_engine_episode(mod, policy=ControllerPolicy.PRE_AIM_ORACLE, regime=InformationRegime.PRE_AIM)
-    assert log_preaim.engine_player_survived
-    assert log_preaim.death_tic is None
-    assert log_preaim.tactical_margin_tics == +2
+        # 2. Pre-Aim Oracle (a_1 = 0) -> Feasible (L* = -2, M = +2) -> Survives in native Doom
+        log_preaim = bridge.run_engine_episode(mod, policy=ControllerPolicy.PRE_AIM_ORACLE, regime=InformationRegime.PRE_AIM)
+        assert log_preaim.engine_player_survived
+        assert log_preaim.death_tic is None
+        assert log_preaim.tactical_margin_tics == +2
+    finally:
+        bridge.close()
 
 
 def test_epistemic_recurrence_properties_and_monotonicity():
