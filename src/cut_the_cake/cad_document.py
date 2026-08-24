@@ -157,7 +157,15 @@ class CADPort:
 
 @dataclass
 class CADPlayerModel:
-    """Tactical player combat and movement configuration."""
+    """Tactical player combat and movement configuration.
+    
+    Authority Semantics:
+    - `v_move_mps`: Default player movement velocity. Overridden on a per-route basis by `CADRoute.v_move_mps`.
+    - `service_duration_s`: Authoring default template for newly spawned threats. Runtime job service requirements are governed authoritatively on each threat via `CADThreat.service_duration_s`.
+    - `omega_slew_deg_per_s`: Authoritative angular slewing rate in degrees per second.
+    - `acquisition_latency_s`: Authoritative reaction latency upon threat reveal.
+    - `initial_reticle_deg`: Starting reticle heading in degrees [0, 360).
+    """
     v_move_mps: float = 4.5
     omega_slew_deg_per_s: float = 360.0
     acquisition_latency_s: float = 0.15
@@ -208,29 +216,31 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     Returns:
         (is_valid, error_messages)
     """
+    import math
     errors: List[str] = []
     
     if not isinstance(data, dict):
         return False, ["Payload must be a JSON object / dictionary."]
 
-    # 1. JSON Schema Validation
+    # 1. JSON Schema Validation (Strictly Fail-Closed)
     schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "cad", "schema", "cad_document_v1.schema.json")
-    if os.path.exists(schema_path):
-        try:
-            import sys
-            # PySide6 six meta-path compatibility patch
-            for imp in list(sys.meta_path):
-                if imp.__class__.__name__ == "_SixMetaPathImporter" and not hasattr(imp, "_path"):
-                    imp._path = None
-            import jsonschema
-            with open(schema_path, "r", encoding="utf-8") as sf:
-                schema_json = json.load(sf)
-            validator = jsonschema.Draft7Validator(schema_json)
-            for err in validator.iter_errors(data):
-                field_path = ".".join(str(p) for p in err.path)
-                errors.append(f"Schema error at '{field_path or 'root'}': {err.message}")
-        except Exception as e:
-            pass
+    if not os.path.exists(schema_path):
+        return False, [f"CADDocument JSON schema definition not found at '{schema_path}'."]
+    try:
+        import sys
+        # PySide6 six meta-path compatibility patch
+        for imp in list(sys.meta_path):
+            if imp.__class__.__name__ == "_SixMetaPathImporter" and not hasattr(imp, "_path"):
+                imp._path = None
+        import jsonschema
+        with open(schema_path, "r", encoding="utf-8") as sf:
+            schema_json = json.load(sf)
+        validator = jsonschema.Draft7Validator(schema_json)
+        for err in validator.iter_errors(data):
+            field_path = ".".join(str(p) for p in err.path)
+            errors.append(f"Schema error at '{field_path or 'root'}': {err.message}")
+    except Exception as e:
+        errors.append(f"Schema validator failure / dependency missing: {e}")
 
     if errors:
         return False, errors
@@ -241,10 +251,12 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
 
     # 3. Parameter checks
     pm = data.get("player_model", {})
-    if pm.get("v_move_mps", 0) <= 0:
-        errors.append("player_model.v_move_mps must be > 0.")
-    if pm.get("omega_slew_deg_per_s", 0) <= 0:
-        errors.append("player_model.omega_slew_deg_per_s must be > 0.")
+    v_move = pm.get("v_move_mps", 0)
+    omega_slew = pm.get("omega_slew_deg_per_s", 0)
+    if not math.isfinite(v_move) or v_move <= 0:
+        errors.append("player_model.v_move_mps must be a positive finite number.")
+    if not math.isfinite(omega_slew) or omega_slew <= 0:
+        errors.append("player_model.omega_slew_deg_per_s must be a positive finite number.")
 
     geo = data.get("geometry", {})
     b_coords = geo.get("boundary", [])
@@ -252,10 +264,13 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     if len(b_coords) < 3:
         errors.append("Boundary must have at least 3 vertices.")
     else:
+        for pt in b_coords:
+            if len(pt) != 2 or not math.isfinite(pt[0]) or not math.isfinite(pt[1]):
+                errors.append(f"Boundary vertex {pt} must contain finite coordinates.")
         try:
             poly_b = Polygon(b_coords)
             if not poly_b.is_valid or poly_b.area < 1e-4:
-                errors.append("Boundary polygon is degenerate or self-intersecting.")
+                errors.append("Boundary polygon is degenerate, self-intersecting, or zero-area.")
         except Exception as e:
             errors.append(f"Invalid boundary polygon: {e}")
 
@@ -285,35 +300,91 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors.append(f"Duplicate port IDs found: {list(set(duplicates))}")
 
     # 5. Geometric containment & validity
-    if poly_b is not None and poly_b.is_valid:
-        for obs in obs_list:
-            v = obs.get("vertices", [])
-            if len(v) < 3:
-                errors.append(f"Obstacle '{obs.get('id')}' has fewer than 3 vertices.")
-                continue
-            try:
-                poly_o = Polygon(v)
-                if not poly_o.is_valid or poly_o.area < 1e-4:
-                    errors.append(f"Obstacle '{obs.get('id')}' is degenerate or self-intersecting.")
-                elif not poly_b.contains(poly_o) and not poly_b.covers(poly_o):
-                    errors.append(f"Obstacle '{obs.get('id')}' is outside or intersects boundary.")
-            except Exception as e:
-                errors.append(f"Obstacle '{obs.get('id')}' invalid geometry: {e}")
+    for obs in obs_list:
+        v = obs.get("vertices", [])
+        if len(v) < 3:
+            errors.append(f"Obstacle '{obs.get('id')}' has fewer than 3 vertices.")
+            continue
+        for pt in v:
+            if len(pt) != 2 or not math.isfinite(pt[0]) or not math.isfinite(pt[1]):
+                errors.append(f"Obstacle '{obs.get('id')}' contains non-finite coordinates.")
+        try:
+            poly_o = Polygon(v)
+            if not poly_o.is_valid or poly_o.area < 1e-4:
+                errors.append(f"Obstacle '{obs.get('id')}' is degenerate, self-intersecting, or zero-area.")
+            elif poly_b is not None and poly_b.is_valid:
+                if not poly_b.contains(poly_o) and not poly_b.covers(poly_o):
+                    errors.append(f"Obstacle '{obs.get('id')}' extends outside or intersects boundary.")
+        except Exception as e:
+            errors.append(f"Obstacle '{obs.get('id')}' invalid geometry: {e}")
 
-        for t in threat_list:
-            v = t.get("polygon", [])
-            if len(v) < 3:
-                errors.append(f"Threat '{t.get('id')}' polygon has fewer than 3 vertices.")
-            anchor = t.get("anchor", [])
-            if len(anchor) == 2:
+    for t in threat_list:
+        v = t.get("polygon", [])
+        if len(v) < 3:
+            errors.append(f"Threat '{t.get('id')}' polygon has fewer than 3 vertices.")
+        for pt in v:
+            if len(pt) != 2 or not math.isfinite(pt[0]) or not math.isfinite(pt[1]):
+                errors.append(f"Threat '{t.get('id')}' polygon contains non-finite coordinates.")
+        try:
+            poly_t = Polygon(v)
+            if not poly_t.is_valid or poly_t.area < 1e-4:
+                errors.append(f"Threat '{t.get('id')}' polygon is degenerate, self-intersecting, or zero-area.")
+            elif poly_b is not None and poly_b.is_valid:
+                if not poly_b.contains(poly_t) and not poly_b.covers(poly_t):
+                    errors.append(f"Threat '{t.get('id')}' polygon extends outside boundary.")
+        except Exception as e:
+            errors.append(f"Threat '{t.get('id')}' invalid polygon: {e}")
+
+        anchor = t.get("anchor", [])
+        if len(anchor) == 2:
+            if not math.isfinite(anchor[0]) or not math.isfinite(anchor[1]):
+                errors.append(f"Threat '{t.get('id')}' anchor contains non-finite coordinates.")
+            elif poly_b is not None and poly_b.is_valid:
                 pt_a = Point(anchor[0], anchor[1])
                 if not poly_b.contains(pt_a) and not poly_b.covers(pt_a):
                     errors.append(f"Threat '{t.get('id')}' anchor {anchor} is outside boundary.")
+        else:
+            errors.append(f"Threat '{t.get('id')}' anchor must be 2D [x, y].")
+
+        due_win = t.get("due_window_s", 0)
+        svc_dur = t.get("service_duration_s", 0)
+        if not math.isfinite(due_win) or due_win <= 0:
+            errors.append(f"Threat '{t.get('id')}' due_window_s must be positive and finite.")
+        if not math.isfinite(svc_dur) or svc_dur <= 0:
+            errors.append(f"Threat '{t.get('id')}' service_duration_s must be positive and finite.")
 
     for r in route_list:
         wps = r.get("waypoints", [])
         if len(wps) < 2:
             errors.append(f"Route '{r.get('id')}' must have at least 2 waypoints.")
+            continue
+        for pt in wps:
+            if len(pt) != 2 or not math.isfinite(pt[0]) or not math.isfinite(pt[1]):
+                errors.append(f"Route '{r.get('id')}' contains non-finite coordinates.")
+        try:
+            ls = LineString(wps)
+            if ls.length < 1e-4:
+                errors.append(f"Route '{r.get('id')}' has zero geometric length.")
+        except Exception as e:
+            errors.append(f"Route '{r.get('id')}' invalid waypoints: {e}")
+        r_speed = r.get("v_move_mps", 0)
+        if not math.isfinite(r_speed) or r_speed <= 0:
+            errors.append(f"Route '{r.get('id')}' v_move_mps must be positive and finite.")
+
+    for p in port_list:
+        seg = p.get("segment", [])
+        if len(seg) != 2:
+            errors.append(f"Port '{p.get('id')}' segment must contain exactly 2 endpoints.")
+            continue
+        for pt in seg:
+            if len(pt) != 2 or not math.isfinite(pt[0]) or not math.isfinite(pt[1]):
+                errors.append(f"Port '{p.get('id')}' contains non-finite coordinates.")
+        try:
+            ls_p = LineString(seg)
+            if ls_p.length < 1e-4:
+                errors.append(f"Port '{p.get('id')}' segment has zero length.")
+        except Exception as e:
+            errors.append(f"Port '{p.get('id')}' invalid segment: {e}")
 
     return len(errors) == 0, errors
 

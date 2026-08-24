@@ -86,7 +86,7 @@ def run_benchmark(n_samples: int = 150) -> dict:
                 "min_ms": round(float(np.min(compute_latencies)), 3),
                 "max_ms": round(float(np.max(compute_latencies)), 3)
             },
-            "local_http_rest_round_trip": {
+            "flask_in_process_request_latency": {
                 "unit": "milliseconds",
                 "samples": len(http_latencies),
                 "p50_ms": round(float(np.percentile(http_latencies, 50)), 3),
@@ -108,12 +108,17 @@ def run_benchmark(n_samples: int = 150) -> dict:
     }
 
     print("=" * 80)
-    print("CUT THE CAKE - TACTICAL CAD BENCHMARK SUITE (MILESTONE 2B.1)")
+    print("CUT THE CAKE - TACTICAL CAD BENCHMARK SUITE (MILESTONE 2B.2)")
     print("=" * 80)
     print(f"{'Metric / Latency Layer':<36} | {'N':<5} | {'p50 (ms)':<10} | {'p95 (ms)':<10} | {'p99 (ms)':<10}")
     print("-" * 80)
+    name_map = {
+        "source_analysis_compute_fast_path": "Source Analysis Fast Compute",
+        "flask_in_process_request_latency": "Flask In-Process Request Latency",
+        "full_telemetry_commit_35hz_sim": "Full Telemetry Commit (35Hz Sim)"
+    }
     for k, v in results["layers"].items():
-        name = k.replace("_", " ").title()
+        name = name_map.get(k, k.replace("_", " ").title())
         print(f"{name:<36} | {v['samples']:<5} | {v['p50_ms']:<10.2f} | {v['p95_ms']:<10.2f} | {v['p99_ms']:<10.2f}")
     print("=" * 80)
 

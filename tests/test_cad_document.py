@@ -341,18 +341,132 @@ def test_validate_cad_document_rejection():
 
 
 def test_parameter_authority_semantics():
-    """threat.service_duration_s controls service requirement; route.v_move_mps controls route velocity."""
+    """threat.service_duration_s controls service requirement; player_model.service_duration_s is default template."""
     doc = get_custom_asymmetric_corridor_document()
     doc.threats[0].service_duration_s = 0.20  # Double service duration
     
     geo = doc.to_geometric_module()
     assert geo.threats[0].service_duration_s == 0.20
 
-    from cut_the_cake.vizdoom_engine import DeterministicSimulationReferee, TicCombatParameters
+    from cut_the_cake.vizdoom_engine import DeterministicSimulationReferee
     params = doc.player_model.to_combat_params()
     referee = DeterministicSimulationReferee(params)
     jobs = referee.extract_tic_jobs(geo, route_index=0)
     
     # 0.20s at dt=0.02857s is 7 tics
     assert jobs[0].service_duration_tics == 7
+
+
+def test_document_load_and_analyze_raw_upload_regression():
+    """Verify raw CADDocument JSON upload to /api/document/load and /api/document/analyze."""
+    app = create_cad_app()
+    client = app.test_client()
+
+    valid_doc = get_custom_asymmetric_corridor_document()
+    valid_dict = valid_doc.to_dict()
+
+    # 1. POST valid raw document to /api/document/load -> 200
+    resp_load_ok = client.post("/api/document/load", json={"document": valid_dict})
+    assert resp_load_ok.status_code == 200
+    data_load = resp_load_ok.get_json()
+    assert data_load["status"] == "loaded"
+    assert data_load["document"]["document_id"] == valid_doc.document_id
+
+    # 2. POST invalid raw document to /api/document/load -> 422 (not 500)
+    invalid_dict = dict(valid_dict)
+    invalid_dict["geometry"] = dict(invalid_dict["geometry"])
+    invalid_dict["geometry"]["obstacles"] = list(invalid_dict["geometry"]["obstacles"])
+    # Add duplicate obstacle ID
+    invalid_dict["geometry"]["obstacles"].append(dict(invalid_dict["geometry"]["obstacles"][0]))
+    resp_load_fail = client.post("/api/document/load", json={"document": invalid_dict})
+    assert resp_load_fail.status_code == 422
+    assert "validation failed" in resp_load_fail.get_json()["error"].lower()
+
+    # 3. POST /api/document/analyze without payload -> analyzes active working document
+    resp_analyze_active = client.post("/api/document/analyze", json={})
+    assert resp_analyze_active.status_code == 200
+    data_active = resp_analyze_active.get_json()
+    assert data_active["is_valid"] is True
+    assert data_active["document_id"] == valid_doc.document_id
+
+    # 4. POST /api/document/analyze with invalid raw document -> 422
+    resp_analyze_fail = client.post("/api/document/analyze", json={"document": invalid_dict})
+    assert resp_analyze_fail.status_code == 422
+    assert resp_analyze_fail.get_json()["is_valid"] is False
+
+
+def test_route_speed_override_and_reveal_timing():
+    """Selected route v_move_mps must override default player speed and scale reveal/deadline tics."""
+    doc = get_custom_asymmetric_corridor_document()
+    
+    # Route 0: default 4.5 m/s
+    doc.routes[0].v_move_mps = 4.5
+    # Route 1: half speed 2.25 m/s (identical path)
+    doc.routes.append(CADRoute(
+        id="route_slow",
+        name="Slow Crawl",
+        waypoints=[[0.0, 0.0], [6.0, 0.0], [12.0, 0.0]],
+        v_move_mps=2.25
+    ))
+
+    # Fast and committed analysis for fast route (4.5 m/s)
+    res_fast_45 = analyze_cad_document(doc, route_id=doc.routes[0].id, include_telemetry=False)
+    res_comm_45 = analyze_cad_document(doc, route_id=doc.routes[0].id, include_telemetry=True)
+    assert res_fast_45["tactical_margin_tics"] == res_comm_45["tactical_margin_tics"]
+
+    # Fast and committed analysis for slow route (2.25 m/s)
+    res_fast_225 = analyze_cad_document(doc, route_id="route_slow", include_telemetry=False)
+    res_comm_225 = analyze_cad_document(doc, route_id="route_slow", include_telemetry=True)
+    assert res_fast_225["tactical_margin_tics"] == res_comm_225["tactical_margin_tics"]
+
+    # Traversal at 2.25 m/s takes 2x the time, so reveal tics should be ~2x larger
+    t1_fast = res_fast_45["threat_jobs"][0]["reveal_tic"]
+    t1_slow = res_fast_225["threat_jobs"][0]["reveal_tic"]
+    assert abs(t1_slow - 2 * t1_fast) <= 2
+
+
+def test_structured_generic_deadline_overload_diagnostic():
+    """Negative-margin diagnostic must provide structured DEADLINE_OVERLOAD fields without guessing mechanism."""
+    doc = get_canonical_f1_document()  # Broken F1 -> M = -6
+    res = analyze_cad_document(doc, include_telemetry=False)
+    
+    assert res["is_valid"] is True
+    assert res["tactical_margin_tics"] == -6
+    assert res["status_band"] == "UNSERVICEABLE"
+    
+    diag = res["diagnostic"]
+    assert diag["type"] == "DEADLINE_OVERLOAD"
+    assert diag["critical_threat_id"] == "F1_T2_R00"
+    assert diag["reveal_tic"] is not None
+    assert diag["deadline_tic"] is not None
+    assert diag["scheduled_completion_tic"] is not None
+    assert diag["lateness_tics"] is not None
+    assert diag["lateness_tics"] == 6
+    assert "Deadline overload detected" in diag["explanation"]
+
+
+def test_strict_fail_closed_geometry_rejections():
+    """validate_cad_document must reject non-finite numbers, degenerate threats, and boundary breaches."""
+    doc = get_custom_asymmetric_corridor_document()
+
+    # 1. Non-finite player speed (NaN / Inf)
+    bad_dict = doc.to_dict()
+    bad_dict["player_model"]["v_move_mps"] = float("inf")
+    is_valid, errors = validate_cad_document(bad_dict)
+    assert is_valid is False
+
+    # 2. Threat anchor outside boundary
+    bad_dict2 = doc.to_dict()
+    bad_dict2["geometry"]["threats"][0]["anchor"] = [100.0, 100.0]
+    is_valid, errors = validate_cad_document(bad_dict2)
+    assert is_valid is False
+    assert any("outside boundary" in e.lower() for e in errors)
+
+    # 3. Degenerate / zero-length route
+    bad_dict3 = doc.to_dict()
+    bad_dict3["geometry"]["routes"][0]["waypoints"] = [[1.0, 1.0], [1.0, 1.0]]
+    is_valid, errors = validate_cad_document(bad_dict3)
+    assert is_valid is False
+    assert any("zero geometric length" in e.lower() for e in errors)
+
 

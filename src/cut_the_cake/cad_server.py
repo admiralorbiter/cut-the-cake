@@ -21,7 +21,8 @@ except ImportError:
 from .cad_document import (
     CADDocument,
     get_canonical_f1_document,
-    get_custom_asymmetric_corridor_document
+    get_custom_asymmetric_corridor_document,
+    validate_cad_document
 )
 from .cad_adapter import (
     analyze_cad_document,
@@ -180,9 +181,18 @@ def create_cad_app() -> Flask:
         route_id = req_data.get("route_id")
 
         if "document" in req_data:
-            doc = CADDocument.from_dict(req_data["document"])
+            doc_dict = req_data["document"]
+            is_valid, errors = validate_cad_document(doc_dict)
+            if not is_valid:
+                return jsonify({
+                    "is_valid": False,
+                    "error_reason": f"Document validation failed: {'; '.join(errors)}",
+                    "details": errors,
+                    "client_revision": client_revision
+                }), 422
+            doc = CADDocument.from_dict(doc_dict)
         else:
-            doc = active_state["document"]
+            doc = active_state["working_document"]
 
         res = analyze_cad_document(
             doc=doc,

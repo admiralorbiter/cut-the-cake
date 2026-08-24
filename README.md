@@ -47,13 +47,13 @@ pip install -e ".[cad]"
 ### Running the Test Suite
 
 ```bash
-# Run full test suite (109 tests at current HEAD)
+# Run full test suite (113 tests at current HEAD)
 pytest -v
 ```
 
-> **Note on Verification**: The frozen scientific core contains **80 tests** tagged at `round11.4a-freeze`. Current HEAD contains **109 tests** including `cad_document_v1` schemas with strict `additionalProperties: false`, cumulative multi-obstacle editing, multi-route & non-zero initial reticle telemetry parity, truthful generic diagnostics, and document validation boundaries.
+> **Note on Verification**: The frozen scientific core contains **80 tests** tagged at `round11.4a-freeze`. Current HEAD contains **113 tests** including `cad_document_v1` schemas with strict `additionalProperties: false`, fail-closed validation, raw JSON upload and active-document analyze endpoints, route-speed traversal overrides, structured generic diagnostics, and parameter-authority contracts.
 
-### Launching the Tactical CAD Workbench (Milestone 2B.1)
+### Launching the Tactical CAD Workbench (Milestone 2B.2)
 
 ```bash
 python -m cut_the_cake.cad_server --port 5000

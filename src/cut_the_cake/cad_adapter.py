@@ -171,7 +171,7 @@ def analyze_cad_document(
 
     geo_module = doc.to_geometric_module()
 
-    # Route selection
+    # Route selection & effective combat parameters
     route_idx = 0
     if route_id is not None:
         found = False
@@ -187,6 +187,16 @@ def analyze_cad_document(
                 "client_revision": client_revision,
                 "runtime_ms": round((time.perf_counter() - t_start) * 1000.0, 2)
             }
+
+    selected_route = doc.routes[route_idx]
+    if params is None:
+        effective_v_move = float(selected_route.v_move_mps) if selected_route.v_move_mps > 0 else float(doc.player_model.v_move_mps)
+        params = TicCombatParameters(
+            v_move_mps=effective_v_move,
+            aim_velocity_deg_s=float(doc.player_model.omega_slew_deg_per_s),
+            acquisition_latency_s=float(doc.player_model.acquisition_latency_s),
+            inspect_duration_s=float(doc.player_model.service_duration_s)
+        )
 
     # 1. Authoritative Physics & Discrete Scheduling Solve
     referee = DeterministicSimulationReferee(params)
@@ -275,17 +285,32 @@ def analyze_cad_document(
     # Diagnostic bottleneck explanation
     crit_id = max(sched_res.lateness_per_threat.items(), key=lambda x: x[1])[0] if sched_res.lateness_per_threat else None
     crit_label = next((t.name for t in doc.threats if t.id == crit_id), crit_id)
+    crit_job = next((j for j in jobs if j.id == crit_id), None)
     
     if m_tics < 0:
+        c_tic = sched_res.completion_tics.get(crit_id, 0)
+        lat_tic = sched_res.lateness_per_threat.get(crit_id, 0)
+        reveal_tic = crit_job.reveal_tic if crit_job else 0
+        deadline_tic = crit_job.deadline_tic if crit_job else 0
         diagnostic = {
             "type": "DEADLINE_OVERLOAD",
             "critical_threat_id": crit_id,
-            "explanation": f"Deadline overload detected at '{crit_label}' (id: '{crit_id}'): deadline is breached by {-m_tics} tics (L* = {sched_res.lateness_optimal_l_star_tics} tics). Schedulability infeasible under current geometry."
+            "critical_threat_label": crit_label,
+            "reveal_tic": reveal_tic,
+            "deadline_tic": deadline_tic,
+            "scheduled_completion_tic": c_tic,
+            "lateness_tics": lat_tic,
+            "explanation": f"Deadline overload detected at '{crit_label}' (id: '{crit_id}'): revealed at tic {reveal_tic}, deadline at tic {deadline_tic}, scheduled completion at tic {c_tic} (lateness: +{lat_tic} tics, L* = {sched_res.lateness_optimal_l_star_tics} tics). Schedulability infeasible under current geometry."
         }
     else:
         diagnostic = {
             "type": "NONE",
             "critical_threat_id": None,
+            "critical_threat_label": None,
+            "reveal_tic": None,
+            "deadline_tic": None,
+            "scheduled_completion_tic": None,
+            "lateness_tics": None,
             "explanation": f"All {len(jobs)} threat deadlines serviced with +{m_tics} tics reserve margin."
         }
 
