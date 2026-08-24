@@ -237,18 +237,21 @@ Audited benchmark evidence (`round11.4a-freeze`):
 
 ## Horizon 5: Real-Map Case Study Pipeline (M5)
 
-- **Milestone 5-A (M5-A — Completed & Certified):** Calibrated Real-Map Transfer Case Study (Dust II: A-Long to A-Site / Pit)
-  - **Calibrated Metric Graybox Reconstruction:** Implemented metric-grounded `CADDocument` fixture of Counter-Strike Dust II A-Long engagement zone ($1.0\,\text{unit} = 1.0\,\text{meter}$, corridor width $\approx 6.0\,\text{m}$, length $\approx 28.0\,\text{m}$) without synthetic toy compromises.
-  - **Multi-Route Tactical Differentiation:** Authored 3 competing routes through the same engagement zone:
-    - `route_pieing` (outer-wall angle slice): isolates Long Corner defender first ($\Delta r = 42\text{ tics} = 1.20\,\text{s}$), achieving feasible, non-negative tactical margin ($\mathcal{M}_{\text{pie}} \ge 0$).
-    - `route_wide_swing` (aggressive open choke entry): reveals Corner and Pit defenders with tight collapse ($\Delta r = 21\text{ tics} = 0.60\,\text{s}$), producing acute simultaneous line-of-sight ($K_{\text{LOS}} = 2$) and critical margin deficits on entry.
-    - `route_pit_drop` (tactical cover drop): steps into Pit depression, breaking line-of-sight to A-Site Plat and isolating the close fight.
-  - **Spatial Observable Orthogonality:** Confirmed distinct spatial progressions for $[\mathcal{M}_{\text{suffix}}(s), \delta_{\text{original\_clock}}(s), \mathcal{K}_{\text{LOS}}(s)]$, with approach-interval pointwise superiority of pieing over wide-swing ($\forall k \in [16, 32], \mathcal{M}_{\text{suffix}}^{\text{pie}}(k) > \mathcal{M}_{\text{suffix}}^{\text{wide}}(k)$).
-  - **Pre-Aim Sensitivity ($\theta_0$):** Quantified how pre-aim orientation downlane ($\theta_0 \le 0^\circ$) preserves maximal response reserve against Corner, whereas pre-aiming into Pit ($\theta_0 = +45^\circ$) incurs large aim-slew penalties.
-  - **Workbench & API Integration:** Added dynamic Route Selector dropdown, template loader (`POST /api/document/load {"name": "dust2_a_long"}`), and captured browser screenshot artifacts (`e2e_dust2_pieing_heatmap.png`, `e2e_dust2_wide_swing_heatmap.png`).
-  - **Verification:** 100% pass across 6 deterministic unit/API tests and Playwright browser E2E workflows.
+- **Milestone 5-A & 5-A.1 (Completed & Scientifically Frozen at `e35e3a8`):** Calibrated Real-Map Transfer Case Study (Dust II: A-Long to A-Site / Pit)
+  - **Metric Graybox Reconstruction & Overview Affine Calibration:** Reconstructed metric `CADDocument` fixture of Counter-Strike Dust II A-Long engagement zone ($1.0\,\text{unit} = 1.0\,\text{meter}$, corridor width $\approx 6.0\,\text{m}$, length $\approx 28.0\,\text{m}$). Affine transform fitted against 5 Valve Source overview landmarks (`pos_x=-2476, pos_y=3239, scale=4.4`, declared hull conversion $0.01905\,\text{m/unit}$) achieves internal coordinate consistency residual $\mathrm{RMSE} = 0.0064\,\text{m} < 0.020\,\text{m}$.
+  - **Strict 2D Navigability & Positive Clearance:** Enforced $\ge 0.50\,\text{m}$ positive clearance (actual min: $0.636\,\text{m}$) and zero geometric intersections with obstacle polygons across all 3 routes.
+  - **Multi-Route Tactical Differentiation & Reveal Ordering:**
+    - `route_pieing` (outer-wall angle slice): isolates Corner defender at $k=0$ and delays Pit until $k=47$ ($\Delta r = 47\text{ tics} = 1.34\,\text{s}$).
+    - `route_wide_swing` (aggressive open choke entry): reveals Corner and Pit with tight collapse ($\Delta r = 26\text{ tics} = 0.74\,\text{s}$), producing acute simultaneous line-of-sight ($K_{\text{LOS}} = 2$).
+  - **Scientific Protocol Finding (Global $\mathcal{M}$ vs Approach $\mathcal{M}_{\text{suffix}}(s)$):**
+    - Pre-registered hypothesis of global scalar dominance $\mathcal{M}_{\text{pie}} \ge \mathcal{M}_{\text{wide}}$ was falsified at the baseline fixture ($\mathcal{M}_{\text{pie}} = +1, \mathcal{M}_{\text{wide}} = +2$) due to whole-route schedule slew geometry.
+    - Preserved the narrower supported physical invariants: universal reveal stagger $\Delta r_{\text{pie}} > \Delta r_{\text{wide}}$ across all speeds ($v \in [3.0, 6.0]\,\text{m/s}$), and approach-interval suffix-margin superiority $\min_{s \in [2, 4]} \mathcal{M}_{\text{suffix}}^{\text{pie}}(s) > \min_{s \in [2, 4]} \mathcal{M}_{\text{suffix}}^{\text{wide}}(s)$ across all velocities.
+  - **Paired Pocket Sightline Isolation:** High push reveals Plat defender past corner ($k=195$), while Pit branch strictly occludes Plat defender behind corner geometry.
+  - **Full Joint Parameter Uncertainty Sweep:** Evaluated an 81-run factorial grid ($v \in [3.5, 4.5, 5.5]$, $\omega \in [270, 360, 450]$, $\Delta \mathbf{q} \in [-0.3, 0.0, +0.3]$, $\Delta D \in [-0.05, 0.0, +0.05]$) asserting effective route velocity mutation and verifying stagger inequality (81/81) and approach suffix superiority (81/81).
+  - **Deterministic Result Packet:** Persisted exact snapshot to `results/m5a_dust2_a_long.json` (locked by SHA-256 hash `d425ce5a4df7ec35`).
+  - **Verification:** 100% pass across 9 unit/API test gates and 5 Playwright browser E2E workflows (102 tests in CAD acceptance suite).
 
-- **Milestone 5-B (Planned):** Multi-Engagement Real-Map Cross-Section (Ascent A-Main/Wine, Transit 213, Dust II B-Tunnels).
+- **Milestone 5-B (Next Focus):** Multi-Engagement Real-Map Cross-Section (Ascent A-Main/Wine, Transit 213, Dust II B-Tunnels) — authoring independent real-map topologies and pre-registering tactical route labels prior to model evaluation.
 
 ---
 
