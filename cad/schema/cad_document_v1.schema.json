@@ -68,7 +68,7 @@
         "acquisition_latency_s": { "type": "number", "minimum": 0 },
         "service_duration_s": { "type": "number", "minimum": 0 },
         "initial_reticle_deg": { "type": "number" },
-        "initial_reticle_elevation_deg": { "type": "number" },
+        "initial_reticle_elevation_deg": { "type": "number", "minimum": -90, "maximum": 90 },
         "eye_height_m": { "type": "number", "exclusiveMinimum": 0 }
       }
     },
@@ -160,7 +160,7 @@
               },
               "due_window_s": { "type": "number", "exclusiveMinimum": 0 },
               "service_duration_s": { "type": "number", "exclusiveMinimum": 0 },
-              "elevation_deg": { "type": "number" },
+              "elevation_deg": { "type": "number", "minimum": -90, "maximum": 90 },
               "z_m": { "type": "number" }
             }
           }

@@ -85,7 +85,12 @@ class CADRoute:
 
 @dataclass
 class CADThreat:
-    """Authored hostile threat zone and firing anchor."""
+    """Authored hostile threat zone and firing anchor.
+    
+    Authority Semantics (M6-A):
+    - `elevation_deg`: Authoritative aim elevation angle in degrees [-90, 90] from player eye to threat anchor.
+    - `z_m`: Reserved elevation coordinate in meters for geometric line-of-sight extraction in M6-B.
+    """
     id: str
     name: str
     polygon: List[List[float]]
@@ -275,10 +280,16 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     pm = data.get("player_model", {})
     v_move = pm.get("v_move_mps", 0)
     omega_slew = pm.get("omega_slew_deg_per_s", 0)
+    ret_el = pm.get("initial_reticle_elevation_deg", 0.0)
+    eye_h = pm.get("eye_height_m", 1.65)
     if not math.isfinite(v_move) or v_move <= 0:
         errors.append("player_model.v_move_mps must be a positive finite number.")
     if not math.isfinite(omega_slew) or omega_slew <= 0:
         errors.append("player_model.omega_slew_deg_per_s must be a positive finite number.")
+    if not math.isfinite(ret_el) or not (-90.0 <= ret_el <= 90.0):
+        errors.append("player_model.initial_reticle_elevation_deg must be a finite number between -90.0 and 90.0.")
+    if not math.isfinite(eye_h) or eye_h <= 0:
+        errors.append("player_model.eye_height_m must be a positive finite number.")
 
     geo = data.get("geometry", {})
     b_coords = geo.get("boundary", [])
@@ -374,6 +385,12 @@ def validate_cad_document(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
             errors.append(f"Threat '{t.get('id')}' due_window_s must be positive and finite.")
         if not math.isfinite(svc_dur) or svc_dur <= 0:
             errors.append(f"Threat '{t.get('id')}' service_duration_s must be positive and finite.")
+        t_el = t.get("elevation_deg", 0.0)
+        if t_el is not None and (not math.isfinite(t_el) or not (-90.0 <= t_el <= 90.0)):
+            errors.append(f"Threat '{t.get('id')}' elevation_deg must be a finite number between -90.0 and 90.0.")
+        t_zm = t.get("z_m", None)
+        if t_zm is not None and not math.isfinite(t_zm):
+            errors.append(f"Threat '{t.get('id')}' z_m must be a finite number.")
 
     for r in route_list:
         wps = r.get("waypoints", [])

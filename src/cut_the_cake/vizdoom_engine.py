@@ -134,7 +134,7 @@ class DiscreteTicScheduler:
         th1, ph1 = self._extract_aim_state(angle_from_deg)
         th2, ph2 = self._extract_aim_state(angle_to_deg)
         diff = spherical_aim_distance_deg(th1, ph1, th2, ph2)
-        aim_tics = int(math.ceil(diff / self.params.max_aim_deg_per_tic)) if diff > 1e-4 else 0
+        aim_tics = int(math.ceil(diff / self.params.max_aim_deg_per_tic))
         return self.params.acquisition_tics + aim_tics
 
     def compute_hamiltonian_workload_tics(

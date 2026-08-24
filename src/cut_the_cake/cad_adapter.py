@@ -1346,24 +1346,35 @@ def analyze_cad_document(
     events_output: Optional[List[Dict[str, Any]]] = None
 
     # 8. Full Simulated Execution (Only when requested on commit)
-    if include_telemetry:
-        from .cad_export import _generate_telemetry_and_events
-        telemetry_frames, events, stats = _generate_telemetry_and_events(
-            geo_module=geo_module,
-            params=params,
-            policy=ControllerPolicy.ORACLE,
-            route_index=route_idx,
-            initial_reticle_deg=doc.player_model.initial_reticle_deg
-        )
-        model_episode_survived = stats.get("model_episode_survived", False)
-        model_death_tic = stats.get("model_death_tic")
-        telemetry_frames_output = telemetry_frames
-        events_output = events
+    has_elevation = any(abs(j.elevation_deg) > 1e-4 for j in jobs) or abs(doc.player_model.initial_reticle_elevation_deg) > 1e-4
+    telemetry_status = "not_run"
 
-        # Populate realized completions strictly from actual controller events
-        for ev in events:
-            if ev.get("type") == "SERVICE_COMPLETE":
-                realized_complete_map[ev["threat_id"]] = ev["tic"]
+    if include_telemetry:
+        if has_elevation:
+            model_episode_survived = None
+            model_death_tic = None
+            telemetry_frames_output = None
+            events_output = None
+            telemetry_status = "ELEVATED_EXECUTION_UNSUPPORTED_M6A"
+        else:
+            from .cad_export import _generate_telemetry_and_events
+            telemetry_frames, events, stats = _generate_telemetry_and_events(
+                geo_module=geo_module,
+                params=params,
+                policy=ControllerPolicy.ORACLE,
+                route_index=route_idx,
+                initial_reticle_deg=doc.player_model.initial_reticle_deg
+            )
+            model_episode_survived = stats.get("model_episode_survived", False)
+            model_death_tic = stats.get("model_death_tic")
+            telemetry_frames_output = telemetry_frames
+            events_output = events
+            telemetry_status = "SUCCESS"
+
+            # Populate realized completions strictly from actual controller events
+            for ev in events:
+                if ev.get("type") == "SERVICE_COMPLETE":
+                    realized_complete_map[ev["threat_id"]] = ev["tic"]
 
     for j in jobs:
         c_tic = sched_res.completion_tics.get(j.id, 0)
@@ -1463,6 +1474,7 @@ def analyze_cad_document(
         "model_death_tic": model_death_tic,
         "telemetry_frames": telemetry_frames_output,
         "events": events_output,
+        "telemetry_status": telemetry_status,
         "heatmap_available": True,
         "source_doc_hash": doc.compute_hash()
     }
