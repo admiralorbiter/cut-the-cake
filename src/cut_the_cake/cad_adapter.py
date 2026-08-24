@@ -1308,7 +1308,8 @@ def analyze_cad_document(
             "model_episode_survived": None,
             "model_death_tic": None,
             "telemetry_frames": None,
-            "events": None
+            "events": None,
+            "source_doc_hash": doc.compute_hash()
         }
 
     # 5. Discrete Scheduling Solve

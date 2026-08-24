@@ -665,3 +665,10 @@ def get_custom_asymmetric_corridor_document() -> CADDocument:
             CADPort(id="port_east", segment=[[12.0, -0.8], [12.0, 0.8]], port_type="EXIT")
         ]
     )
+
+
+def get_dust2_a_long_document() -> CADDocument:
+    """Return calibrated metric graybox CADDocument of Counter-Strike Dust II A-Long (M5-A)."""
+    from cut_the_cake.cad_fixtures.dust2_a_long import get_dust2_a_long_document as _get_dust2
+    return _get_dust2()
+

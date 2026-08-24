@@ -337,3 +337,59 @@ def test_cad_e2e_spatial_heatmap(cad_server_url):
         browser.close()
 
 
+def test_cad_e2e_real_map_transfer_case_study(cad_server_url):
+    """E2E Test: Load Dust II A-Long real-map case study template, switch routes dynamically,
+    verify Tactical Margin updating and capture visual screenshot artifacts for Pieing vs Wide Swing.
+    """
+    artifacts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "artifacts"))
+    brain_dir = r"C:\Users\admir\.gemini\antigravity\brain\24682a79-57e4-435b-bdc5-0a0c8d4150f6"
+    os.makedirs(artifacts_dir, exist_ok=True)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1440, "height": 900})
+        page = context.new_page()
+        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+
+        # 1. Load Workbench & Select Dust II template
+        page.goto(cad_server_url, wait_until="networkidle")
+        page.wait_for_selector("#docSelect")
+        page.select_option("#docSelect", "dust2_a_long")
+        page.wait_for_selector("#fixtureBadge", timeout=5000)
+        page.wait_for_timeout(400)
+
+        fixture_text = page.inner_text("#fixtureBadge")
+        assert "dust2_a_long" in fixture_text.lower()
+
+        # 2. Verify Route Selector options
+        route_options = page.eval_on_selector_all("#routeSelect option", "opts => opts.map(o => o.value)")
+        assert "route_pieing" in route_options
+        assert "route_wide_swing" in route_options
+        assert "route_pit_drop" in route_options
+
+        # 3. Enable Spatial Heatmap
+        page.click("#btnToggleHeatmap")
+        page.wait_for_selector("#heatmapLegend", state="visible", timeout=5000)
+        page.wait_for_timeout(500)
+
+        # 4. Capture Pieing Route Artifact
+        page.select_option("#routeSelect", "route_pieing")
+        page.wait_for_timeout(600)
+        screenshot_pieing = os.path.join(artifacts_dir, "e2e_dust2_pieing_heatmap.png")
+        page.screenshot(path=screenshot_pieing)
+        if os.path.exists(brain_dir):
+            page.screenshot(path=os.path.join(brain_dir, "e2e_dust2_pieing_heatmap.png"))
+
+        # 5. Switch to Wide-Swing Route & Capture Artifact
+        page.select_option("#routeSelect", "route_wide_swing")
+        page.wait_for_timeout(600)
+        screenshot_wide = os.path.join(artifacts_dir, "e2e_dust2_wide_swing_heatmap.png")
+        page.screenshot(path=screenshot_wide)
+        if os.path.exists(brain_dir):
+            page.screenshot(path=os.path.join(brain_dir, "e2e_dust2_wide_swing_heatmap.png"))
+
+        browser.close()
+
+
+

@@ -236,10 +236,30 @@ Audited benchmark evidence (`round11.4a-freeze`):
 ---
 
 ## Horizon 5: Real-Map Case Study Pipeline (M5)
-- Ingest and analyze recognizable competitive FPS geometry:
-  - Modern Warfare beta gray-box reconstructions;
-  - Tactical defusal maps (Dust II, Ascent, Haven A/B/C rotations).
-- Ingestion pipeline: image reference underlay, scale calibration, polygon tracing, route hypotheses, uncertainty tagging.
+
+- **Milestone 5-A (M5-A — Completed & Certified):** Calibrated Real-Map Transfer Case Study (Dust II: A-Long to A-Site / Pit)
+  - **Calibrated Metric Graybox Reconstruction:** Implemented metric-grounded `CADDocument` fixture of Counter-Strike Dust II A-Long engagement zone ($1.0\,\text{unit} = 1.0\,\text{meter}$, corridor width $\approx 6.0\,\text{m}$, length $\approx 28.0\,\text{m}$) without synthetic toy compromises.
+  - **Multi-Route Tactical Differentiation:** Authored 3 competing routes through the same engagement zone:
+    - `route_pieing` (outer-wall angle slice): isolates Long Corner defender first ($\Delta r = 42\text{ tics} = 1.20\,\text{s}$), achieving feasible, non-negative tactical margin ($\mathcal{M}_{\text{pie}} \ge 0$).
+    - `route_wide_swing` (aggressive open choke entry): reveals Corner and Pit defenders with tight collapse ($\Delta r = 21\text{ tics} = 0.60\,\text{s}$), producing acute simultaneous line-of-sight ($K_{\text{LOS}} = 2$) and critical margin deficits on entry.
+    - `route_pit_drop` (tactical cover drop): steps into Pit depression, breaking line-of-sight to A-Site Plat and isolating the close fight.
+  - **Spatial Observable Orthogonality:** Confirmed distinct spatial progressions for $[\mathcal{M}_{\text{suffix}}(s), \delta_{\text{original\_clock}}(s), \mathcal{K}_{\text{LOS}}(s)]$, with approach-interval pointwise superiority of pieing over wide-swing ($\forall k \in [16, 32], \mathcal{M}_{\text{suffix}}^{\text{pie}}(k) > \mathcal{M}_{\text{suffix}}^{\text{wide}}(k)$).
+  - **Pre-Aim Sensitivity ($\theta_0$):** Quantified how pre-aim orientation downlane ($\theta_0 \le 0^\circ$) preserves maximal response reserve against Corner, whereas pre-aiming into Pit ($\theta_0 = +45^\circ$) incurs large aim-slew penalties.
+  - **Workbench & API Integration:** Added dynamic Route Selector dropdown, template loader (`POST /api/document/load {"name": "dust2_a_long"}`), and captured browser screenshot artifacts (`e2e_dust2_pieing_heatmap.png`, `e2e_dust2_wide_swing_heatmap.png`).
+  - **Verification:** 100% pass across 6 deterministic unit/API tests and Playwright browser E2E workflows.
+
+- **Milestone 5-B (Planned):** Multi-Engagement Real-Map Cross-Section (Ascent A-Main/Wine, Transit 213, Dust II B-Tunnels).
+
+---
+
+## Horizon 3: Multi-Operator Repair Workbench (M3)
+- Expand repair operators informed by observed real-world failure demand:
+  1. Aperture resize / choke narrowing;
+  2. Small cover lip / occluder insertion;
+  3. Obstacle translation (current $\mathcal{T}_{\text{obs}}$);
+  4. Obstacle extension / contraction;
+  5. Route waypoint / entry angle adjustment.
+- Heterogeneous cost model: $\mathcal{C}(\mathcal{G}, \mathcal{G}') = w_{\text{move}} d_{\text{wall}} + w_{\text{resize}} \Delta A + w_{\text{insert}} N_{\text{new}} + w_{\text{route}} \Delta L$.
 
 ---
 

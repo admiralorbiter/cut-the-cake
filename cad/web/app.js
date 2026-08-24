@@ -45,6 +45,7 @@ let showHeatmap = false;
 let showFloorExposure = false;
 let cachedHeatmapData = null;
 let hoveredHeatmapSample = null;
+let selectedRouteId = null; // Active route for analysis and heatmap (M5-A)
 
 let clientRevision = 0;
 let latestRequestedRevision = 0;
@@ -59,6 +60,7 @@ const ctx = canvas.getContext('2d');
 const viewportContainer = document.getElementById('viewportContainer');
 
 const docSelect = document.getElementById('docSelect');
+const routeSelect = document.getElementById('routeSelect');
 const fixtureBadge = document.getElementById('fixtureBadge');
 const evidenceBadge = document.getElementById('evidenceBadge');
 const latencyBadge = document.getElementById('latencyBadge');
@@ -200,11 +202,51 @@ function updateUndoRedoButtons(undoAvailable, redoAvailable) {
   if (btnDelete) btnDelete.disabled = !selectedObstacleId;
 }
 
+function updateRouteSelector() {
+  if (!routeSelect) return;
+  const routes = getRoutes();
+  routeSelect.innerHTML = '';
+  
+  if (routes.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'No Routes';
+    routeSelect.appendChild(opt);
+    selectedRouteId = null;
+    return;
+  }
+
+  const existingIds = routes.map(r => r.id);
+  if (!selectedRouteId || !existingIds.includes(selectedRouteId)) {
+    selectedRouteId = routes[0].id;
+  }
+
+  routes.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = `${r.name || r.id} (${r.waypoints ? r.waypoints.length : 0} pts)`;
+    if (r.id === selectedRouteId) opt.selected = true;
+    routeSelect.appendChild(opt);
+  });
+}
+
 function setupUI() {
   // Document Switcher
   docSelect.addEventListener('change', async () => {
     await loadDocumentByName(docSelect.value);
   });
+
+  // Route Switcher (M5-A)
+  if (routeSelect) {
+    routeSelect.addEventListener('change', async () => {
+      selectedRouteId = routeSelect.value;
+      await requestInitialAnalysis();
+      if (showHeatmap) {
+        await fetchHeatmapData();
+      }
+      drawMap();
+    });
+  }
 
   // Tool Selection
   if (toolSelect) toolSelect.addEventListener('click', () => setTool('select'));
@@ -460,7 +502,7 @@ async function fetchHeatmapData() {
   const expectedHash = activeDoc.hash || currentAnalysis?.source_doc_hash;
 
   try {
-    const activeRouteId = getRoutes().length > 0 ? getRoutes()[0].id : null;
+    const activeRouteId = selectedRouteId || (getRoutes().length > 0 ? getRoutes()[0].id : null);
     const resp = await fetch('/api/document/heatmap', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -550,6 +592,8 @@ async function loadDocumentByName(docName) {
 
   if (!activeDoc) return;
 
+  selectedRouteId = null;
+  updateRouteSelector();
   const obstacles = getObstacles();
   selectedObstacleId = obstacles.length > 0 ? obstacles[0].id : null;
   resetTransformState();
@@ -1035,10 +1079,12 @@ function setupInteraction() {
 // Server Analysis & Mutation Requests
 async function requestInitialAnalysis() {
   try {
+    const payload = { include_telemetry: true };
+    if (selectedRouteId) payload.route_id = selectedRouteId;
     const resp = await fetch('/api/document/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ include_telemetry: true })
+      body: JSON.stringify(payload)
     });
     if (resp.ok) {
       const data = await resp.json();
