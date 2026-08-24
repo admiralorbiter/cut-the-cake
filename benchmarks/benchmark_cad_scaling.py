@@ -101,7 +101,7 @@ def generate_scaling_document(num_segments: int, num_threats: int) -> CADDocumen
 
 
 def _timed_runs(fn, runs: int = 5, warmup: int = 1) -> tuple[float, float]:
-    """Run fn multiple times with warmup, returning (p50_ms, p95_ms)."""
+    """Run fn multiple times with warmup, returning (p50_ms, sample_max_ms)."""
     for _ in range(warmup):
         fn()
     durations = []
@@ -111,19 +111,19 @@ def _timed_runs(fn, runs: int = 5, warmup: int = 1) -> tuple[float, float]:
         durations.append((time.perf_counter() - t0) * 1000.0)
     durations.sort()
     p50 = statistics.median(durations)
-    p95 = durations[int(math.ceil(0.95 * len(durations))) - 1]
-    return round(p50, 3), round(p95, 3)
+    sample_max = max(durations)
+    return round(p50, 3), round(sample_max, 3)
 
 
 def run_scaling_benchmark(output_path: str = "benchmarks/results_scaling.json") -> dict[str, Any]:
     segment_counts = [50, 100, 250, 500, 1000, 2500, 5000]
     threat_counts = [2, 4, 8, 12, 20]
     
-    print("=" * 88)
+    print("=" * 102)
     print("CUT THE CAKE - PHASE 1: GEOMETRY & THREAT SCALING (FAST ANALYSIS MATRIX)")
-    print("=" * 88)
-    print(f"{'Segments':<10} | {'Threats':<8} | {'Job Comp p50/p95 (ms)':<23} | {'Sched p50 (ms)':<15} | {'Fast Tot p50/p95 (ms)':<22}")
-    print("-" * 88)
+    print("=" * 102)
+    print(f"{'Segments':<10} | {'Threats':<8} | {'Route Tics':<11} | {'Jobs':<6} | {'Job Comp (p50/max ms)':<24} | {'Sched (p50 ms)':<16} | {'Fast Tot (p50/max ms)':<22}")
+    print("-" * 102)
 
     phase1_results = []
     for seg in segment_counts:
@@ -135,57 +135,74 @@ def run_scaling_benchmark(output_path: str = "benchmarks/results_scaling.json") 
             referee = DeterministicSimulationReferee(params)
             scheduler = DiscreteTicScheduler(params)
 
-            # Job compilation timing
-            c_p50, c_p95 = _timed_runs(lambda: referee.extract_tic_jobs(geo_module, route_index=0), runs=5)
-            
-            # Scheduler timing
+            # Route tics and extracted jobs
+            route = geo_module.routes[0]
+            route_tics = int(math.ceil(route.total_length_m / params.move_m_per_tic))
             jobs = referee.extract_tic_jobs(geo_module, route_index=0)
-            s_p50, s_p95 = _timed_runs(lambda: scheduler.solve(jobs), runs=5)
+            compiled_jobs = len(jobs)
+
+            # Job compilation timing
+            c_p50, c_max = _timed_runs(lambda: referee.extract_tic_jobs(geo_module, route_index=0), runs=5)
+            
+            # Scheduler timing (exact permutation scheduler: O(J! * J))
+            s_p50, s_max = _timed_runs(lambda: scheduler.solve(jobs), runs=5)
 
             # Fast analysis timing
-            f_p50, f_p95 = _timed_runs(lambda: analyze_cad_document(doc, include_telemetry=False), runs=5)
+            f_p50, f_max = _timed_runs(lambda: analyze_cad_document(doc, include_telemetry=False), runs=5)
 
             row = {
                 "segments_actual": actual_segs,
-                "threats": th,
+                "threats_authored": th,
+                "route_tics": route_tics,
+                "compiled_jobs": compiled_jobs,
                 "compile_p50_ms": c_p50,
-                "compile_p95_ms": c_p95,
+                "compile_sample_max_ms": c_max,
                 "scheduler_p50_ms": s_p50,
-                "scheduler_p95_ms": s_p95,
+                "scheduler_sample_max_ms": s_max,
                 "fast_total_p50_ms": f_p50,
-                "fast_total_p95_ms": f_p95,
+                "fast_total_sample_max_ms": f_max,
             }
             phase1_results.append(row)
             print(
-                f"{actual_segs:<10} | {th:<8} | {f'{c_p50:.2f} / {c_p95:.2f}':<23} | "
-                f"{s_p50:<15.2f} | {f'{f_p50:.2f} / {f_p95:.2f}':<22}"
+                f"{actual_segs:<10} | {th:<8} | {route_tics:<11} | {compiled_jobs:<6} | "
+                f"{f'{c_p50:.2f} / {c_max:.2f}':<24} | {s_p50:<16.2f} | {f'{f_p50:.2f} / {f_max:.2f}':<22}"
             )
 
-    print("\n" + "=" * 88)
+    print("\n" + "=" * 90)
     print("CUT THE CAKE - PHASE 2: REPRESENTATIVE FULL TELEMETRY SIMULATION")
-    print("=" * 88)
-    print(f"{'Segments':<10} | {'Threats':<8} | {'Telemetry p50 (ms)':<20} | {'Telemetry p95 (ms)':<20}")
-    print("-" * 88)
+    print("=" * 90)
+    print(f"{'Segments':<10} | {'Threats':<8} | {'Route Tics':<11} | {'Jobs':<6} | {'Telemetry p50 (ms)':<20} | {'Telemetry sample_max (ms)':<26}")
+    print("-" * 90)
 
     phase2_cells = [(50, 2), (250, 4), (500, 8), (1000, 12), (2500, 20)]
     phase2_results = []
     for seg, th in phase2_cells:
         doc = generate_scaling_document(seg, th)
         actual_segs = sum(len(o.vertices) for o in doc.obstacles)
-        t_p50, t_p95 = _timed_runs(lambda: analyze_cad_document(doc, include_telemetry=True), runs=3)
+        params = doc.player_model.to_combat_params()
+        geo_module = doc.to_geometric_module()
+        referee = DeterministicSimulationReferee(params)
+        route = geo_module.routes[0]
+        route_tics = int(math.ceil(route.total_length_m / params.move_m_per_tic))
+        jobs = referee.extract_tic_jobs(geo_module, route_index=0)
+        compiled_jobs = len(jobs)
+
+        t_p50, t_max = _timed_runs(lambda: analyze_cad_document(doc, include_telemetry=True), runs=3)
         row = {
             "segments_actual": actual_segs,
-            "threats": th,
+            "threats_authored": th,
+            "route_tics": route_tics,
+            "compiled_jobs": compiled_jobs,
             "telemetry_p50_ms": t_p50,
-            "telemetry_p95_ms": t_p95,
+            "telemetry_sample_max_ms": t_max,
         }
         phase2_results.append(row)
-        print(f"{actual_segs:<10} | {th:<8} | {t_p50:<20.2f} | {t_p95:<20.2f}")
+        print(f"{actual_segs:<10} | {th:<8} | {route_tics:<11} | {compiled_jobs:<6} | {t_p50:<20.2f} | {t_max:<26.2f}")
 
     # Phase 3: Memory footprint
-    print("\n" + "=" * 88)
+    print("\n" + "=" * 90)
     print("CUT THE CAKE - PHASE 3: PEAK MEMORY ALLOCATION")
-    print("=" * 88)
+    print("=" * 90)
     tracemalloc.start()
     doc_heavy = generate_scaling_document(5000, 20)
     _ = analyze_cad_document(doc_heavy, include_telemetry=False)
@@ -195,6 +212,11 @@ def run_scaling_benchmark(output_path: str = "benchmarks/results_scaling.json") 
     print(f"Peak memory for 5000-segment / 20-threat document analysis: {peak_mb} MB")
 
     full_payload = {
+        "metadata": {
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "python_version": "3.12",
+            "notes": "Synthetic generator scales both obstacle segments and corridor length (route_tics). Scheduler is factorial O(J! * J) in compiled jobs J."
+        },
         "phase1_fast_matrix": phase1_results,
         "phase2_telemetry_samples": phase2_results,
         "phase3_peak_memory_mb": peak_mb,

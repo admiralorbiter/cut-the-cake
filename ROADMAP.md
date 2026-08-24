@@ -176,14 +176,24 @@ Audited benchmark evidence (`round11.4a-freeze`):
 ---
 
 ## Horizon 2: Tactical CAD Editor Foundation (M2) — 🚀 ACTIVE
-- **Milestone 2A (M2A — Active):** Drag One Wall / Interactive Source Re-analysis:
+- **Milestone 2A (M2A — Completed):** Drag One Wall / Interactive Source Re-analysis:
   - Constrained X-axis horizontal dragging of Obstacle #0 with $0.05\,\text{m}$ grid snapping.
   - Real-time local Python Flask service (`POST /api/analyze`) serving authoritative geometry validation, raycasts, discrete scheduling, and Tactical Margin calculations.
   - Fail-closed external engine evidence (`transfer_status: "not_run"`).
   - 3 status bands (`UNSERVICEABLE`, `FEASIBLE — BELOW TARGET RESERVE`, `TARGET RESERVE MET`).
-- **Milestone 2B (M2B — Planned):** Multi-obstacle translation, rotation, and custom corridor clearance validation.
-- **Milestone 2C (M2C — Planned):** Live heatmaps of tactical margin deficits along authored patrol paths.
-- **Milestone 2D (M2D — Planned):** "Auto-Fix" button invoking `MinimalRepairOptimizer` to suggest compliant placements.
+- **Milestone 2B (M2B — Completed):** Multi-obstacle translation, rotation, and custom corridor clearance validation.
+- **Milestone 2C (M2C / M2C.1 — Completed & Accepted):** Transform Hardening & Monotonic Session History:
+  - Local-basis oriented rectangle resize (preserving authored orientation).
+  - Monotonic document/session wall sequence ID allocation (non-reusing deleted IDs across undo/redo).
+  - Absolute target-angle vs relative delta rotation composition.
+  - State-preserving undo/redo history stack across multi-element mutations.
+- **Milestone 2D (M2D — Active / Verification Conditional):** Scenario Authoring, Interactive Playback & Automated Verification Harness:
+  - Interactive scenario authoring: route creation, waypoint editing, route speed tuning ($v_{\text{move}}$), combat parameters ($\omega_{\text{slew}}, T_{\text{acq}}, T_{\text{serv}}$), and initial reticle azimuth.
+  - Interactive time-indexed playback scrubbing with synchronized player cone and authoritative LOS visibility rays.
+  - Fast path vs full simulation dual-mode analysis dispatch.
+  - 4-Tier verification system: Tiered state-machine fuzzer, metamorphic property suite, Playwright browser E2E, and scaling benchmark matrix.
+- **Milestone 2E (M2E — Planned):** "Auto-Fix" integration invoking `MinimalRepairOptimizer` to suggest compliant obstacle placements in authored layouts.
+- **Milestone 2F (M2F — Planned):** Live spatial heatmaps of tactical margin deficits along authored patrol routes.
 
 ---
 

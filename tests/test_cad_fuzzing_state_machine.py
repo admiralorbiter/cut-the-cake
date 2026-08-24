@@ -52,12 +52,13 @@ from cut_the_cake.cad_adapter import (
 
 # Global Instrumentation Registry
 METRICS = {
-    "total_transitions": 0,
+    "rule_invocations": 0,
+    "successful_mutations": 0,
+    "rejected_mutations": 0,
+    "history_operations": 0,
     "invariant_evaluations": 0,
-    "full_telemetry_evaluations": 0,
+    "oracle_evaluations": 0,
     "schema_validation_s": 0.0,
-    "job_compilation_s": 0.0,
-    "scheduler_s": 0.0,
     "fast_total_s": 0.0,
     "full_telemetry_s": 0.0,
     "history_copy_s": 0.0,
@@ -65,19 +66,20 @@ METRICS = {
     "peak_threats": 0,
     "peak_segments": 0,
     "worst_single_step_s": 0.0,
-    "complexity_bins": defaultdict(lambda: {"count": 0, "fast_total_s": 0.0, "telemetry_total_s": 0.0}),
+    "density_tiers": defaultdict(lambda: {"count": 0, "fast_total_s": 0.0, "telemetry_total_s": 0.0}),
 }
 
 
-def _get_complexity_bin(num_obs: int, num_threats: int) -> str:
-    if num_obs <= 5 and num_threats <= 3:
-        return "obs_2_5__thr_1_3"
-    elif num_obs <= 10 and num_threats <= 6:
-        return "obs_6_10__thr_4_6"
-    elif num_obs <= 15 and num_threats <= 9:
-        return "obs_11_15__thr_7_9"
+def _get_density_tier(num_obs: int, num_threats: int) -> str:
+    """Classify document into explicit density tiers."""
+    if num_obs <= 4 and num_threats <= 2:
+        return "tier_1_light (<=4 obs, <=2 thr)"
+    elif num_obs <= 8 and num_threats <= 4:
+        return "tier_2_medium (<=8 obs, <=4 thr)"
+    elif num_obs <= 12 and num_threats <= 6:
+        return "tier_3_heavy (<=12 obs, <=6 thr)"
     else:
-        return "obs_16_plus__thr_10_plus"
+        return "tier_4_dense (>12 obs or >6 thr)"
 
 
 PROFILE = os.environ.get("CAD_FUZZ_PROFILE", "smoke").lower()
@@ -120,7 +122,9 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
         h=st.floats(min_value=0.2, max_value=2.0)
     )
     def create_obstacle_rule(self, x1, y1, w, h):
+        METRICS["rule_invocations"] += 1
         if len(self.doc.obstacles) >= MAX_OBSTACLES:
+            METRICS["rejected_mutations"] += 1
             return
         x2 = x1 + w
         y2 = y1 + h
@@ -131,29 +135,42 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
             self._push_undo()
             self.doc = cand_doc
             self.next_wall_seq += 1
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     @rule(
         dx=st.floats(min_value=-1.5, max_value=1.5),
         dy=st.floats(min_value=-0.8, max_value=0.8)
     )
     def translate_obstacle_rule(self, dx, dy):
+        METRICS["rule_invocations"] += 1
         if not self.doc.obstacles:
+            METRICS["rejected_mutations"] += 1
             return
         target_id = self.doc.obstacles[0].id
         cand_doc, is_valid, _ = translate_obstacle_in_document(self.doc, target_id, dx, dy)
         if is_valid:
             self._push_undo()
             self.doc = cand_doc
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     @rule(angle=st.floats(min_value=-90.0, max_value=90.0))
     def rotate_obstacle_rule(self, angle):
+        METRICS["rule_invocations"] += 1
         if not self.doc.obstacles:
+            METRICS["rejected_mutations"] += 1
             return
         target_id = self.doc.obstacles[0].id
         cand_doc, is_valid, _ = rotate_obstacle_in_document(self.doc, target_id, angle_delta_deg=angle)
         if is_valid:
             self._push_undo()
             self.doc = cand_doc
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     @rule(
         handle=st.sampled_from(["ne", "nw", "se", "sw", "n", "s", "e", "w"]),
@@ -161,7 +178,9 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
         dy=st.floats(min_value=-0.4, max_value=0.4)
     )
     def resize_obstacle_rule(self, handle, dx, dy):
+        METRICS["rule_invocations"] += 1
         if not self.doc.obstacles:
+            METRICS["rejected_mutations"] += 1
             return
         target_id = self.doc.obstacles[0].id
         cand_doc, is_valid, _ = resize_rectangle_obstacle(
@@ -170,16 +189,24 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
         if is_valid:
             self._push_undo()
             self.doc = cand_doc
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     @rule()
     def delete_obstacle_rule(self):
+        METRICS["rule_invocations"] += 1
         if not self.doc.obstacles:
+            METRICS["rejected_mutations"] += 1
             return
         target_id = self.doc.obstacles[-1].id
         cand_doc, is_valid, _ = delete_obstacle_in_document(self.doc, target_id)
         if is_valid:
             self._push_undo()
             self.doc = cand_doc
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     # -------------------------------------------------------------------------
     # THREAT MUTATIONS (Density Budgeted)
@@ -192,7 +219,9 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
         service_duration=st.floats(min_value=0.05, max_value=0.4)
     )
     def create_threat_rule(self, x, y, due_window, service_duration):
+        METRICS["rule_invocations"] += 1
         if len(self.doc.threats) >= MAX_THREATS:
+            METRICS["rejected_mutations"] += 1
             return
         cand_doc, cand_id, is_valid, _ = create_threat_in_document(
             self.doc, anchor=[x, y], due_window_s=due_window, service_duration_s=service_duration,
@@ -202,26 +231,39 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
             self._push_undo()
             self.doc = cand_doc
             self.next_threat_seq += 1
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     @rule(due_window=st.floats(min_value=0.1, max_value=2.0))
     def update_threat_due_window_rule(self, due_window):
+        METRICS["rule_invocations"] += 1
         if not self.doc.threats:
+            METRICS["rejected_mutations"] += 1
             return
         target_id = self.doc.threats[0].id
         cand_doc, is_valid, _ = update_threat_due_window(self.doc, target_id, due_window)
         if is_valid:
             self._push_undo()
             self.doc = cand_doc
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     @rule()
     def delete_threat_rule(self):
+        METRICS["rule_invocations"] += 1
         if not self.doc.threats:
+            METRICS["rejected_mutations"] += 1
             return
         target_id = self.doc.threats[-1].id
         cand_doc, is_valid, _ = delete_threat_in_document(self.doc, target_id)
         if is_valid:
             self._push_undo()
             self.doc = cand_doc
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     # -------------------------------------------------------------------------
     # ROUTE MUTATIONS
@@ -229,13 +271,18 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
 
     @rule(speed=st.floats(min_value=1.0, max_value=8.0))
     def update_route_speed_rule(self, speed):
+        METRICS["rule_invocations"] += 1
         if not self.doc.routes:
+            METRICS["rejected_mutations"] += 1
             return
         target_id = self.doc.routes[0].id
         cand_doc, is_valid, _ = update_route_speed(self.doc, target_id, speed)
         if is_valid:
             self._push_undo()
             self.doc = cand_doc
+            METRICS["successful_mutations"] += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     # -------------------------------------------------------------------------
     # HISTORY OPERATIONS (Undo / Redo / Roundtrip)
@@ -243,25 +290,33 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
 
     @rule()
     def undo_rule(self):
+        METRICS["rule_invocations"] += 1
         if self.undo_stack:
             t0 = time.perf_counter()
             prev_doc = self.undo_stack.pop()
             self.redo_stack.append(copy.deepcopy(self.doc))
             self.doc = prev_doc
             METRICS["history_copy_s"] += time.perf_counter() - t0
+            METRICS["history_operations"] += 1
             self.last_op_was_history = True
             self.step_counter += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     @rule()
     def redo_rule(self):
+        METRICS["rule_invocations"] += 1
         if self.redo_stack:
             t0 = time.perf_counter()
             next_doc = self.redo_stack.pop()
             self.undo_stack.append(copy.deepcopy(self.doc))
             self.doc = next_doc
             METRICS["history_copy_s"] += time.perf_counter() - t0
+            METRICS["history_operations"] += 1
             self.last_op_was_history = True
             self.step_counter += 1
+        else:
+            METRICS["rejected_mutations"] += 1
 
     # -------------------------------------------------------------------------
     # INVARIANTS: Cheap Checked Dense, Oracle Checked Strategically
@@ -270,7 +325,6 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
     @invariant()
     def document_invariants(self):
         t_step_start = time.perf_counter()
-        METRICS["total_transitions"] += 1
         METRICS["invariant_evaluations"] += 1
 
         num_obs = len(self.doc.obstacles)
@@ -303,15 +357,11 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
         assert res_fast["is_valid"] is True
         assert res_fast["tactical_margin_tics"] == -res_fast["l_star_tics"]
 
-        cbin = _get_complexity_bin(num_obs, num_threats)
-        METRICS["complexity_bins"][cbin]["count"] += 1
-        METRICS["complexity_bins"][cbin]["fast_total_s"] += t_fast_dur
+        tier_name = _get_density_tier(num_obs, num_threats)
+        METRICS["density_tiers"][tier_name]["count"] += 1
+        METRICS["density_tiers"][tier_name]["fast_total_s"] += t_fast_dur
 
         # 4. Strategic Full Telemetry Oracle
-        # Execute oracle if:
-        # a) Every 10th mutation step, OR
-        # b) Immediately after an Undo/Redo operation, OR
-        # c) In Extended/Stress profile
         should_run_oracle = (
             (self.step_counter % 10 == 0) or
             self.last_op_was_history or
@@ -323,8 +373,8 @@ class CADDocumentStateMachine(RuleBasedStateMachine):
             res_full = analyze_cad_document(self.doc, include_telemetry=True)
             t_full_dur = time.perf_counter() - t0
             METRICS["full_telemetry_s"] += t_full_dur
-            METRICS["full_telemetry_evaluations"] += 1
-            METRICS["complexity_bins"][cbin]["telemetry_total_s"] += t_full_dur
+            METRICS["oracle_evaluations"] += 1
+            METRICS["density_tiers"][tier_name]["telemetry_total_s"] += t_full_dur
 
             assert res_full["tactical_margin_tics"] == res_fast["tactical_margin_tics"]
             assert res_full["l_star_tics"] == res_fast["l_star_tics"]
@@ -373,9 +423,12 @@ def report_fuzz_metrics():
     print("\n" + "=" * 80)
     print(f"HYPOTHESIS STATE-MACHINE FUZZING METRICS (PROFILE: {PROFILE.upper()})")
     print("=" * 80)
-    print(f"Total Transitions Executed      : {METRICS['total_transitions']}")
+    print(f"Rule Invocations Total          : {METRICS['rule_invocations']}")
+    print(f"  - Successful CAD Mutations    : {METRICS['successful_mutations']}")
+    print(f"  - Rejected / No-Op Invocations: {METRICS['rejected_mutations']}")
+    print(f"  - History (Undo/Redo) Actions : {METRICS['history_operations']}")
     print(f"Invariant Evaluations           : {METRICS['invariant_evaluations']}")
-    print(f"Full Telemetry Oracle Runs      : {METRICS['full_telemetry_evaluations']}")
+    print(f"Full Telemetry Oracle Runs      : {METRICS['oracle_evaluations']}")
     print(f"Peak Obstacles / Threats / Segs : {METRICS['peak_obstacles']} obs / {METRICS['peak_threats']} threats / {METRICS['peak_segments']} segs")
     print(f"Worst-case Single Step Duration : {METRICS['worst_single_step_s'] * 1000.0:.2f} ms")
     print("-" * 80)
@@ -393,12 +446,12 @@ def report_fuzz_metrics():
         print(f"  History Snapshotting  : {METRICS['history_copy_s']:.3f} s ({METRICS['history_copy_s'] / total_time * 100:.1f}%)")
         print(f"  Total Active Compute  : {total_time:.3f} s")
     print("-" * 80)
-    print("LATENCY BY DOCUMENT COMPLEXITY BINS:")
-    print(f"{'Complexity Bin':<28} | {'Transitions':<12} | {'Fast p50 (ms)':<14} | {'Full Telemetry (ms)':<20}")
+    print("LATENCY BY DOCUMENT DENSITY TIERS:")
+    print(f"{'Density Tier':<35} | {'Visits':<8} | {'Fast Avg (ms)':<14} | {'Full Telem Avg (ms)':<20}")
     print("-" * 80)
-    for bname, data in METRICS["complexity_bins"].items():
+    for bname, data in sorted(METRICS["density_tiers"].items()):
         cnt = data["count"]
         fast_avg = (data["fast_total_s"] / cnt * 1000.0) if cnt else 0.0
-        telem_avg = (data["telemetry_total_s"] / METRICS["full_telemetry_evaluations"] * 1000.0) if METRICS["full_telemetry_evaluations"] else 0.0
-        print(f"{bname:<28} | {cnt:<12} | {fast_avg:<14.2f} | {telem_avg:<20.2f}")
+        telem_avg = (data["telemetry_total_s"] / METRICS["oracle_evaluations"] * 1000.0) if METRICS["oracle_evaluations"] else 0.0
+        print(f"{bname:<35} | {cnt:<8} | {fast_avg:<14.2f} | {telem_avg:<20.2f}")
     print("=" * 80 + "\n")

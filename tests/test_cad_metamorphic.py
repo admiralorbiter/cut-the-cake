@@ -149,8 +149,9 @@ class TestCADMetamorphicProperties:
         )
 
     def test_rigid_body_rotation_invariance(self):
-        """Rotating and translating the entire world (geometry, route, threats, reticle)
-        must preserve tactical margin M, L*, and threat job deadlines exactly.
+        """Verifies on the custom asymmetric corridor fixture that rotating and translating
+        the entire world (geometry, route, threats, reticle) preserves tactical margin M, L*,
+        and threat job due windows within numerical rounding tolerance (<= 1 tic).
         """
         doc = get_custom_asymmetric_corridor_document()
         res_base = analyze_cad_document(doc, include_telemetry=True)
@@ -169,6 +170,7 @@ class TestCADMetamorphicProperties:
             # Assert each threat's relative due window (deadline_tic - reveal_tic) is invariant
             jobs_base = {j["id"]: j for j in res_base["threat_jobs"]}
             jobs_rot = {j["id"]: j for j in res_rot["threat_jobs"]}
+            assert set(jobs_base.keys()) == set(jobs_rot.keys())
             for tid in jobs_base:
                 window_base = jobs_base[tid]["deadline_tic"] - jobs_base[tid]["reveal_tic"]
                 window_rot = jobs_rot[tid]["deadline_tic"] - jobs_rot[tid]["reveal_tic"]
@@ -207,6 +209,13 @@ class TestCADMetamorphicProperties:
         res_bunker = analyze_cad_document(doc_bunker, include_telemetry=False)
         
         # Threat is never revealed, so job compilation extracts 0 jobs for it
+        extracted_ids = [j["id"] for j in res_bunker["threat_jobs"]]
+        assert "threat_bunker_isolated" not in extracted_ids
         assert len(res_bunker["threat_jobs"]) == job_count_base
         assert res_bunker["l_star_tics"] == l_base
         assert res_bunker["tactical_margin_tics"] == m_base
+
+        # Verify complete baseline-job mapping equality before and after
+        jobs_base_map = {j["id"]: (j["reveal_tic"], j["deadline_tic"], j["service_duration_tics"]) for j in res_base["threat_jobs"]}
+        jobs_bunker_map = {j["id"]: (j["reveal_tic"], j["deadline_tic"], j["service_duration_tics"]) for j in res_bunker["threat_jobs"]}
+        assert jobs_bunker_map == jobs_base_map
