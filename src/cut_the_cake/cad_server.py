@@ -27,6 +27,10 @@ from .cad_document import (
 from .cad_adapter import (
     analyze_cad_document,
     translate_obstacle_in_document,
+    create_rectangle_obstacle,
+    resize_rectangle_obstacle,
+    rotate_obstacle_in_document,
+    delete_obstacle_in_document,
     analyze_candidate_geometry
 )
 from .cad_export import export_scene_manifest
@@ -40,13 +44,22 @@ def create_cad_app() -> Flask:
 
     app = Flask(__name__, static_folder=web_dir)
 
-    # In-memory working document session
+    # In-memory working document session with undo/redo history
     import copy
     active_state = {
         "working_document": get_canonical_f1_document(),
         "baseline_document": get_canonical_f1_document(),
-        "document_type": "canonical_f1"
+        "document_type": "canonical_f1",
+        "undo_stack": [],
+        "redo_stack": []
     }
+
+    def push_undo_state():
+        """Push a snapshot of working_document onto undo_stack and clear redo_stack."""
+        active_state["undo_stack"].append(copy.deepcopy(active_state["working_document"]))
+        if len(active_state["undo_stack"]) > 100:
+            active_state["undo_stack"].pop(0)
+        active_state["redo_stack"].clear()
 
     # Disable strict slashes
     app.url_map.strict_slashes = False
@@ -72,17 +85,20 @@ def create_cad_app() -> Flask:
         return jsonify({
             "status": "ok",
             "service": "Cut the Cake Tactical CAD Server",
-            "version": "2.0-M2B.1"
+            "version": "2.0-M2C"
         })
 
     # =========================================================================
-    # DOCUMENT SESSION ENDPOINTS (M2B.1)
+    # DOCUMENT SESSION & MUTATION ENDPOINTS (M2C)
     # =========================================================================
 
     @app.route("/api/document", methods=["GET"])
     def get_document():
         """Retrieve active working CADDocument."""
-        return jsonify(active_state["working_document"].to_dict())
+        doc_dict = active_state["working_document"].to_dict()
+        doc_dict["can_undo"] = len(active_state["undo_stack"]) > 0
+        doc_dict["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(doc_dict)
 
     @app.route("/api/document/load", methods=["POST"])
     def load_document():
@@ -111,20 +127,72 @@ def create_cad_app() -> Flask:
 
         active_state["baseline_document"] = copy.deepcopy(doc)
         active_state["working_document"] = copy.deepcopy(doc)
+        active_state["undo_stack"].clear()
+        active_state["redo_stack"].clear()
+
         return jsonify({
             "status": "loaded",
             "document_type": active_state["document_type"],
-            "document": doc.to_dict()
+            "document": doc.to_dict(),
+            "can_undo": False,
+            "can_redo": False
         })
 
     @app.route("/api/document/reset", methods=["POST"])
     def reset_document():
         """Reset active working document to its baseline state."""
         active_state["working_document"] = copy.deepcopy(active_state["baseline_document"])
+        active_state["undo_stack"].clear()
+        active_state["redo_stack"].clear()
         return jsonify({
             "status": "reset",
-            "document": active_state["working_document"].to_dict()
+            "document": active_state["working_document"].to_dict(),
+            "can_undo": False,
+            "can_redo": False
         })
+
+    @app.route("/api/document/create_obstacle", methods=["POST"])
+    def create_obstacle():
+        """Create a new rectangle obstacle in the active working document."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        x1 = float(req_data.get("x1", 0.0))
+        y1 = float(req_data.get("y1", 0.0))
+        x2 = float(req_data.get("x2", 0.0))
+        y2 = float(req_data.get("y2", 0.0))
+        name = req_data.get("name")
+        obstacle_id = req_data.get("obstacle_id")
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        commit = bool(req_data.get("commit", True))
+        route_id = req_data.get("route_id")
+
+        working_doc = active_state["working_document"]
+        cand_doc, new_id, is_valid, error_reason = create_rectangle_obstacle(
+            working_doc, x1, y1, x2, y2, obstacle_id=obstacle_id, name=name
+        )
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["created_obstacle_id"] = new_id
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
 
     @app.route("/api/document/translate_obstacle", methods=["POST"])
     def translate_obstacle():
@@ -159,6 +227,7 @@ def create_cad_app() -> Flask:
             }), 422
 
         if commit:
+            push_undo_state()
             active_state["working_document"] = cand_doc
 
         res = analyze_cad_document(
@@ -170,6 +239,199 @@ def create_cad_app() -> Flask:
         res["dx"] = dx
         res["dy"] = dy
         res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/resize_obstacle", methods=["POST"])
+    def resize_obstacle():
+        """Resize a rectangle obstacle by dragging a corner handle."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        obstacle_id = req_data.get("obstacle_id")
+        handle = req_data.get("handle", "se")
+        dx = float(req_data.get("dx", 0.0))
+        dy = float(req_data.get("dy", 0.0))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", False))
+        commit = bool(req_data.get("commit", False))
+        route_id = req_data.get("route_id")
+
+        if not obstacle_id:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": "Missing 'obstacle_id' parameter.",
+                "client_revision": client_revision
+            }), 400
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = resize_rectangle_obstacle(
+            working_doc, obstacle_id, handle, dx, dy
+        )
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "dx": dx,
+                "dy": dy,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["obstacle_id"] = obstacle_id
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/rotate_obstacle", methods=["POST"])
+    def rotate_obstacle():
+        """Rotate an obstacle by angle_deg around its centroid."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        obstacle_id = req_data.get("obstacle_id")
+        angle_deg = float(req_data.get("angle_deg", 0.0))
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", False))
+        commit = bool(req_data.get("commit", False))
+        route_id = req_data.get("route_id")
+
+        if not obstacle_id:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": "Missing 'obstacle_id' parameter.",
+                "client_revision": client_revision
+            }), 400
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = rotate_obstacle_in_document(
+            working_doc, obstacle_id, angle_deg
+        )
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "angle_deg": angle_deg,
+                "runtime_ms": 0.0
+            }), 422
+
+        if commit:
+            push_undo_state()
+            active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["obstacle_id"] = obstacle_id
+        res["angle_deg"] = angle_deg
+        res["is_committed"] = commit
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/delete_obstacle", methods=["POST"])
+    def delete_obstacle():
+        """Delete an obstacle from the working document."""
+        req_data = request.get_json(force=True, silent=True) or {}
+        obstacle_id = req_data.get("obstacle_id")
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        route_id = req_data.get("route_id")
+
+        if not obstacle_id:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": "Missing 'obstacle_id' parameter.",
+                "client_revision": client_revision
+            }), 400
+
+        working_doc = active_state["working_document"]
+        cand_doc, is_valid, error_reason = delete_obstacle_in_document(working_doc, obstacle_id)
+        if not is_valid:
+            return jsonify({
+                "is_valid": False,
+                "error_reason": error_reason,
+                "client_revision": client_revision,
+                "runtime_ms": 0.0
+            }), 422
+
+        push_undo_state()
+        active_state["working_document"] = cand_doc
+
+        res = analyze_cad_document(
+            doc=cand_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["deleted_obstacle_id"] = obstacle_id
+        res["is_committed"] = True
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        return jsonify(res), 200
+
+    @app.route("/api/document/undo", methods=["POST"])
+    def undo_document():
+        """Restore previous document snapshot from undo stack."""
+        if not active_state["undo_stack"]:
+            return jsonify({"error": "Nothing to undo", "can_undo": False, "can_redo": len(active_state["redo_stack"]) > 0}), 400
+
+        req_data = request.get_json(force=True, silent=True) or {}
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        route_id = req_data.get("route_id")
+
+        prev_doc = active_state["undo_stack"].pop()
+        active_state["redo_stack"].append(copy.deepcopy(active_state["working_document"]))
+        active_state["working_document"] = prev_doc
+
+        res = analyze_cad_document(
+            doc=prev_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        res["is_committed"] = True
+        return jsonify(res), 200
+
+    @app.route("/api/document/redo", methods=["POST"])
+    def redo_document():
+        """Restore next document snapshot from redo stack."""
+        if not active_state["redo_stack"]:
+            return jsonify({"error": "Nothing to redo", "can_undo": len(active_state["undo_stack"]) > 0, "can_redo": False}), 400
+
+        req_data = request.get_json(force=True, silent=True) or {}
+        client_revision = int(req_data.get("client_revision", 0))
+        include_telemetry = bool(req_data.get("include_telemetry", True))
+        route_id = req_data.get("route_id")
+
+        next_doc = active_state["redo_stack"].pop()
+        active_state["undo_stack"].append(copy.deepcopy(active_state["working_document"]))
+        active_state["working_document"] = next_doc
+
+        res = analyze_cad_document(
+            doc=next_doc,
+            route_id=route_id,
+            client_revision=client_revision,
+            include_telemetry=include_telemetry
+        )
+        res["can_undo"] = len(active_state["undo_stack"]) > 0
+        res["can_redo"] = len(active_state["redo_stack"]) > 0
+        res["is_committed"] = True
         return jsonify(res), 200
 
     @app.route("/api/document/analyze", methods=["POST"])

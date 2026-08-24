@@ -42,6 +42,37 @@
   <div class="workbench">
     <!-- Viewport -->
     <div class="viewport-container" id="viewportContainer">
+      <!-- Left CAD Authoring Toolbar -->
+      <div class="cad-toolbar" id="cadToolbar">
+        <button class="tool-btn active" id="toolSelect" title="Select / Transform (V, Esc)">
+          <span class="tool-icon">↖</span>
+          <span class="tool-label">Select</span>
+          <span class="tool-key">V</span>
+        </button>
+        <button class="tool-btn" id="toolWall" title="Rectangle Wall (R)">
+          <span class="tool-icon">▭</span>
+          <span class="tool-label">Wall</span>
+          <span class="tool-key">R</span>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" id="btnUndo" title="Undo (Ctrl+Z)" disabled>
+          <span class="tool-icon">↶</span>
+          <span class="tool-label">Undo</span>
+          <span class="tool-key">^Z</span>
+        </button>
+        <button class="tool-btn" id="btnRedo" title="Redo (Ctrl+Y, Ctrl+Shift+Z)" disabled>
+          <span class="tool-icon">↷</span>
+          <span class="tool-label">Redo</span>
+          <span class="tool-key">^Y</span>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn danger" id="btnDelete" title="Delete Selected Wall (Del, Backspace)" disabled>
+          <span class="tool-icon">🗑</span>
+          <span class="tool-label">Delete</span>
+          <span class="tool-key">Del</span>
+        </button>
+      </div>
+
       <canvas id="mapCanvas"></canvas>
       
       <div class="viewport-overlay">
@@ -52,7 +83,7 @@
 
       <!-- Live Drag Status Banner -->
       <div class="drag-hint-banner" id="dragHintBanner">
-        <span id="dragHintText">🖱️ <strong>Interactive 2D CAD:</strong> Click any obstacle to select, then drag in X or Y to re-analyze Tactical Margin</span>
+        <span id="dragHintText">🖱️ <strong>Interactive 2D CAD:</strong> [V] Select & Transform | [R] Drag to Create Wall | [Ctrl+Z] Undo</span>
       </div>
 
       <!-- Playback Pending Commit Banner -->
@@ -103,6 +134,30 @@
             <span class="data-label">External Engine Evidence</span>
             <span class="data-value" id="valEngineStatus" style="color: var(--text-muted);">SOURCE MODEL ONLY — EXTERNAL ENGINE NOT RUN</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Obstacle Inspector Card -->
+      <div class="card" id="obstacleCard">
+        <div class="card-title">
+          <span>Selected Obstacle</span>
+          <span class="badge" id="badgeObsType">WALL</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">ID / Name</span>
+          <span class="data-value" id="valObsIdName" style="color: var(--amber); font-weight: 700;">wall_0 (Central Baffle)</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Center (X, Y)</span>
+          <span class="data-value" id="valObsCenter">0.00 m, 0.00 m</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Dimensions (W &times; H)</span>
+          <span class="data-value" id="valObsDimensions">0.40 m &times; 1.80 m</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Rotation Angle</span>
+          <span class="data-value" id="valObsRotation">0.0&deg;</span>
         </div>
       </div>
 

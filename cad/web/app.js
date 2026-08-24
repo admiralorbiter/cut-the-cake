@@ -1,12 +1,13 @@
 /**
- * Tactical CAD (Cut the Cake) - Milestone 2B General Working Document Engine
+ * Tactical CAD (Cut the Cake) - Milestone 2C Gray-Box Obstacle Authoring Engine
  * 
  * Strict boundary:
- * - Operates on arbitrary CADDocument instances (cad_document_v1).
- * - Generic multi-obstacle selection and 2D translation (X and Y).
- * - Fast analysis updates scalar metrics; dims playback with 'PLAYBACK PENDING COMMIT'.
- * - Full telemetry is fetched on pointer release to eliminate mixed-state visualization.
- * - AbortController prevents stale out-of-order responses.
+ * - Authoritative Python CADDocument operations: Create, Translate, Resize, Rotate, Delete.
+ * - Server-side undo/redo document history snapshots.
+ * - Select tool (V, Esc): Move body, 4 corner resize handles with pinned anchor, 1 top rotation handle.
+ * - Rectangle Wall tool (R): Live rubber-band preview box (0.05m snap, min 0.10m), commits to Python.
+ * - Delete (Del, Backspace): Removes selected obstacle, recomputes authoritative margin.
+ * - Fast analysis during drag; full telemetry on pointer release.
  */
 
 // Application State
@@ -18,17 +19,26 @@ let isPlaying = false;
 let playbackSpeed = 1.0;
 let animTimer = null;
 
-// Generic Interaction State
+// Tool & Interaction State
+let currentTool = 'select'; // 'select' | 'rectangle'
 let selectedObstacleId = null;
-let currentDx = 0.00;
-let currentDy = 0.00;
+let canUndo = false;
+let canRedo = false;
+
+// Dragging & Transform Modes
+let interactionMode = null; // 'create_rect' | 'translate_body' | 'resize_corner' | 'rotate_handle'
+let activeResizeHandle = null; // 'nw' | 'ne' | 'se' | 'sw'
+let dragStartClientX = 0;
+let dragStartClientY = 0;
+let dragStartArenaX = 0;
+let dragStartArenaY = 0;
+
+// Transform live preview deltas
 let previewDx = 0.00;
 let previewDy = 0.00;
-let isDragging = false;
-let dragStartX = 0;
-let dragStartY = 0;
-let dragStartDx = 0.00;
-let dragStartDy = 0.00;
+let previewAngleDeg = 0.00;
+let previewRect = null; // { x1, y1, x2, y2 } in meters
+
 let clientRevision = 0;
 let latestRequestedRevision = 0;
 let latestAppliedRevision = 0;
@@ -48,6 +58,15 @@ const latencyBadge = document.getElementById('latencyBadge');
 const btnResetDoc = document.getElementById('btnResetDoc');
 const btnExportDoc = document.getElementById('btnExportDoc');
 
+// CAD Authoring Toolbar Elements
+const toolSelect = document.getElementById('toolSelect');
+const toolWall = document.getElementById('toolWall');
+const btnUndo = document.getElementById('btnUndo');
+const btnRedo = document.getElementById('btnRedo');
+const btnDelete = document.getElementById('btnDelete');
+const dragHintText = document.getElementById('dragHintText');
+
+// Hero Card
 const statusBandBadge = document.getElementById('statusBandBadge');
 const valMargin = document.getElementById('valMargin');
 const valMarginMs = document.getElementById('valMarginMs');
@@ -57,6 +76,13 @@ const valLStar = document.getElementById('valLStar');
 const valFeasibility = document.getElementById('valFeasibility');
 const valStaggerGap = document.getElementById('valStaggerGap');
 const valEngineStatus = document.getElementById('valEngineStatus');
+
+// Obstacle Inspector Card
+const obstacleCard = document.getElementById('obstacleCard');
+const valObsIdName = document.getElementById('valObsIdName');
+const valObsCenter = document.getElementById('valObsCenter');
+const valObsDimensions = document.getElementById('valObsDimensions');
+const valObsRotation = document.getElementById('valObsRotation');
 
 const threatCountBadge = document.getElementById('threatCountBadge');
 const threatListContainer = document.getElementById('threatListContainer');
@@ -107,31 +133,67 @@ let viewTransform = {
 async function init() {
   setupUI();
   setupCanvas();
-  setupDragging();
+  setupInteraction();
+  setupKeyboardShortcuts();
   await loadDocumentByName('canonical_f1');
 }
 
+function setTool(tool) {
+  currentTool = tool;
+  if (toolSelect) toolSelect.classList.toggle('active', tool === 'select');
+  if (toolWall) toolWall.classList.toggle('active', tool === 'rectangle');
+
+  if (tool === 'rectangle') {
+    canvas.style.cursor = 'crosshair';
+    dragHintText.innerHTML = '📐 <strong>Rectangle Wall:</strong> Click and drag to draw a new wall obstacle';
+  } else {
+    canvas.style.cursor = 'default';
+    dragHintText.innerHTML = '🖱️ <strong>Interactive 2D CAD:</strong> [V] Select & Transform | [R] Create Wall | [Del] Delete | [Ctrl+Z] Undo';
+  }
+  drawMap();
+}
+
+function updateUndoRedoButtons(undoAvailable, redoAvailable) {
+  canUndo = !!undoAvailable;
+  canRedo = !!redoAvailable;
+  if (btnUndo) btnUndo.disabled = !canUndo;
+  if (btnRedo) btnRedo.disabled = !canRedo;
+  if (btnDelete) btnDelete.disabled = !selectedObstacleId;
+}
+
 function setupUI() {
+  // Document Switcher
   docSelect.addEventListener('change', async () => {
     await loadDocumentByName(docSelect.value);
   });
 
+  // Tool Selection
+  if (toolSelect) toolSelect.addEventListener('click', () => setTool('select'));
+  if (toolWall) toolWall.addEventListener('click', () => setTool('rectangle'));
+
+  // Undo / Redo
+  if (btnUndo) btnUndo.addEventListener('click', handleUndo);
+  if (btnRedo) btnRedo.addEventListener('click', handleRedo);
+  if (btnDelete) btnDelete.addEventListener('click', handleDeleteSelected);
+
+  // Document Reset
   btnResetDoc.addEventListener('click', async () => {
     try {
       const resp = await fetch('/api/document/reset', { method: 'POST' });
       if (resp.ok) {
-        currentDx = 0.00;
-        currentDy = 0.00;
-        previewDx = 0.00;
-        previewDy = 0.00;
-        invalidCandidateReason = null;
-        await requestAnalysis(0.00, 0.00, true);
+        const data = await resp.json();
+        activeDoc = data.document;
+        selectedObstacleId = getObstacles().length > 0 ? getObstacles()[0].id : null;
+        updateUndoRedoButtons(data.can_undo, data.can_redo);
+        resetTransformState();
+        await requestInitialAnalysis();
       }
     } catch (err) {
-      console.warn('Server offline, resetting local document');
+      console.warn('Reset error:', err);
     }
   });
 
+  // Export JSON
   btnExportDoc.addEventListener('click', () => {
     if (!activeDoc) return;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activeDoc, null, 2));
@@ -167,6 +229,41 @@ function setupUI() {
   window.addEventListener('resize', resizeCanvas);
 }
 
+function setupKeyboardShortcuts() {
+  window.addEventListener('keydown', (e) => {
+    // Avoid triggering when focused in an input field
+    const targetTag = e.target.tagName.toLowerCase();
+    if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') return;
+
+    if (e.key === 'v' || e.key === 'V' || e.key === 'Escape') {
+      setTool('select');
+    } else if (e.key === 'r' || e.key === 'R') {
+      setTool('rectangle');
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selectedObstacleId) {
+        e.preventDefault();
+        handleDeleteSelected();
+      }
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y' || ((e.key === 'z' || e.key === 'Z') && e.shiftKey))) {
+      e.preventDefault();
+      handleRedo();
+    }
+  });
+}
+
+function resetTransformState() {
+  previewDx = 0.00;
+  previewDy = 0.00;
+  previewAngleDeg = 0.00;
+  previewRect = null;
+  interactionMode = null;
+  activeResizeHandle = null;
+  invalidCandidateReason = null;
+}
+
 async function loadDocumentByName(docName) {
   try {
     const resp = await fetch('/api/document/load', {
@@ -178,37 +275,72 @@ async function loadDocumentByName(docName) {
       const data = await resp.json();
       activeDoc = data.document;
       baselineDoc = JSON.parse(JSON.stringify(data.document));
+      updateUndoRedoButtons(data.can_undo, data.can_redo);
     }
   } catch (err) {
-    console.warn('Server offline, loading fallback manifest');
-    if (window.SCENE_MANIFEST) {
-      activeDoc = {
-        schema_version: 'cad_document_v1',
-        document_id: window.SCENE_MANIFEST.provenance.fixture_id,
-        name: 'Canonical Family 1',
-        geometry: window.SCENE_MANIFEST.broken_geometry,
-        player_model: window.SCENE_MANIFEST.source_parameters
-      };
-      baselineDoc = JSON.parse(JSON.stringify(activeDoc));
-    }
+    console.warn('Server offline, loading fallback');
   }
 
   if (!activeDoc) return;
 
-  // Default selection
   const obstacles = getObstacles();
-  if (obstacles.length > 0) {
-    selectedObstacleId = obstacles[0].id;
-  }
-
-  currentDx = 0.00;
-  currentDy = 0.00;
-  previewDx = 0.00;
-  previewDy = 0.00;
-  invalidCandidateReason = null;
-
+  selectedObstacleId = obstacles.length > 0 ? obstacles[0].id : null;
+  resetTransformState();
   setupDynamicBounds();
-  await requestAnalysis(0.00, 0.00, true);
+  await requestInitialAnalysis();
+}
+
+async function handleUndo() {
+  if (!canUndo) return;
+  try {
+    const resp = await fetch('/api/document/undo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      applyAnalysisResponse(data, true);
+      updateUndoRedoButtons(data.can_undo, data.can_redo);
+    }
+  } catch (err) {
+    console.warn('Undo error:', err);
+  }
+}
+
+async function handleRedo() {
+  if (!canRedo) return;
+  try {
+    const resp = await fetch('/api/document/redo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      applyAnalysisResponse(data, true);
+      updateUndoRedoButtons(data.can_undo, data.can_redo);
+    }
+  } catch (err) {
+    console.warn('Redo error:', err);
+  }
+}
+
+async function handleDeleteSelected() {
+  if (!selectedObstacleId) return;
+  try {
+    const resp = await fetch('/api/document/delete_obstacle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ obstacle_id: selectedObstacleId })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      selectedObstacleId = null;
+      applyAnalysisResponse(data, true);
+      updateUndoRedoButtons(data.can_undo, data.can_redo);
+    }
+  } catch (err) {
+    console.warn('Delete error:', err);
+  }
 }
 
 function getObstacles() {
@@ -274,8 +406,108 @@ function setupDynamicBounds() {
   resizeCanvas();
 }
 
-// Interactive Obstacle Selection & 2D Dragging
-function setupDragging() {
+function toCanvasX(x) {
+  return viewTransform.offsetX + x * viewTransform.scale;
+}
+
+function toCanvasY(y) {
+  return viewTransform.offsetY - y * viewTransform.scale;
+}
+
+function toArenaX(cx) {
+  return (cx - viewTransform.offsetX) / viewTransform.scale;
+}
+
+function toArenaY(cy) {
+  return -(cy - viewTransform.offsetY) / viewTransform.scale;
+}
+
+function snap(val, step = 0.05) {
+  return Math.round(val / step) * step;
+}
+
+// Transform Handles & Hit Testing
+function getSelectedObstacleBounds() {
+  const obs = getObstacles().find(o => o.id === selectedObstacleId);
+  if (!obs || !obs.vertices || obs.vertices.length < 3) return null;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  obs.vertices.forEach(([x, y]) => {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  });
+  return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, width: maxX - minX, height: maxY - minY };
+}
+
+function getHandlesForObstacle(obs) {
+  if (!obs || !obs.vertices || obs.vertices.length < 3) return null;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  obs.vertices.forEach(([x, y]) => {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  });
+
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+
+  // Corner resize handles in canvas coordinates
+  return {
+    nw: { x: toCanvasX(minX), y: toCanvasY(maxY), handle: 'nw', arenaX: minX, arenaY: maxY },
+    ne: { x: toCanvasX(maxX), y: toCanvasY(maxY), handle: 'ne', arenaX: maxX, arenaY: maxY },
+    se: { x: toCanvasX(maxX), y: toCanvasY(minY), handle: 'se', arenaX: maxX, arenaY: minY },
+    sw: { x: toCanvasX(minX), y: toCanvasY(minY), handle: 'sw', arenaX: minX, arenaY: minY },
+    // Rotation handle: 26px above top-center
+    rot: { x: toCanvasX(cx), y: toCanvasY(maxY) - 24, handle: 'rot', arenaCx: cx, arenaCy: cy }
+  };
+}
+
+function hitTestHandles(cx, cy) {
+  const obs = getObstacles().find(o => o.id === selectedObstacleId);
+  if (!obs) return null;
+  const handles = getHandlesForObstacle(obs);
+  if (!handles) return null;
+
+  // 1. Rotation handle check (radius 9px)
+  const distRot = Math.hypot(cx - handles.rot.x, cy - handles.rot.y);
+  if (distRot <= 10) return { type: 'rot', handle: handles.rot };
+
+  // 2. Corner resize handles check (8px box)
+  const hSize = 8;
+  for (const key of ['nw', 'ne', 'se', 'sw']) {
+    const h = handles[key];
+    if (Math.abs(cx - h.x) <= hSize && Math.abs(cy - h.y) <= hSize) {
+      return { type: 'resize', handle: key };
+    }
+  }
+  return null;
+}
+
+function hitTestObstacles(cx, cy) {
+  const obstacles = getObstacles();
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const obs = obstacles[i];
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    obs.vertices.forEach(([x, y]) => {
+      const px = toCanvasX(x);
+      const py = toCanvasY(y);
+      minX = Math.min(minX, px);
+      maxX = Math.max(maxX, px);
+      minY = Math.min(minY, py);
+      maxY = Math.max(maxY, py);
+    });
+    const pad = 6;
+    if (cx >= minX - pad && cx <= maxX + pad && cy >= minY - pad && cy <= maxY + pad) {
+      return obs;
+    }
+  }
+  return null;
+}
+
+// Setup Interactive Canvas Handlers
+function setupInteraction() {
   function getCanvasCoords(e) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -284,167 +516,337 @@ function setupDragging() {
     };
   }
 
-  function hitTestObstacles(cx, cy) {
-    const obstacles = getObstacles();
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-      const obs = obstacles[i];
-      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-      obs.vertices.forEach(([x, y]) => {
-        const px = toCanvasX(x);
-        const py = toCanvasY(y);
-        minX = Math.min(minX, px);
-        maxX = Math.max(maxX, px);
-        minY = Math.min(minY, py);
-        maxY = Math.max(maxY, py);
-      });
-      const pad = 8;
-      if (cx >= minX - pad && cx <= maxX + pad && cy >= minY - pad && cy <= maxY + pad) {
-        return obs;
-      }
-    }
-    return null;
-  }
-
   canvas.addEventListener('mousemove', (e) => {
     const pt = getCanvasCoords(e);
+    const mx = toArenaX(pt.x);
+    const my = toArenaY(pt.y);
 
-    if (isDragging) {
-      const dpX = pt.x - dragStartX;
-      const dpY = pt.y - dragStartY;
-      const dmX = dpX / viewTransform.scale;
-      const dmY = -dpY / viewTransform.scale; // Invert Canvas Y to arena coordinates
+    if (interactionMode === 'create_rect') {
+      const curX = snap(mx, 0.05);
+      const curY = snap(my, 0.05);
+      previewRect = {
+        x1: Math.min(dragStartArenaX, curX),
+        y1: Math.min(dragStartArenaY, curY),
+        x2: Math.max(dragStartArenaX, curX),
+        y2: Math.max(dragStartArenaY, curY)
+      };
+      drawMap();
+    } else if (interactionMode === 'translate_body') {
+      const rawDx = mx - dragStartArenaX;
+      const rawDy = my - dragStartArenaY;
+      previewDx = snap(rawDx, 0.05);
+      previewDy = snap(rawDy, 0.05);
 
-      const rawDx = dragStartDx + dmX;
-      const rawDy = dragStartDy + dmY;
-      
-      // 0.05m grid snapping
-      const snappedDx = Math.round(rawDx / 0.05) * 0.05;
-      const snappedDy = Math.round(rawDy / 0.05) * 0.05;
-
-      previewDx = snappedDx;
-      previewDy = snappedDy;
-
-      // Show Pending Commit state
       pendingCommitBanner.style.display = 'block';
       footerEl.classList.add('disabled');
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        requestAnalysis(snappedDx, snappedDy, false);
+        requestTranslateAnalysis(selectedObstacleId, previewDx, previewDy, false);
       }, 20);
 
       drawMap();
+    } else if (interactionMode === 'resize_corner') {
+      const rawDx = mx - dragStartArenaX;
+      const rawDy = my - dragStartArenaY;
+      previewDx = snap(rawDx, 0.05);
+      previewDy = snap(rawDy, 0.05);
+
+      pendingCommitBanner.style.display = 'block';
+      footerEl.classList.add('disabled');
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        requestResizeAnalysis(selectedObstacleId, activeResizeHandle, previewDx, previewDy, false);
+      }, 20);
+
+      drawMap();
+    } else if (interactionMode === 'rotate_handle') {
+      const b = getSelectedObstacleBounds();
+      if (b) {
+        const angleRad = Math.atan2(my - b.cy, mx - b.cx);
+        let angleDeg = -(angleRad * 180 / Math.PI - 90); // 0 at top, clockwise positive
+        if (!e.shiftKey) {
+          angleDeg = Math.round(angleDeg / 5) * 5; // 5 degree snap
+        }
+        previewAngleDeg = angleDeg;
+
+        pendingCommitBanner.style.display = 'block';
+        footerEl.classList.add('disabled');
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          requestRotateAnalysis(selectedObstacleId, previewAngleDeg, false);
+        }, 20);
+
+        drawMap();
+      }
     } else {
-      const hoveredObs = hitTestObstacles(pt.x, pt.y);
-      canvas.style.cursor = hoveredObs ? 'move' : 'default';
+      // Hover Cursor State
+      if (currentTool === 'rectangle') {
+        canvas.style.cursor = 'crosshair';
+      } else {
+        const handleHit = hitTestHandles(pt.x, pt.y);
+        if (handleHit) {
+          if (handleHit.type === 'rot') canvas.style.cursor = 'grab';
+          else if (handleHit.handle === 'nw' || handleHit.handle === 'se') canvas.style.cursor = 'nwse-resize';
+          else canvas.style.cursor = 'nesw-resize';
+        } else {
+          const obsHit = hitTestObstacles(pt.x, pt.y);
+          canvas.style.cursor = obsHit ? 'move' : 'default';
+        }
+      }
     }
   });
 
   canvas.addEventListener('mousedown', (e) => {
     const pt = getCanvasCoords(e);
-    const hitObs = hitTestObstacles(pt.x, pt.y);
+    const mx = toArenaX(pt.x);
+    const my = toArenaY(pt.y);
 
-    if (hitObs) {
-      selectedObstacleId = hitObs.id;
-      isDragging = true;
-      dragStartX = pt.x;
-      dragStartY = pt.y;
-      dragStartDx = 0.00;
-      dragStartDy = 0.00;
-      previewDx = 0.00;
-      previewDy = 0.00;
-      canvas.style.cursor = 'grabbing';
+    if (currentTool === 'rectangle') {
+      // Start Rectangle Creation
+      interactionMode = 'create_rect';
+      dragStartArenaX = snap(mx, 0.05);
+      dragStartArenaY = snap(my, 0.05);
+      previewRect = {
+        x1: dragStartArenaX,
+        y1: dragStartArenaY,
+        x2: dragStartArenaX,
+        y2: dragStartArenaY
+      };
       drawMap();
+    } else {
+      // Select tool: Check handles first, then obstacles
+      const handleHit = hitTestHandles(pt.x, pt.y);
+      if (handleHit) {
+        if (handleHit.type === 'rot') {
+          interactionMode = 'rotate_handle';
+          dragStartArenaX = mx;
+          dragStartArenaY = my;
+          previewAngleDeg = 0.0;
+          canvas.style.cursor = 'grabbing';
+        } else {
+          interactionMode = 'resize_corner';
+          activeResizeHandle = handleHit.handle;
+          dragStartArenaX = mx;
+          dragStartArenaY = my;
+          previewDx = 0.00;
+          previewDy = 0.00;
+        }
+        drawMap();
+        return;
+      }
+
+      const hitObs = hitTestObstacles(pt.x, pt.y);
+      if (hitObs) {
+        selectedObstacleId = hitObs.id;
+        interactionMode = 'translate_body';
+        dragStartArenaX = mx;
+        dragStartArenaY = my;
+        previewDx = 0.00;
+        previewDy = 0.00;
+        canvas.style.cursor = 'grabbing';
+        updateUndoRedoButtons(canUndo, canRedo);
+        drawMap();
+      } else {
+        selectedObstacleId = null;
+        updateUndoRedoButtons(canUndo, canRedo);
+        drawMap();
+      }
     }
   });
 
-  window.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
+  window.addEventListener('mouseup', async () => {
+    if (interactionMode === 'create_rect') {
+      interactionMode = null;
+      if (previewRect) {
+        const w = previewRect.x2 - previewRect.x1;
+        const h = previewRect.y2 - previewRect.y1;
+        if (w >= 0.10 && h >= 0.10) {
+          await requestCreateObstacle(previewRect.x1, previewRect.y1, previewRect.x2, previewRect.y2);
+        }
+      }
+      previewRect = null;
+      setTool('select');
+    } else if (interactionMode === 'translate_body') {
+      interactionMode = null;
       canvas.style.cursor = 'default';
       pendingCommitBanner.style.display = 'none';
       footerEl.classList.remove('disabled');
-
-      // Commit final position with full telemetry
-      requestAnalysis(previewDx, previewDy, true, true);
+      await requestTranslateAnalysis(selectedObstacleId, previewDx, previewDy, true);
+    } else if (interactionMode === 'resize_corner') {
+      interactionMode = null;
+      canvas.style.cursor = 'default';
+      pendingCommitBanner.style.display = 'none';
+      footerEl.classList.remove('disabled');
+      await requestResizeAnalysis(selectedObstacleId, activeResizeHandle, previewDx, previewDy, true);
+    } else if (interactionMode === 'rotate_handle') {
+      interactionMode = null;
+      canvas.style.cursor = 'default';
+      pendingCommitBanner.style.display = 'none';
+      footerEl.classList.remove('disabled');
+      await requestRotateAnalysis(selectedObstacleId, previewAngleDeg, true);
     }
   });
 }
 
-// Authoritative Python CAD Document Re-analysis
-async function requestAnalysis(dx, dy, includeTelemetry = false, commit = false) {
-  clientRevision++;
-  latestRequestedRevision = clientRevision;
-  const thisRevision = clientRevision;
-
-  if (activeAbortController) {
-    activeAbortController.abort();
+// Server Analysis & Mutation Requests
+async function requestInitialAnalysis() {
+  try {
+    const resp = await fetch('/api/document/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ include_telemetry: true })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      applyAnalysisResponse(data, true);
+    }
+  } catch (err) {
+    console.warn('Initial analysis error:', err);
   }
-  activeAbortController = new AbortController();
+}
 
-  latencyBadge.textContent = '⚡ Analyzing...';
-  latencyBadge.style.color = 'var(--amber)';
+async function requestCreateObstacle(x1, y1, x2, y2) {
+  try {
+    const resp = await fetch('/api/document/create_obstacle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        x1, y1, x2, y2, commit: true, include_telemetry: true
+      })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.is_valid) {
+      selectedObstacleId = data.created_obstacle_id;
+      applyAnalysisResponse(data, true);
+      updateUndoRedoButtons(data.can_undo, data.can_redo);
+    } else {
+      console.warn('Create rejected:', data.error_reason);
+    }
+  } catch (err) {
+    console.warn('Create request error:', err);
+  }
+}
+
+async function requestTranslateAnalysis(obsId, dx, dy, commit) {
+  if (!obsId) return;
+  clientRevision++;
+  const thisRev = clientRevision;
+  latestRequestedRevision = thisRev;
 
   try {
     const resp = await fetch('/api/document/translate_obstacle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        obstacle_id: selectedObstacleId,
+        obstacle_id: obsId,
         dx: dx,
         dy: dy,
-        client_revision: thisRevision,
-        include_telemetry: includeTelemetry,
-        commit: commit
-      }),
-      signal: activeAbortController.signal
+        commit: commit,
+        client_revision: thisRev,
+        include_telemetry: commit
+      })
     });
-
     const data = await resp.json();
-
-    // Strict revision ordering check for both 200 and 422
-    if (data.client_revision !== latestRequestedRevision) {
-      return; // Discard stale out-of-order response
-    }
-
-    latestAppliedRevision = data.client_revision;
-
-    if (!resp.ok || !data.is_valid) {
-      invalidCandidateReason = data.error_reason || 'Invalid placement (boundary or clearance collision)';
-      statusBandBadge.textContent = 'INVALID PLACEMENT';
-      statusBandBadge.style.background = 'rgba(248, 81, 73, 0.3)';
-      statusBandBadge.style.color = 'var(--red)';
-      valFeasibility.textContent = 'INVALID GEOMETRY';
-      valFeasibility.style.color = 'var(--red)';
-      latencyBadge.textContent = `⚡ Analysis: ${data.runtime_ms || 0} ms (Rejected)`;
-      latencyBadge.style.color = 'var(--red)';
-      drawMap();
-      return;
-    }
-
-    invalidCandidateReason = null;
-    currentDx = commit ? 0.00 : (data.dx !== undefined ? data.dx : dx);
-    currentDy = commit ? 0.00 : (data.dy !== undefined ? data.dy : dy);
-    if (commit) {
-      previewDx = 0.00;
-      previewDy = 0.00;
-    }
-    currentAnalysis = data;
-    if (data.candidate_document) {
-      activeDoc = data.candidate_document;
-    }
-
-    latencyBadge.textContent = `⚡ Analysis: ${data.runtime_ms} ms`;
-    latencyBadge.style.color = '#58a6ff';
-
-    renderTimelineEvents();
-    updateView(currentTic);
+    if (data.client_revision !== latestRequestedRevision) return;
+    applyAnalysisResponse(data, commit);
+    if (commit) updateUndoRedoButtons(data.can_undo, data.can_redo);
   } catch (err) {
-    if (err.name === 'AbortError') return;
-    console.warn('Analysis error:', err);
+    console.warn('Translate error:', err);
   }
 }
 
+async function requestResizeAnalysis(obsId, handle, dx, dy, commit) {
+  if (!obsId) return;
+  clientRevision++;
+  const thisRev = clientRevision;
+  latestRequestedRevision = thisRev;
+
+  try {
+    const resp = await fetch('/api/document/resize_obstacle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        obstacle_id: obsId,
+        handle: handle,
+        dx: dx,
+        dy: dy,
+        commit: commit,
+        client_revision: thisRev,
+        include_telemetry: commit
+      })
+    });
+    const data = await resp.json();
+    if (data.client_revision !== latestRequestedRevision) return;
+    applyAnalysisResponse(data, commit);
+    if (commit) updateUndoRedoButtons(data.can_undo, data.can_redo);
+  } catch (err) {
+    console.warn('Resize error:', err);
+  }
+}
+
+async function requestRotateAnalysis(obsId, angleDeg, commit) {
+  if (!obsId) return;
+  clientRevision++;
+  const thisRev = clientRevision;
+  latestRequestedRevision = thisRev;
+
+  try {
+    const resp = await fetch('/api/document/rotate_obstacle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        obstacle_id: obsId,
+        angle_deg: angleDeg,
+        commit: commit,
+        client_revision: thisRev,
+        include_telemetry: commit
+      })
+    });
+    const data = await resp.json();
+    if (data.client_revision !== latestRequestedRevision) return;
+    applyAnalysisResponse(data, commit);
+    if (commit) updateUndoRedoButtons(data.can_undo, data.can_redo);
+  } catch (err) {
+    console.warn('Rotate error:', err);
+  }
+}
+
+function applyAnalysisResponse(data, committed) {
+  if (!data.is_valid) {
+    invalidCandidateReason = data.error_reason || 'Invalid placement';
+    statusBandBadge.textContent = 'INVALID PLACEMENT';
+    statusBandBadge.style.background = 'rgba(248, 81, 73, 0.3)';
+    statusBandBadge.style.color = 'var(--red)';
+    valFeasibility.textContent = 'INVALID GEOMETRY';
+    valFeasibility.style.color = 'var(--red)';
+    latencyBadge.textContent = `⚡ Analysis: ${data.runtime_ms || 0} ms (Rejected)`;
+    latencyBadge.style.color = 'var(--red)';
+    drawMap();
+    return;
+  }
+
+  invalidCandidateReason = null;
+  currentAnalysis = data;
+  if (data.candidate_document) {
+    activeDoc = data.candidate_document;
+  }
+  if (committed) {
+    previewDx = 0.00;
+    previewDy = 0.00;
+    previewAngleDeg = 0.00;
+  }
+
+  latencyBadge.textContent = `⚡ Analysis: ${data.runtime_ms} ms`;
+  latencyBadge.style.color = '#58a6ff';
+
+  renderTimelineEvents();
+  updateView(currentTic);
+}
+
+// Playback Helpers
 function setSpeed(speed, activeBtn) {
   playbackSpeed = speed;
   [btnSpeed05, btnSpeed10, btnSpeed20].forEach(b => b.style.background = '#172130');
@@ -513,23 +915,15 @@ function resizeCanvas() {
   const spanX = (viewTransform.maxX - viewTransform.minX) + 1.0;
   const spanY = (viewTransform.maxY - viewTransform.minY) + 1.0;
   
-  const padding = 55;
+  const padding = 65;
   const scaleX = (canvas.width - padding * 2) / spanX;
   const scaleY = (canvas.height - padding * 2) / spanY;
   viewTransform.scale = Math.min(scaleX, scaleY);
   
-  viewTransform.offsetX = padding + 15 - (viewTransform.minX * viewTransform.scale);
+  viewTransform.offsetX = padding + 25 - (viewTransform.minX * viewTransform.scale);
   viewTransform.offsetY = canvas.height / 2;
   
   drawMap();
-}
-
-function toCanvasX(x) {
-  return viewTransform.offsetX + x * viewTransform.scale;
-}
-
-function toCanvasY(y) {
-  return viewTransform.offsetY - y * viewTransform.scale;
 }
 
 function renderTimelineEvents() {
@@ -605,13 +999,28 @@ function updateView(tic) {
     valFeasibility.style.color = 'var(--green)';
   }
 
-  // Selected Obstacle & Displacement
+  // Selected Obstacle & Inspector Card
   const curObs = getObstacles().find(o => o.id === selectedObstacleId);
   const obsName = curObs ? `${curObs.name} (${curObs.id})` : (selectedObstacleId || 'None');
   valSelectedName.textContent = obsName;
   tagSelectedObs.textContent = `SELECTED: ${obsName}`;
 
-  valDisp.textContent = `${currentDx >= 0 ? '+' : ''}${currentDx.toFixed(2)}m, ${currentDy >= 0 ? '+' : ''}${currentDy.toFixed(2)}m`;
+  if (curObs) {
+    valObsIdName.textContent = `${curObs.name} (${curObs.id})`;
+    const b = getSelectedObstacleBounds();
+    if (b) {
+      valObsCenter.textContent = `${b.cx.toFixed(2)} m, ${b.cy.toFixed(2)} m`;
+      valObsDimensions.textContent = `${b.width.toFixed(2)} m × ${b.height.toFixed(2)} m`;
+      valObsRotation.textContent = `${previewAngleDeg.toFixed(1)}°`;
+    }
+  } else {
+    valObsIdName.textContent = 'None';
+    valObsCenter.textContent = '—';
+    valObsDimensions.textContent = '—';
+    valObsRotation.textContent = '—';
+  }
+
+  valDisp.textContent = `${previewDx >= 0 ? '+' : ''}${previewDx.toFixed(2)}m, ${previewDy >= 0 ? '+' : ''}${previewDy.toFixed(2)}m`;
   valStaggerGap.textContent = `${currentAnalysis.stagger_gap_ms} ms (${currentAnalysis.stagger_gap_tics} tics)`;
 
   // Threats List
@@ -651,102 +1060,79 @@ function updateView(tic) {
     }
 
     valActiveTarget.textContent = frame.active_target_id || 'None';
-    valRouteDist.textContent = `${frame.route_dist_m.toFixed(2)} m`;
+    valRouteDist.textContent = `${frame.route_distance_traversed_m.toFixed(2)} m / ${(frames[frames.length - 1].route_distance_traversed_m).toFixed(2)} m`;
+    valMoveSpeed.textContent = `${frame.movement_speed_mps.toFixed(1)} m/s`;
+    valSlewSpeed.textContent = `${frame.reticle_slew_velocity_deg_s.toFixed(1)}°/s`;
+
     tagPlayerPos.textContent = `POS: (${frame.player_pos[0].toFixed(2)}m, ${frame.player_pos[1].toFixed(2)}m)`;
-    tagReticle.textContent = `RETICLE: ${frame.reticle_heading_deg.toFixed(1)}° (FWD: ${frame.forward_heading_deg.toFixed(1)}°)`;
+    tagReticle.textContent = `RETICLE: ${frame.reticle_heading_deg.toFixed(1)}°`;
   }
 
   drawMap();
 }
 
 function renderThreatList() {
-  if (!currentAnalysis) return;
   threatListContainer.innerHTML = '';
-
-  const frames = currentAnalysis.telemetry_frames;
-  const currentFrame = frames ? frames[Math.min(currentTic, frames.length - 1)] : null;
+  if (!currentAnalysis || !currentAnalysis.threat_jobs) return;
 
   currentAnalysis.threat_jobs.forEach(job => {
-    const isVisible = currentFrame && currentFrame.visible_threat_ids.includes(job.id);
-    const isTarget = currentFrame && currentFrame.active_target_id === job.id;
-    const isCleared = currentFrame && job.realized_service_complete_tic !== null && currentFrame.tic >= job.realized_service_complete_tic;
-    const isBreached = currentFrame && currentFrame.tic >= job.deadline_tic && !isCleared;
-
-    let statusTag = 'Occluded';
-    let statusColor = 'var(--text-muted)';
-    let itemClass = 'threat-item';
-
-    if (isCleared) {
-      statusTag = `Neutralized (Tic ${job.realized_service_complete_tic})`;
-      statusColor = 'var(--green)';
-      itemClass += ' neutralized';
-    } else if (isBreached) {
-      statusTag = `BREACHED (+${job.lateness_tics} tics)`;
-      statusColor = 'var(--red)';
-    } else if (isTarget && currentFrame.controller_state === 'SERVICING') {
-      statusTag = 'ENGAGING / FIRING';
-      statusColor = 'var(--amber)';
-    } else if (isTarget) {
-      statusTag = 'ACQUIRING / AIMING';
-      statusColor = 'var(--blue)';
-    } else if (isVisible) {
-      statusTag = `Revealed (Due Tic ${job.deadline_tic})`;
-      statusColor = 'var(--blue)';
-    }
-
     const item = document.createElement('div');
-    item.className = itemClass;
-    item.innerHTML = `
-      <div>
-        <div class="threat-name">
-          <div class="threat-pill" style="background: ${statusColor};"></div>
-          <span>${job.label}</span>
-          <span class="threat-sublabel">${job.id}</span>
-        </div>
-        <div class="threat-timing">
-          r=${job.reveal_tic} | D=${job.deadline_tic} | C=${job.completion_tic}
-        </div>
-      </div>
-      <div class="threat-status-tag" style="color: ${statusColor};">${statusTag}</div>
+    item.className = 'threat-item';
+
+    const header = document.createElement('div');
+    header.className = 'threat-header';
+    header.innerHTML = `
+      <span class="threat-name">${job.label || job.id}</span>
+      <span class="threat-badge ${job.lateness_tics <= 0 ? 'good' : 'bad'}">
+        ${job.lateness_tics <= 0 ? `Lateness: ${job.lateness_tics} tics` : `Late: +${job.lateness_tics} tics`}
+      </span>
     `;
+
+    const details = document.createElement('div');
+    details.className = 'threat-details';
+    details.innerHTML = `
+      <div>Reveal: <strong>Tic ${job.reveal_tic}</strong> (${job.reveal_s}s)</div>
+      <div>Deadline: <strong>Tic ${job.deadline_tic}</strong> (${job.deadline_s}s)</div>
+      <div>Due Window: <strong>${job.due_window_tics} tics</strong> (${job.due_window_s}s)</div>
+      <div>Angle: <strong>${job.angle_deg}&deg;</strong></div>
+    `;
+
+    item.appendChild(header);
+    item.appendChild(details);
     threatListContainer.appendChild(item);
   });
 }
 
-// 2D Canvas Map Drawing
+// 2D Map Rendering
 function drawMap() {
   if (!activeDoc) return;
-  const frames = currentAnalysis ? currentAnalysis.telemetry_frames : null;
-  const currentFrame = frames ? frames[Math.min(currentTic, frames.length - 1)] : null;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 1. Grid
+  const boundary = getBoundary();
+  const frames = currentAnalysis?.telemetry_frames;
+  const currentFrame = (frames && frames.length > 0) ? frames[Math.min(currentTic, frames.length - 1)] : null;
+
+  // 1. Grid lines (0.5m grid)
   ctx.strokeStyle = '#121926';
   ctx.lineWidth = 1;
-  const minX = Math.floor(viewTransform.minX);
-  const maxX = Math.ceil(viewTransform.maxX);
-  const minY = Math.floor(viewTransform.minY);
-  const maxY = Math.ceil(viewTransform.maxY);
-
-  for (let x = minX; x <= maxX; x += 1) {
+  for (let x = -5; x <= 20; x += 0.5) {
     ctx.beginPath();
-    ctx.moveTo(toCanvasX(x), toCanvasY(minY));
-    ctx.lineTo(toCanvasX(x), toCanvasY(maxY));
+    ctx.moveTo(toCanvasX(x), 0);
+    ctx.lineTo(toCanvasX(x), canvas.height);
     ctx.stroke();
   }
-  for (let y = minY; y <= maxY; y += 1) {
+  for (let y = -10; y <= 10; y += 0.5) {
     ctx.beginPath();
-    ctx.moveTo(toCanvasX(minX), toCanvasY(y));
-    ctx.lineTo(toCanvasX(maxX), toCanvasY(y));
+    ctx.moveTo(0, toCanvasY(y));
+    ctx.lineTo(canvas.width, toCanvasY(y));
     ctx.stroke();
   }
 
-  // 2. Arena Boundary
-  const boundary = getBoundary();
-  ctx.strokeStyle = '#3b506e';
+  // 2. Arena Boundary Polygon
+  ctx.fillStyle = '#0c121c';
+  ctx.strokeStyle = '#233145';
   ctx.lineWidth = 3;
-  ctx.fillStyle = '#0a0e17';
   ctx.beginPath();
   boundary.forEach(([x, y], idx) => {
     if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
@@ -770,28 +1156,10 @@ function drawMap() {
     ctx.setLineDash([]);
   });
 
-  // 4. Baseline Reference Ghost for Selected Obstacle
-  if (baselineDoc && selectedObstacleId) {
-    const baseObs = (baselineDoc.geometry?.obstacles || baselineDoc.obstacles || []).find(o => o.id === selectedObstacleId);
-    if (baseObs && (Math.abs(currentDx) > 1e-4 || Math.abs(currentDy) > 1e-4)) {
-      ctx.strokeStyle = 'rgba(248, 81, 73, 0.3)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      baseObs.vertices.forEach(([x, y], idx) => {
-        if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
-        else ctx.lineTo(toCanvasX(x), toCanvasY(y));
-      });
-      ctx.closePath();
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  }
-
-  // 5. Active Obstacles
+  // 4. Active Obstacles
   getObstacles().forEach(obs => {
     const isSelected = (obs.id === selectedObstacleId);
-    ctx.fillStyle = isSelected ? '#22271d' : '#1c2536';
+    ctx.fillStyle = isSelected ? '#1e2820' : '#1c2536';
     ctx.strokeStyle = isSelected ? '#39c5bb' : '#4f688a';
     ctx.lineWidth = isSelected ? 3 : 2;
 
@@ -804,39 +1172,71 @@ function drawMap() {
     ctx.fill();
     ctx.stroke();
 
-    // Selection Label & Coordinates
-    const cx = (obs.vertices[0][0] + obs.vertices[1][0]) / 2;
-    const cy = (obs.vertices[0][1] + obs.vertices[2][1]) / 2;
+    // Selection Label
+    const cx = obs.vertices.reduce((sum, v) => sum + v[0], 0) / obs.vertices.length;
+    const cy = obs.vertices.reduce((sum, v) => sum + v[1], 0) / obs.vertices.length;
     ctx.fillStyle = isSelected ? '#39c5bb' : '#8b9bb0';
     ctx.font = 'bold 10px monospace';
     ctx.fillText(obs.name || obs.id, toCanvasX(cx) - 20, toCanvasY(cy) + 4);
+
+    // Transform Handles for Selected Obstacle
+    if (isSelected && currentTool === 'select') {
+      const handles = getHandlesForObstacle(obs);
+      if (handles) {
+        // Rotation stem line & circle handle
+        ctx.strokeStyle = '#39c5bb';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(handles.rot.x, handles.ne.y);
+        ctx.lineTo(handles.rot.x, handles.rot.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Rotation Handle Knob
+        ctx.fillStyle = '#39c5bb';
+        ctx.beginPath();
+        ctx.arc(handles.rot.x, handles.rot.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // 4 Corner Resize Handles
+        const hSize = 4;
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#39c5bb';
+        ctx.lineWidth = 2;
+        ['nw', 'ne', 'se', 'sw'].forEach(k => {
+          const h = handles[k];
+          ctx.fillRect(h.x - hSize, h.y - hSize, hSize * 2, hSize * 2);
+          ctx.strokeRect(h.x - hSize, h.y - hSize, hSize * 2, hSize * 2);
+        });
+      }
+    }
   });
 
-  // Client-Side Drag Preview Ghost
-  if (isDragging) {
-    const isInvalid = (invalidCandidateReason !== null);
-    const baseObs = (baselineDoc.geometry?.obstacles || baselineDoc.obstacles || []).find(o => o.id === selectedObstacleId);
-    if (baseObs) {
-      ctx.strokeStyle = isInvalid ? 'rgba(248, 81, 73, 0.9)' : 'rgba(255, 215, 0, 0.9)';
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      baseObs.vertices.forEach(([x, y], idx) => {
-        const px = toCanvasX(x + previewDx);
-        const py = toCanvasY(y + previewDy);
-        if (idx === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      });
-      ctx.closePath();
-      ctx.stroke();
-      ctx.setLineDash([]);
+  // 5. Rectangle Creation Preview Box
+  if (interactionMode === 'create_rect' && previewRect) {
+    const px1 = toCanvasX(previewRect.x1);
+    const py1 = toCanvasY(previewRect.y2); // Canvas top-left
+    const pw = (previewRect.x2 - previewRect.x1) * viewTransform.scale;
+    const ph = (previewRect.y2 - previewRect.y1) * viewTransform.scale;
 
-      const cx = (baseObs.vertices[0][0] + baseObs.vertices[1][0]) / 2 + previewDx;
-      const cy = (baseObs.vertices[0][1] + baseObs.vertices[2][1]) / 2 + previewDy;
-      ctx.fillStyle = isInvalid ? 'rgba(248, 81, 73, 0.95)' : 'rgba(255, 215, 0, 0.95)';
-      ctx.font = 'bold 10px monospace';
-      ctx.fillText(isInvalid ? 'INVALID' : 'PREVIEW', toCanvasX(cx) - 20, toCanvasY(cy) - 10);
-    }
+    ctx.fillStyle = 'rgba(88, 166, 255, 0.2)';
+    ctx.strokeStyle = '#58a6ff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.fillRect(px1, py1, pw, ph);
+    ctx.strokeRect(px1, py1, pw, ph);
+    ctx.setLineDash([]);
+
+    // Live dimension label
+    const dimW = (previewRect.x2 - previewRect.x1).toFixed(2);
+    const dimH = (previewRect.y2 - previewRect.y1).toFixed(2);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText(`${dimW}m × ${dimH}m`, px1 + pw / 2 - 25, py1 + ph / 2 + 4);
   }
 
   // 6. Threats
@@ -882,8 +1282,8 @@ function drawMap() {
     ctx.fillText(threat.name || threat.id, ax - 24, ay - 12);
   });
 
-  // 7. Player Telemetry (Only when active and committed)
-  if (currentFrame && !isDragging) {
+  // 7. Player Telemetry (Only when committed and not actively interacting)
+  if (currentFrame && !interactionMode) {
     const px = toCanvasX(currentFrame.player_pos[0]);
     const py = toCanvasY(currentFrame.player_pos[1]);
 

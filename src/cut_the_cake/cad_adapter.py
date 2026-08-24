@@ -93,6 +93,79 @@ def validate_candidate_obstacle_in_module(
     return True, None
 
 
+def generate_next_obstacle_id(doc: CADDocument) -> str:
+    """Generate a unique deterministic obstacle ID (e.g. wall_001, wall_002)."""
+    existing_ids = {obs.id for obs in doc.obstacles}
+    counter = 1
+    while True:
+        candidate_id = f"wall_{counter:03d}"
+        if candidate_id not in existing_ids:
+            return candidate_id
+        counter += 1
+
+
+def create_rectangle_obstacle(
+    doc: CADDocument,
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    obstacle_id: Optional[str] = None,
+    name: Optional[str] = None
+) -> Tuple[CADDocument, Optional[str], bool, Optional[str]]:
+    """Creates a new axis-aligned rectangle obstacle and validates against spatial invariants."""
+    min_x = min(float(x1), float(x2))
+    max_x = max(float(x1), float(x2))
+    min_y = min(float(y1), float(y2))
+    max_y = max(float(y1), float(y2))
+
+    width = max_x - min_x
+    height = max_y - min_y
+
+    if width < 0.10 or height < 0.10:
+        return doc, None, False, f"Obstacle dimensions ({width:.2f}m x {height:.2f}m) are smaller than minimum allowed (0.10m x 0.10m)."
+
+    verts = [
+        [round(min_x, 4), round(min_y, 4)],
+        [round(max_x, 4), round(min_y, 4)],
+        [round(max_x, 4), round(max_y, 4)],
+        [round(min_x, 4), round(max_y, 4)],
+        [round(min_x, 4), round(min_y, 4)]
+    ]
+    cand_poly = Polygon(verts)
+
+    geo_mod = doc.to_geometric_module()
+    is_valid, error_reason = validate_candidate_obstacle_in_module(geo_mod, obstacle_idx=-1, candidate_obstacle=cand_poly)
+    if not is_valid:
+        return doc, None, False, error_reason
+
+    obs_id = obstacle_id if obstacle_id else generate_next_obstacle_id(doc)
+    obs_name = name if name else f"Wall ({obs_id})"
+
+    new_obstacles = list(doc.obstacles) + [
+        CADObstacle(
+            id=obs_id,
+            name=obs_name,
+            vertices=verts
+        )
+    ]
+
+    updated_doc = CADDocument(
+        document_id=doc.document_id,
+        name=doc.name,
+        description=doc.description,
+        metadata=dict(doc.metadata),
+        units=dict(doc.units),
+        player_model=doc.player_model,
+        boundary=doc.boundary,
+        obstacles=new_obstacles,
+        routes=doc.routes,
+        threats=doc.threats,
+        ports=doc.ports
+    )
+    return updated_doc, obs_id, True, None
+
+
 def translate_obstacle_in_document(
     doc: CADDocument,
     obstacle_id: str,
@@ -129,6 +202,184 @@ def translate_obstacle_in_document(
         vertices=new_verts
     )
 
+    updated_doc = CADDocument(
+        document_id=doc.document_id,
+        name=doc.name,
+        description=doc.description,
+        metadata=dict(doc.metadata),
+        units=dict(doc.units),
+        player_model=doc.player_model,
+        boundary=doc.boundary,
+        obstacles=new_obstacles,
+        routes=doc.routes,
+        threats=doc.threats,
+        ports=doc.ports
+    )
+    return updated_doc, True, None
+
+
+def resize_rectangle_obstacle(
+    doc: CADDocument,
+    obstacle_id: str,
+    handle: str,
+    dx: float,
+    dy: float
+) -> Tuple[CADDocument, bool, Optional[str]]:
+    """Resizes an obstacle by moving the specified handle corner with the opposite corner anchored."""
+    obs_idx = -1
+    for idx, obs in enumerate(doc.obstacles):
+        if obs.id == obstacle_id:
+            obs_idx = idx
+            break
+
+    if obs_idx == -1:
+        return doc, False, f"Obstacle ID '{obstacle_id}' not found in document '{doc.document_id}'."
+
+    orig_obs = doc.obstacles[obs_idx]
+    orig_poly = orig_obs.to_polygon()
+    min_x, min_y, max_x, max_y = orig_poly.bounds
+
+    h = handle.lower()
+    if h in ("se", "bottom_right"):
+        # Anchor top-left (min_x, max_y), move bottom-right (max_x, min_y)
+        max_x += float(dx)
+        min_y += float(dy)
+    elif h in ("nw", "top_left"):
+        # Anchor bottom-right (max_x, min_y), move top-left (min_x, max_y)
+        min_x += float(dx)
+        max_y += float(dy)
+    elif h in ("ne", "top_right"):
+        # Anchor bottom-left (min_x, min_y), move top-right (max_x, max_y)
+        max_x += float(dx)
+        max_y += float(dy)
+    elif h in ("sw", "bottom_left"):
+        # Anchor top-right (max_x, max_y), move bottom-left (min_x, min_y)
+        min_x += float(dx)
+        min_y += float(dy)
+    elif h in ("e", "right"):
+        max_x += float(dx)
+    elif h in ("w", "left"):
+        min_x += float(dx)
+    elif h in ("n", "top"):
+        max_y += float(dy)
+    elif h in ("s", "bottom"):
+        min_y += float(dy)
+    else:
+        return doc, False, f"Unknown resize handle '{handle}'."
+
+    # Normalize bounds in case handle crossed over anchor
+    norm_min_x = min(min_x, max_x)
+    norm_max_x = max(min_x, max_x)
+    norm_min_y = min(min_y, max_y)
+    norm_max_y = max(min_y, max_y)
+
+    width = norm_max_x - norm_min_x
+    height = norm_max_y - norm_min_y
+
+    if width < 0.10 or height < 0.10:
+        return doc, False, f"Resized dimensions ({width:.2f}m x {height:.2f}m) are smaller than minimum allowed (0.10m x 0.10m)."
+
+    new_verts = [
+        [round(norm_min_x, 4), round(norm_min_y, 4)],
+        [round(norm_max_x, 4), round(norm_min_y, 4)],
+        [round(norm_max_x, 4), round(norm_max_y, 4)],
+        [round(norm_min_x, 4), round(norm_max_y, 4)],
+        [round(norm_min_x, 4), round(norm_min_y, 4)]
+    ]
+    cand_poly = Polygon(new_verts)
+
+    geo_mod = doc.to_geometric_module()
+    is_valid, error_reason = validate_candidate_obstacle_in_module(geo_mod, obs_idx, cand_poly)
+    if not is_valid:
+        return doc, False, error_reason
+
+    new_obstacles = list(doc.obstacles)
+    new_obstacles[obs_idx] = CADObstacle(
+        id=orig_obs.id,
+        name=orig_obs.name,
+        vertices=new_verts
+    )
+
+    updated_doc = CADDocument(
+        document_id=doc.document_id,
+        name=doc.name,
+        description=doc.description,
+        metadata=dict(doc.metadata),
+        units=dict(doc.units),
+        player_model=doc.player_model,
+        boundary=doc.boundary,
+        obstacles=new_obstacles,
+        routes=doc.routes,
+        threats=doc.threats,
+        ports=doc.ports
+    )
+    return updated_doc, True, None
+
+
+def rotate_obstacle_in_document(
+    doc: CADDocument,
+    obstacle_id: str,
+    angle_deg: float
+) -> Tuple[CADDocument, bool, Optional[str]]:
+    """Rotates an obstacle by angle_deg around its centroid and validates spatial invariants."""
+    obs_idx = -1
+    for idx, obs in enumerate(doc.obstacles):
+        if obs.id == obstacle_id:
+            obs_idx = idx
+            break
+
+    if obs_idx == -1:
+        return doc, False, f"Obstacle ID '{obstacle_id}' not found in document '{doc.document_id}'."
+
+    orig_obs = doc.obstacles[obs_idx]
+    orig_poly = orig_obs.to_polygon()
+
+    cand_poly = shapely.affinity.rotate(orig_poly, float(angle_deg), origin='centroid', use_radians=False)
+
+    geo_mod = doc.to_geometric_module()
+    is_valid, error_reason = validate_candidate_obstacle_in_module(geo_mod, obs_idx, cand_poly)
+    if not is_valid:
+        return doc, False, error_reason
+
+    new_verts = [[round(float(x), 4), round(float(y), 4)] for x, y in list(cand_poly.exterior.coords)]
+    new_obstacles = list(doc.obstacles)
+    new_obstacles[obs_idx] = CADObstacle(
+        id=orig_obs.id,
+        name=orig_obs.name,
+        vertices=new_verts
+    )
+
+    updated_doc = CADDocument(
+        document_id=doc.document_id,
+        name=doc.name,
+        description=doc.description,
+        metadata=dict(doc.metadata),
+        units=dict(doc.units),
+        player_model=doc.player_model,
+        boundary=doc.boundary,
+        obstacles=new_obstacles,
+        routes=doc.routes,
+        threats=doc.threats,
+        ports=doc.ports
+    )
+    return updated_doc, True, None
+
+
+def delete_obstacle_in_document(
+    doc: CADDocument,
+    obstacle_id: str
+) -> Tuple[CADDocument, bool, Optional[str]]:
+    """Deletes an obstacle from the document."""
+    obs_idx = -1
+    for idx, obs in enumerate(doc.obstacles):
+        if obs.id == obstacle_id:
+            obs_idx = idx
+            break
+
+    if obs_idx == -1:
+        return doc, False, f"Obstacle ID '{obstacle_id}' not found in document '{doc.document_id}'."
+
+    new_obstacles = [obs for obs in doc.obstacles if obs.id != obstacle_id]
     updated_doc = CADDocument(
         document_id=doc.document_id,
         name=doc.name,
