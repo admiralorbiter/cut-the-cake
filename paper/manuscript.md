@@ -231,15 +231,15 @@ Under this parameterization, reticle setup toward target $j$ is permitted to beg
 
 #### Proposition 1 (Monotonic Actionability)
 *Let $\gamma$ be a fixed traversal trajectory, $\mathcal{T}$ a set of persistent threat regions, and $\ell \ge 0$ a uniform advance actionability lead. For any $\ell_2 \ge \ell_1 \ge 0$, the optimal tactical margin satisfies:*
-$$\mathcal{M}(\ell_2) \ge \mathcal{M}(\ell_1) \quad (	ext{equivalently, } L^*(\ell_2) \le L^*(\ell_1))$$
+$$\mathcal{M}(\ell_2) \ge \mathcal{M}(\ell_1) \quad (\text{equivalently, } L^*(\ell_2) \le L^*(\ell_1))$$
 
 *Proof:* For any threat $j$, $\ell_2 \ge \ell_1 \implies a_j(\ell_2) = \max(0, r_j - \ell_2) \le \max(0, r_j - \ell_1) = a_j(\ell_1)$. For any fixed clearing permutation $\pi = (\pi_1, \dots, \pi_N)$, mathematical induction over completion timestamps $C_{\pi_k}$ in the unified recurrence yields:
-$$C_{\pi_k}(\ell_2) \le C_{\pi_k}(\ell_1) \quad orall k \in \{1, \dots, N\}$$
+$$C_{\pi_k}(\ell_2) \le C_{\pi_k}(\ell_1) \quad \forall k \in \{1, \dots, N\}$$
 Consequently, maximum lateness under permutation $\pi$ satisfies:
 $$L^\pi(\ell_2) = \max_k (C_{\pi_k}(\ell_2) - D_{\pi_k}) \le \max_k (C_{\pi_k}(\ell_1) - D_{\pi_k}) = L^\pi(\ell_1)$$
 Minimizing over all permutations $\pi \in \Pi$ preserves the inequality:
 $$L^*(\ell_2) = \min_{\pi \in \Pi} L^\pi(\ell_2) \le \min_{\pi \in \Pi} L^\pi(\ell_1) = L^*(\ell_1)$$
-and therefore $\mathcal{M}(\ell_2) = -L^*(\ell_2) \ge -L^*(\ell_1) = \mathcal{M}(\ell_1)$. $lacksquare$
+and therefore $\mathcal{M}(\ell_2) = -L^*(\ell_2) \ge -L^*(\ell_1) = \mathcal{M}(\ell_1)$. $\blacksquare$
 
 *Implementation Verification:* Evaluated across all 72 experimental instances (12 pilot stimuli + 60 benchmark arenas), $\mathcal{M}(\ell)$ is verified to be monotone non-decreasing across all step intervals.
 
@@ -537,14 +537,16 @@ We evaluated the audited repair pipeline across $N=50$ genuinely unserviceable m
 ### 11.3 Contingency Analysis & Three-Layer Residual Decomposition
 We evaluate the contingency between source-model repair certification and realized external-engine rescue:
 
-$$\begin{array}{c|cc|c}
+$$
+\begin{array}{c|cc|c}
 \text{Source Optimizer} \backslash \text{ViZDoom Engine} & \text{Engine Rescued (Survived)} & \text{Engine Fatal (Dead)} & \text{Total} \\
 \hline
 \text{Source Repair Success} & \mathbf{30} \text{ (60.0\%)} & \mathbf{10} \text{ (20.0\%)} & \mathbf{40} \text{ (80.0\%)} \\
 \text{Source Repair Fail} & \mathbf{0} \text{ (0.0\%)} & \mathbf{10} \text{ (20.0\%)} & \mathbf{10} \text{ (20.0\%)} \\
 \hline
 \text{Total} & \mathbf{30} \text{ (60.0\%)} & \mathbf{20} \text{ (40.0\%)} & \mathbf{50} \text{ (100.0\%)}
-\end{array}$$
+\end{array}
+$$
 
 | Mechanism Family | Arenas | Initial $\mathcal{M}$ | Source Success | Median Edit $d^*$ | Engine Rescue | Transfer Efficiency | Mean $\Delta_{\text{export}} L$ | Mean $\Delta_{\text{execution}} L$ |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |

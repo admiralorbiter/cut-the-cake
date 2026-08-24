@@ -90,6 +90,14 @@ cut-the-cake/
 └── human/                      # Prospective pilot protocol and telemetry instrument
 ```
 
+## Guides & Documentation
+
+- [**Plain-Language Paper Overview**](docs/PLAIN_LANGUAGE_GUIDE.md) — Non-technical explanation of the core research and key findings.
+- [**Practical Application Guide**](docs/PRACTICAL_APPLICATION_GUIDE.md) — Concrete guidance for FPS players (how to read fights, when to pre-aim, clearing order) and level designers/developers (compile-time linting, automated repair, PCG, difficulty tuning).
+- [**Interactive Visual Explainer**](explainer/index.html) — 8-module browser explainer with interactive corner, reticle, and scheduling widgets.
+- [**Product Roadmap**](ROADMAP.md) — Multi-horizon tactical CAD platform roadmap.
+- [**Scientific Manuscript**](paper/manuscript.md) — Full formal research paper.
+
 ---
 
 ## Interactive Visual Explainer

@@ -39,14 +39,16 @@ $$\Delta_{\text{total}} L = \Delta_{\text{export}} L + \Delta_{\text{execution}}
 
 ## 3. Contingency Matrix: Source Repair vs. Native Engine Rescue
 
-$$\begin{array}{c|cc|c}
+$$
+\begin{array}{c|cc|c}
 \text{Source Optimizer} \backslash \text{ViZDoom Engine} & \text{Engine Rescued (Survived)} & \text{Engine Fatal (Dead)} & \text{Total} \\
 \hline
 \text{Source Repair Success} & \mathbf{30} \text{ (60.0\%)} & \mathbf{10} \text{ (20.0\%)} & \mathbf{40} \text{ (80.0\%)} \\
 \text{Source Repair Fail} & \mathbf{0} \text{ (0.0\%)} & \mathbf{10} \text{ (20.0\%)} & \mathbf{10} \text{ (20.0\%)} \\
 \hline
 \text{Total} & \mathbf{30} \text{ (60.0\%)} & \mathbf{20} \text{ (40.0\%)} & \mathbf{50} \text{ (100.0\%)}
-\end{array}$$
+\end{array}
+$$
 
 * **Source Success $\times$ Engine Rescued (30 arenas, 60.0%):** Robust geometric repairs where theoretical margin reserve transfers directly to engine survival.
 * **Source Success $\times$ Engine Fatal (10 arenas, 20.0%):** Transfer gap where source-model $\mathcal{M} \ge +2\,\text{tics}$ is eroded by positive export residuals ($\Delta_{\text{export}} L$), primarily in Family 4 3-threat congestion.
