@@ -392,4 +392,51 @@ def test_cad_e2e_real_map_transfer_case_study(cad_server_url):
         browser.close()
 
 
+def test_cad_e2e_m5b_cross_section_templates(cad_server_url):
+    """E2E Test: Load Ascent A-Main, Dust II B-Tunnels, and Transit 213 templates,
+    toggle spatial heatmap overlays, and capture visual screenshot artifacts.
+    """
+    artifacts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "artifacts"))
+    brain_dir = r"C:\Users\admir\.gemini\antigravity\brain\24682a79-57e4-435b-bdc5-0a0c8d4150f6"
+    os.makedirs(artifacts_dir, exist_ok=True)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1440, "height": 900})
+        page = context.new_page()
+        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+
+        page.goto(cad_server_url, wait_until="networkidle")
+        page.wait_for_selector("#docSelect")
+
+        # 1. Ascent A-Main
+        page.select_option("#docSelect", "ascent_a_main")
+        page.wait_for_timeout(500)
+        page.click("#btnToggleHeatmap")
+        page.wait_for_selector("#heatmapLegend", state="visible", timeout=5000)
+        page.wait_for_timeout(400)
+        page.screenshot(path=os.path.join(artifacts_dir, "e2e_ascent_a_main_heatmap.png"))
+        if os.path.exists(brain_dir):
+            page.screenshot(path=os.path.join(brain_dir, "e2e_ascent_a_main_heatmap.png"))
+
+        # 2. Dust II B-Tunnels
+        page.select_option("#docSelect", "dust2_b_tunnels")
+        page.wait_for_timeout(500)
+        page.wait_for_timeout(400)
+        page.screenshot(path=os.path.join(artifacts_dir, "e2e_dust2_b_tunnels_heatmap.png"))
+        if os.path.exists(brain_dir):
+            page.screenshot(path=os.path.join(brain_dir, "e2e_dust2_b_tunnels_heatmap.png"))
+
+        # 3. Transit 213
+        page.select_option("#docSelect", "transit_213")
+        page.wait_for_timeout(500)
+        page.wait_for_timeout(400)
+        page.screenshot(path=os.path.join(artifacts_dir, "e2e_transit_213_heatmap.png"))
+        if os.path.exists(brain_dir):
+            page.screenshot(path=os.path.join(brain_dir, "e2e_transit_213_heatmap.png"))
+
+        browser.close()
+
+
+
 

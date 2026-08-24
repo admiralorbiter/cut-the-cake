@@ -251,7 +251,14 @@ Audited benchmark evidence (`round11.4a-freeze`):
   - **Deterministic Result Packet:** Persisted exact snapshot to `results/m5a_dust2_a_long.json` (locked by SHA-256 hash `d425ce5a4df7ec35`).
   - **Verification:** 100% pass across 9 unit/API test gates and 5 Playwright browser E2E workflows (102 tests in CAD acceptance suite).
 
-- **Milestone 5-B (Next Focus):** Multi-Engagement Real-Map Cross-Section (Ascent A-Main/Wine, Transit 213, Dust II B-Tunnels) — authoring independent real-map topologies and pre-registering tactical route labels prior to model evaluation.
+- **Milestone 5-B (Completed & Certified):** Pre-Registered Multi-Engagement Falsification Cross-Section
+  - **Two-Stage Pre-Registration Protocol:** Sealed hypotheses, source citations, control points, and blinded route IDs (`route_A`, `route_B`) in `preregistration/m5b_preregistration.json` and committed at `9c59a38` *prior* to model execution.
+  - **Cross-Section Mechanisms Evaluated:**
+    1. **Valorant Ascent (A-Main / Wine)**: Off-angle serialization confirmed. Wine slice ($\mathcal{M}_{\min} = -20$) strictly outperforms direct center rush ($\mathcal{M}_{\min} = -24$). Stepping into Wine mouth achieves isolated $K=1, \mathcal{M}_{\text{suffix}} = +3$ while direct rush suffers $K=3, \mathcal{M}_{\text{suffix}} = -26$. A-Site Heaven/Rafters verticality acknowledged as explicit 2D model boundary limitation.
+    2. **Counter-Strike Dust II (Upper B-Tunnels Exit)**: Multi-angle choke crossfire collapse confirmed as an expected negative. Both dry routes suffer immediate $K \ge 2$ crossfire at exit ($s \le 0.4\,\text{m}$) and severe exit deficit ($\mathcal{M}_{\min} = -7$), proving the model refuses to fabricate false serialization on compressed dry chokes.
+    3. **Modern Warfare 4 (Transit 213 Center Lot)**: Occluder lattice confirmed. Bus lattice weave ($\mathcal{M}_{\min} = -4$) preserves superior cover over open lot push ($\mathcal{M}_{\min} = -19$).
+  - **Deterministic Result Matrix:** Persisted aggregate unblinded matrix in `results/m5b_cross_section.json`.
+  - **Verification:** 100% pass across 7 deterministic cross-section test gates and Playwright browser screenshot workflows (109 tests in CAD acceptance suite).
 
 ---
 
