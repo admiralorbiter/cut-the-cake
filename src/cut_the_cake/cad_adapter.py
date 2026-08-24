@@ -1132,7 +1132,7 @@ def analyze_cad_document(
     
     Safe Exact-Solver Envelope (M2D.1):
     - J <= 6 : EXACT_INTERACTIVE (Fast path < 10 ms)
-    - J == 7 : EXACT_SLOW (Permitted on explicit analyze, ~80 ms)
+    - J == 7 : EXACT_SLOW (Exact solve permitted but classified slow, ~80 ms; unsuitable for high-frequency interactive recomputation)
     - J >= 8 : EXACT_LIMIT_EXCEEDED (Fail-closed prompt return to avoid factorial hang, unless allow_slow_solver=True)
     """
     t_start = time.perf_counter()
@@ -1276,7 +1276,7 @@ def analyze_cad_document(
             "solver_mode": solver_mode,
             "is_exact": is_exact,
             "solver_limit": max_exact_jobs,
-            "source_schedule_feasible": False,
+            "source_schedule_feasible": None,
             "stagger_gap_tics": stagger_gap_tics,
             "stagger_gap_ms": stagger_gap_ms,
             "threat_jobs": threat_output_jobs,

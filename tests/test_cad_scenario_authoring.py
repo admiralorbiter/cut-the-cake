@@ -331,7 +331,7 @@ def test_safe_exact_solver_envelope_and_fail_closed_dispatch():
     assert res_8["verdict"] == "inconclusive"
     assert res_8["tactical_margin_tics"] is None
     assert res_8["l_star_tics"] is None
-    assert res_8["source_schedule_feasible"] is False
+    assert res_8["source_schedule_feasible"] is None
     assert res_8["diagnostic"]["type"] == "SOLVER_LIMIT_EXCEEDED"
     assert "EXACT_LIMIT_EXCEEDED" in res_8["diagnostic"]["explanation"]
     assert len(res_8["threat_jobs"]) == 8
