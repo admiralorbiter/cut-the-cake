@@ -470,7 +470,7 @@ def test_m6a_gate6_ascent_vertical_mechanism_counterexample():
     assert res_25d.tactical_margin_tics == -3
     assert res_25d.is_feasible is False
 
-    # Verifies that elevation converts a falsely feasible 2D schedule into an empirically grounded critical deficit
+    # Verifies that elevation converts a falsely feasible 2D schedule into a critical deficit in this synthetic mechanism demonstration
     assert res_25d.tactical_margin_tics < res_2d.tactical_margin_tics
 
 
