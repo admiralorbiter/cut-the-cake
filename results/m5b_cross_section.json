@@ -1,16 +1,9 @@
 {
-  "milestone": "M5-B.2",
+  "milestone": "M5-B.3",
   "title": "Pre-Registered Multi-Engagement Falsification Cross-Section Results",
   "evaluation_protocol": "Pre-registered, analyzer-label-neutral evaluation",
   "protocol_reference": "M5-B.0",
   "protocol_version": "1.0.0-blinded",
-  "aggregate_summary": {
-    "total_engagements": 3,
-    "total_pre_registered_hypotheses": 6,
-    "supported_hypotheses_count": 5,
-    "falsified_hypotheses_count": 1,
-    "support_rate": 0.833
-  },
   "engagements": {
     "ascent_a_main": {
       "game": "Valorant",
@@ -256,7 +249,14 @@
         }
       },
       "two_d_model_adequacy": "Adequate (planar vehicular occluder lattice).",
-      "findings_summary": "Bus lattice preserves superior cover over open lot push (route_A M_min=-4 > route_B M_min=-19) and delays K>=2 exposure onset (route_A at 23.1m > route_B at 12.6m)."
+      "findings_summary": "Bus lattice produces a substantially less severe critical deficit (route_A M_min=-4 vs route_B M_min=-19) and delays K>=2 exposure onset (route_A at 23.1m > route_B at 12.6m)."
     }
+  },
+  "aggregate_summary": {
+    "total_engagements": 3,
+    "total_pre_registered_hypotheses": 6,
+    "supported_hypotheses_count": 5,
+    "falsified_hypotheses_count": 1,
+    "support_rate": 0.833
   }
 }

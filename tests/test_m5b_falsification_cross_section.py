@@ -152,16 +152,27 @@ def test_m5b_transit_213_occluder_lattice_both_hypotheses():
     assert min_lot_a > min_lot_b, f"Bus lattice ({min_lot_a}) should exceed open lot ({min_lot_b})"
 
 
-def test_m5b_aggregate_cross_section_matrix_truthfulness():
-    """Verify results/m5b_cross_section.json accurately records 5/6 supported hypotheses across the cross-section."""
+def test_m5b_aggregate_cross_section_matrix_truthfulness(tmp_path):
+    """Verify results/m5b_cross_section.json accurately matches a live dynamic cross-section evaluation run."""
+    from cut_the_cake.exporters.m5b_cross_section_exporter import run_m5b_cross_section_evaluation
+
     res_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "results", "m5b_cross_section.json")
     assert os.path.exists(res_path), "results/m5b_cross_section.json missing"
 
     with open(res_path, "r", encoding="utf-8") as f:
         saved = json.load(f)
 
+    # 1. Dynamically execute exporter to a temporary file
+    temp_out = str(tmp_path / "live_m5b_results.json")
+    live = run_m5b_cross_section_evaluation(output_path=temp_out)
+
+    # 2. Assert dynamic evaluation matches saved packet bit-for-bit
+    assert live == saved, "Committed results/m5b_cross_section.json diverged from live dynamic evaluation"
+
+    # 3. Assert derived summary properties
     assert saved["protocol_reference"] == "M5-B.0"
     summary = saved["aggregate_summary"]
+    assert summary["total_engagements"] == 3
     assert summary["total_pre_registered_hypotheses"] == 6
     assert summary["supported_hypotheses_count"] == 5
     assert summary["falsified_hypotheses_count"] == 1
@@ -172,7 +183,12 @@ def test_m5b_aggregate_cross_section_matrix_truthfulness():
     assert saved["engagements"]["ascent_a_main"]["hypothesis_outcomes"]["approach_suffix_margin"] == "PASS"
 
     assert saved["engagements"]["dust2_b_tunnels"]["disposition"] == "FULL_SUPPORT"
+    assert saved["engagements"]["dust2_b_tunnels"]["hypothesis_outcomes"]["choke_crossfire_collapse"] == "PASS"
+    assert saved["engagements"]["dust2_b_tunnels"]["hypothesis_outcomes"]["critical_exit_deficit"] == "PASS"
+
     assert saved["engagements"]["transit_213"]["disposition"] == "FULL_SUPPORT"
+    assert saved["engagements"]["transit_213"]["hypothesis_outcomes"]["exposure_onset_delay"] == "PASS"
+    assert saved["engagements"]["transit_213"]["hypothesis_outcomes"]["lot_suffix_margin"] == "PASS"
 
 
 def test_m5b_server_template_loading_for_all_fixtures():

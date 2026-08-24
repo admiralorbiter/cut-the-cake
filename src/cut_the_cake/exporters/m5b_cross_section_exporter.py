@@ -2,7 +2,8 @@
 
 Executes the frozen Cut the Cake model on all 3 pre-registered engagements,
 unblinds the route mappings against preregistration/m5b_preregistration.json,
-evaluates the pre-registered falsification criteria per hypothesis, and generates
+evaluates the pre-registered falsification criteria per hypothesis, dynamically
+derives dispositions and aggregate summary metrics, and generates
 results/m5b_cross_section.json.
 """
 
@@ -22,7 +23,7 @@ def run_m5b_cross_section_evaluation(
     protocol_path: str = "preregistration/m5b_preregistration.json",
     output_path: str = "results/m5b_cross_section.json"
 ) -> Dict[str, Any]:
-    """Execute cross-section evaluation and persist results."""
+    """Execute cross-section evaluation, dynamically derive summary statistics, and persist results."""
     with open(protocol_path, "r", encoding="utf-8") as f:
         protocol = json.load(f)
 
@@ -33,18 +34,11 @@ def run_m5b_cross_section_evaluation(
     }
 
     results: Dict[str, Any] = {
-        "milestone": "M5-B.2",
+        "milestone": "M5-B.3",
         "title": "Pre-Registered Multi-Engagement Falsification Cross-Section Results",
         "evaluation_protocol": "Pre-registered, analyzer-label-neutral evaluation",
         "protocol_reference": protocol["protocol"],
         "protocol_version": protocol["protocol_version"],
-        "aggregate_summary": {
-            "total_engagements": 3,
-            "total_pre_registered_hypotheses": 6,
-            "supported_hypotheses_count": 5,
-            "falsified_hypotheses_count": 1,
-            "support_rate": 0.833
-        },
         "engagements": {}
     }
 
@@ -90,7 +84,6 @@ def run_m5b_cross_section_evaluation(
 
         # Evaluate pre-registered falsification criteria per individual hypothesis
         hypothesis_outcomes = {}
-        disposition = ""
         criteria_notes = ""
         two_d_adequate = ""
 
@@ -107,7 +100,6 @@ def run_m5b_cross_section_evaluation(
             h2_pass = (m_a > m_b)
             hypothesis_outcomes["approach_suffix_margin"] = "PASS" if h2_pass else "FAIL"
 
-            disposition = "PARTIAL_SUPPORT"
             criteria_notes = (
                 f"Approach suffix-margin hypothesis SUPPORTED (route_A M_min={m_a} > route_B M_min={m_b}; "
                 f"Wine mouth achieves K=1, M_suffix=+3 vs K=3, M_suffix=-26). "
@@ -129,7 +121,6 @@ def run_m5b_cross_section_evaluation(
             h2_pass = (m_a <= 0) and (m_b <= 0)
             hypothesis_outcomes["critical_exit_deficit"] = "PASS" if h2_pass else "FAIL"
 
-            disposition = "FULL_SUPPORT"
             criteria_notes = (
                 f"Choke crossfire collapse confirmed as expected negative: both dry routes suffer immediate K>=2 "
                 f"(route_A at {k2_a}m, route_B at {k2_b}m) and exit deficits (M_A={m_a}, M_B={m_b}). "
@@ -150,12 +141,21 @@ def run_m5b_cross_section_evaluation(
             h2_pass = (m_a > m_b)
             hypothesis_outcomes["lot_suffix_margin"] = "PASS" if h2_pass else "FAIL"
 
-            disposition = "FULL_SUPPORT"
             criteria_notes = (
-                f"Bus lattice preserves superior cover over open lot push (route_A M_min={m_a} > route_B M_min={m_b}) "
+                f"Bus lattice produces a substantially less severe critical deficit (route_A M_min={m_a} vs route_B M_min={m_b}) "
                 f"and delays K>=2 exposure onset (route_A at {k2_a:.1f}m > route_B at {k2_b:.1f}m)."
             )
             two_d_adequate = "Adequate (planar vehicular occluder lattice)."
+
+        # Derive disposition dynamically from hypothesis outcomes
+        pass_count = sum(1 for v in hypothesis_outcomes.values() if v == "PASS")
+        total_count = len(hypothesis_outcomes)
+        if pass_count == total_count:
+            disposition = "FULL_SUPPORT"
+        elif pass_count > 0:
+            disposition = "PARTIAL_SUPPORT"
+        else:
+            disposition = "FALSIFIED"
 
         results["engagements"][eng_id] = {
             "game": eng_meta["game"],
@@ -172,6 +172,20 @@ def run_m5b_cross_section_evaluation(
             "findings_summary": criteria_notes
         }
 
+    # Dynamically derive aggregate summary statistics across all engagements
+    total_hypotheses = sum(len(e["hypothesis_outcomes"]) for e in results["engagements"].values())
+    total_passed = sum(sum(1 for v in e["hypothesis_outcomes"].values() if v == "PASS") for e in results["engagements"].values())
+    total_failed = total_hypotheses - total_passed
+    support_rate = round(total_passed / total_hypotheses, 3) if total_hypotheses > 0 else 0.0
+
+    results["aggregate_summary"] = {
+        "total_engagements": len(results["engagements"]),
+        "total_pre_registered_hypotheses": total_hypotheses,
+        "supported_hypotheses_count": total_passed,
+        "falsified_hypotheses_count": total_failed,
+        "support_rate": support_rate
+    }
+
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
@@ -181,6 +195,7 @@ def run_m5b_cross_section_evaluation(
 
 if __name__ == "__main__":
     res = run_m5b_cross_section_evaluation()
-    print(f"Exported M5-B.2 Cross-Section Results to results/m5b_cross_section.json")
+    print(f"Exported M5-B.3 Cross-Section Results to results/m5b_cross_section.json")
+    print(f"Aggregate Summary: {res['aggregate_summary']}")
     for eng_id, data in res["engagements"].items():
         print(f"  [{eng_id}] Disposition: {data['disposition']} | Outcomes: {data['hypothesis_outcomes']}")
