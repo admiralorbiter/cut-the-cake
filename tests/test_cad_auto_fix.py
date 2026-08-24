@@ -36,9 +36,8 @@ from cut_the_cake.cad_server import create_cad_app
 
 def test_auto_fix_canonical_f1_baffle_stagger():
     """Verify Auto-Fix resolves Canonical F1 baffle stagger deficit:
-    - Initial: M0 = -6 tics (Infeasible)
-    - Repaired: M1 = +2 tics (Target met) with minimal shift Delta d = 0.20m
-    - Target obstacle: 'Central Baffle'
+    M0 = -6 tics (lethal simultaneous reveal) -> M1 = +2 tics (serviceable stagger)
+    via minimal shift Delta d = 1.10m of obstacle wall_0 along +X.
     """
     doc_f1 = get_canonical_f1_document()
     res_initial = analyze_cad_document(doc_f1, include_telemetry=False)

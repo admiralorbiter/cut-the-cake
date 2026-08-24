@@ -455,6 +455,12 @@ class CADDocument:
             ports=[CADPort.from_dict(p) for p in geo.get("ports", [])]
         )
 
+    def compute_hash(self) -> str:
+        """Compute stable SHA256 hex digest of document state for concurrency guarding."""
+        import hashlib
+        serialized = json.dumps(self.to_dict(), sort_keys=True)
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:16]
+
     def to_geometric_module(self) -> GeometricModule:
         """Project CADDocument into an authoritative scientific GeometricModule.
         

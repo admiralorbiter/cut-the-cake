@@ -665,3 +665,112 @@ footer.disabled {
   align-items: center;
   gap: 8px;
 }
+
+/* Heatmap Toolbar & Legend (Milestone 2F) */
+.tool-btn.heatmap-btn {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #7dd3fc;
+}
+
+.tool-btn.heatmap-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.tool-btn.heatmap-btn.active {
+  background: rgba(56, 189, 248, 0.3);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.heatmap-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(13, 17, 23, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 90;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  font-size: 0.78rem;
+}
+
+.legend-title {
+  font-weight: 700;
+  color: #7dd3fc;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.legend-badge {
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  background: rgba(56, 189, 248, 0.2);
+  border-radius: 4px;
+  color: #38bdf8;
+}
+
+.legend-items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c9d1d9;
+}
+
+.legend-chip {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.chip-safe { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+.chip-contested { background: #eab308; box-shadow: 0 0 6px rgba(234, 179, 8, 0.5); }
+.chip-critical { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+.chip-quiescent { background: #64748b; }
+
+.floor-exposure-toggle-row {
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.floor-exposure-toggle-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.heatmap-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 10px rgba(56, 189, 248, 0.2);
+  color: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.74rem;
+  z-index: 150;
+  white-space: nowrap;
+  transform: translate(-50%, -130%);
+}

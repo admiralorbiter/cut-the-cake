@@ -268,3 +268,60 @@ def test_cad_e2e_auto_fix_interactive_flow(cad_server_url):
 
         browser.close()
 
+
+def test_cad_e2e_spatial_heatmap(cad_server_url):
+    """E2E Test: Toggle Suffix Tactical Margin heatmap ribbon, hover for tooltip metrics,
+    enable 2D Floor LOS exposure grid, and capture visual screenshot artifact.
+    """
+    artifacts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "artifacts"))
+    brain_dir = r"C:\Users\admir\.gemini\antigravity\brain\24682a79-57e4-435b-bdc5-0a0c8d4150f6"
+    os.makedirs(artifacts_dir, exist_ok=True)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1440, "height": 900})
+        page = context.new_page()
+        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+
+        # 1. Load Canonical F1
+        page.goto(cad_server_url, wait_until="networkidle")
+        page.wait_for_selector("#fixtureBadge")
+
+        # 2. Toggle Heatmap via [H] button
+        page.click("#btnToggleHeatmap")
+        page.wait_for_selector("#heatmapLegend", state="visible", timeout=5000)
+        assert "active" in page.get_attribute("#btnToggleHeatmap", "class")
+
+        # 3. Hover over route entrance to inspect tooltip
+        canvas = page.locator("#mapCanvas")
+        box = canvas.bounding_box()
+        assert box is not None
+
+        # Sample near x=0.0, y=0.0
+        start_pt = page.evaluate("() => ({ x: toCanvasX(0.0), y: toCanvasY(0.0) })")
+        page.mouse.move(box["x"] + start_pt["x"], box["y"] + start_pt["y"])
+        page.wait_for_selector("#heatmapTooltip", state="visible", timeout=5000)
+
+        tooltip_text = page.inner_text("#heatmapTooltip")
+        assert "Suffix M:" in tooltip_text
+        assert "LOS K:" in tooltip_text
+
+        # 4. Enable 2D Floor Exposure Grid
+        page.check("#chkFloorExposure")
+        page.wait_for_timeout(600)
+
+        # 5. Capture Visual Screenshot Artifact
+        screenshot_path = os.path.join(artifacts_dir, "e2e_spatial_heatmap.png")
+        page.screenshot(path=screenshot_path)
+        if os.path.exists(brain_dir):
+            page.screenshot(path=os.path.join(brain_dir, "e2e_spatial_heatmap.png"))
+
+        # 6. Toggle Heatmap off
+        page.keyboard.press("KeyH")
+        page.wait_for_selector("#heatmapLegend", state="hidden", timeout=5000)
+        assert "active" not in page.get_attribute("#btnToggleHeatmap", "class")
+
+        browser.close()
+
+

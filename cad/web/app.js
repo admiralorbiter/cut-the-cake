@@ -40,6 +40,12 @@ let previewAngleDeg = 0.00;
 let previewRect = null; // { x1, y1, x2, y2 } in meters
 let activeRepairPreview = null; // Auto-Fix proposed repair result (M2E)
 
+// Spatial Heatmap State (Milestone 2F)
+let showHeatmap = false;
+let showFloorExposure = false;
+let cachedHeatmapData = null;
+let hoveredHeatmapSample = null;
+
 let clientRevision = 0;
 let latestRequestedRevision = 0;
 let latestAppliedRevision = 0;
@@ -69,6 +75,10 @@ const btnRedo = document.getElementById('btnRedo');
 const btnDelete = document.getElementById('btnDelete');
 const btnAutoFix = document.getElementById('btnAutoFix');
 const btnCardAutoFix = document.getElementById('btnCardAutoFix');
+const btnToggleHeatmap = document.getElementById('btnToggleHeatmap');
+const heatmapLegend = document.getElementById('heatmapLegend');
+const chkFloorExposure = document.getElementById('chkFloorExposure');
+const heatmapTooltip = document.getElementById('heatmapTooltip');
 const repairProposalBanner = document.getElementById('repairProposalBanner');
 const repairMarginBadge = document.getElementById('repairMarginBadge');
 const repairBannerDesc = document.getElementById('repairBannerDesc');
@@ -289,6 +299,18 @@ function setupUI() {
   if (btnApplyRepair) btnApplyRepair.addEventListener('click', handleApplyRepair);
   if (btnDismissRepair) btnDismissRepair.addEventListener('click', handleDismissRepair);
 
+  // Suffix Tactical Margin & Spatial Heatmap (M2F)
+  if (btnToggleHeatmap) btnToggleHeatmap.addEventListener('click', toggleHeatmap);
+  if (chkFloorExposure) {
+    chkFloorExposure.addEventListener('change', async () => {
+      showFloorExposure = chkFloorExposure.checked;
+      if (showHeatmap) {
+        await fetchHeatmapData();
+      }
+      drawMap();
+    });
+  }
+
   // Document Reset
   btnResetDoc.addEventListener('click', async () => {
     try {
@@ -416,11 +438,50 @@ function handleDismissRepair() {
   drawMap();
 }
 
+async function toggleHeatmap() {
+  showHeatmap = !showHeatmap;
+  if (btnToggleHeatmap) btnToggleHeatmap.classList.toggle('active', showHeatmap);
+  if (heatmapLegend) heatmapLegend.style.display = showHeatmap ? 'flex' : 'none';
+  if (!showHeatmap) {
+    if (heatmapTooltip) heatmapTooltip.style.display = 'none';
+    hoveredHeatmapSample = null;
+  } else {
+    await fetchHeatmapData();
+  }
+  drawMap();
+}
+
+async function fetchHeatmapData() {
+  if (!activeDoc) return;
+  try {
+    const activeRouteId = getRoutes().length > 0 ? getRoutes()[0].id : null;
+    const resp = await fetch('/api/document/heatmap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        route_id: activeRouteId,
+        include_floor_grid: showFloorExposure,
+        grid_step_m: 0.25
+      })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.is_valid) {
+        cachedHeatmapData = data;
+        drawMap();
+      }
+    }
+  } catch (err) {
+    console.warn('Heatmap fetch error:', err);
+  }
+}
+
 function setupKeyboardShortcuts() {
   window.addEventListener('keydown', (e) => {
-    // Avoid triggering when focused in an input field
+    // Avoid triggering when focused in a text or numeric input field
     const targetTag = e.target.tagName.toLowerCase();
-    if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') return;
+    const isTextInput = (targetTag === 'textarea' || (targetTag === 'input' && (e.target.type === 'text' || e.target.type === 'number')) || targetTag === 'select');
+    if (isTextInput) return;
 
     if (e.key === 'v' || e.key === 'V' || e.key === 'Escape') {
       setTool('select');
@@ -432,6 +493,8 @@ function setupKeyboardShortcuts() {
       setTool('threat');
     } else if (e.key === 'a' || e.key === 'A') {
       handleSuggestAutoFix();
+    } else if (e.key === 'h' || e.key === 'H') {
+      toggleHeatmap();
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
       if (selectedObstacleId) {
         e.preventDefault();
@@ -817,6 +880,52 @@ function setupInteraction() {
           canvas.style.cursor = obsHit ? 'move' : 'default';
         }
       }
+
+      // Heatmap Sample Tooltip & Highlight on Hover
+      if (showHeatmap && cachedHeatmapData?.samples) {
+        let closestSample = null;
+        let closestDistPx = 18;
+        for (const s of cachedHeatmapData.samples) {
+          const sx = toCanvasX(s.position[0]);
+          const sy = toCanvasY(s.position[1]);
+          const dPx = Math.hypot(pt.x - sx, pt.y - sy);
+          if (dPx < closestDistPx) {
+            closestDistPx = dPx;
+            closestSample = s;
+          }
+        }
+
+        if (closestSample) {
+          hoveredHeatmapSample = closestSample;
+          if (heatmapTooltip) {
+            const mText = closestSample.suffix_margin_tics !== null
+              ? (closestSample.suffix_margin_tics >= 0 ? `+${closestSample.suffix_margin_tics}` : `${closestSample.suffix_margin_tics}`) + ` tics (${closestSample.status_band})`
+              : `None (${closestSample.status_band})`;
+            const hText = closestSample.min_deadline_headroom_tics !== null
+              ? (closestSample.min_deadline_headroom_tics >= 0 ? `+${closestSample.min_deadline_headroom_tics}` : `${closestSample.min_deadline_headroom_tics}`) + ` tics`
+              : `N/A`;
+
+            heatmapTooltip.innerHTML = `<strong>Suffix M:</strong> ${mText} | <strong>Headroom:</strong> ${hText} | <strong>LOS K:</strong> ${closestSample.los_concurrency}`;
+            const canvasRect = canvas.getBoundingClientRect();
+            heatmapTooltip.style.left = `${canvasRect.left + toCanvasX(closestSample.position[0])}px`;
+            heatmapTooltip.style.top = `${canvasRect.top + toCanvasY(closestSample.position[1])}px`;
+            heatmapTooltip.style.display = 'block';
+          }
+          drawMap();
+        } else if (hoveredHeatmapSample) {
+          hoveredHeatmapSample = null;
+          if (heatmapTooltip) heatmapTooltip.style.display = 'none';
+          drawMap();
+        }
+      }
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    if (hoveredHeatmapSample) {
+      hoveredHeatmapSample = null;
+      if (heatmapTooltip) heatmapTooltip.style.display = 'none';
+      drawMap();
     }
   });
 
@@ -1058,6 +1167,10 @@ function applyAnalysisResponse(data, committed) {
     previewDx = 0.00;
     previewDy = 0.00;
     previewAngleDeg = 0.00;
+    cachedHeatmapData = null;
+    if (showHeatmap) {
+      fetchHeatmapData();
+    }
   }
   if (data.can_undo !== undefined || data.can_redo !== undefined) {
     updateUndoRedoButtons(data.can_undo, data.can_redo);
@@ -1371,19 +1484,97 @@ function drawMap() {
   ctx.fill();
   ctx.stroke();
 
-  // 3. Traversal Routes
-  getRoutes().forEach(r => {
-    ctx.strokeStyle = '#23384d';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([6, 6]);
-    ctx.beginPath();
-    r.waypoints.forEach(([x, y], idx) => {
-      if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
-      else ctx.lineTo(toCanvasX(x), toCanvasY(y));
+  // 2.5 Floor LOS Exposure Density Grid (M2F-B)
+  if (showHeatmap && showFloorExposure && cachedHeatmapData?.floor_grid) {
+    const grid = cachedHeatmapData.floor_grid;
+    const step = grid.grid_step_m;
+    const maxExp = Math.max(1, grid.max_exposure);
+    const halfStep = step / 2.0;
+
+    grid.cells.forEach(cell => {
+      if (!cell.masked && cell.exposure_count > 0) {
+        const x1 = toCanvasX(cell.x - halfStep);
+        const y1 = toCanvasY(cell.y + halfStep);
+        const w = toCanvasX(cell.x + halfStep) - x1;
+        const h = toCanvasY(cell.y - halfStep) - y1;
+
+        const intensity = Math.min(0.42, 0.08 + (cell.exposure_count / maxExp) * 0.34);
+        ctx.fillStyle = `rgba(99, 102, 241, ${intensity})`;
+        ctx.fillRect(x1, y1, w, h);
+        ctx.strokeStyle = `rgba(129, 140, 248, ${intensity * 0.4})`;
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x1, y1, w, h);
+      }
     });
-    ctx.stroke();
-    ctx.setLineDash([]);
-  });
+  }
+
+  // 3. Traversal Routes & Suffix Tactical Margin Heatmap Ribbon (M2F-A)
+  if (showHeatmap && cachedHeatmapData?.samples && cachedHeatmapData.samples.length > 1) {
+    const samples = cachedHeatmapData.samples;
+    // Outer glow aura
+    ctx.lineWidth = 10;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let i = 0; i < samples.length - 1; i++) {
+      const s1 = samples[i];
+      const s2 = samples[i + 1];
+      ctx.strokeStyle = s1.color || '#64748b';
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(s1.position[0]), toCanvasY(s1.position[1]));
+      ctx.lineTo(toCanvasX(s2.position[0]), toCanvasY(s2.position[1]));
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Solid core ribbon
+    ctx.lineWidth = 5;
+    for (let i = 0; i < samples.length - 1; i++) {
+      const s1 = samples[i];
+      const s2 = samples[i + 1];
+      ctx.strokeStyle = s1.color || '#64748b';
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(s1.position[0]), toCanvasY(s1.position[1]));
+      ctx.lineTo(toCanvasX(s2.position[0]), toCanvasY(s2.position[1]));
+      ctx.stroke();
+    }
+
+    // Sample dots along the path
+    samples.forEach((s, idx) => {
+      if (idx % 2 === 0) {
+        ctx.fillStyle = s.color || '#64748b';
+        ctx.beginPath();
+        ctx.arc(toCanvasX(s.position[0]), toCanvasY(s.position[1]), 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    // Highlight hovered sample
+    if (hoveredHeatmapSample) {
+      const hx = toCanvasX(hoveredHeatmapSample.position[0]);
+      const hy = toCanvasY(hoveredHeatmapSample.position[1]);
+      ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = hoveredHeatmapSample.color || '#64748b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(hx, hy, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  } else {
+    getRoutes().forEach(r => {
+      ctx.strokeStyle = '#23384d';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      r.waypoints.forEach(([x, y], idx) => {
+        if (idx === 0) ctx.moveTo(toCanvasX(x), toCanvasY(y));
+        else ctx.lineTo(toCanvasX(x), toCanvasY(y));
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
 
   // 4. Active Obstacles
   getObstacles().forEach(obs => {

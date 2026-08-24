@@ -32,6 +32,11 @@ from .compiler import (
     GeometricPort,
     segments_intersect
 )
+from .geometry import (
+    extract_polygon_segments,
+    heading_to_deg,
+    normalize_angle_deg
+)
 from .vizdoom_engine import (
     TicCombatParameters,
     TicThreatJob,
@@ -1456,7 +1461,8 @@ def analyze_cad_document(
         "model_episode_survived": model_episode_survived,
         "model_death_tic": model_death_tic,
         "telemetry_frames": telemetry_frames_output,
-        "events": events_output
+        "events": events_output,
+        "heatmap_available": True
     }
 
 
@@ -1972,3 +1978,322 @@ def auto_fix_cad_document(
             "initial_analysis": initial_analysis,
             "repaired_analysis": None
         }
+
+
+# =============================================================================
+# MILESTONE 2F: LIVE SPATIAL HEATMAP & SUFFIX TACTICAL MARGIN
+# =============================================================================
+
+def compute_cad_route_spatial_heatmap(
+    doc: CADDocument,
+    route_id: Optional[str] = None,
+    params: Optional[TicCombatParameters] = None,
+    allow_slow_solver: bool = False,
+    max_exact_jobs: int = 7
+) -> Dict[str, Any]:
+    """Compute discrete-tic counterfactual suffix Tactical Margin and LOS metrics along authored route (M2F-A).
+    
+    Mathematical Invariants:
+    1. Entrance Equivalence: M_suffix(0) == M_authoritative (identical full-route baseline).
+    2. Suffix Formulation: Suffix at tic k re-evaluates remaining reveal timeline [k, N] with
+       due windows and authored initial_reticle_deg.
+    3. 5-Band Status Classification:
+       - QUIESCENT: J_suffix == 0 (no upcoming threats on suffix) -> #64748b
+       - SAFE: J_suffix > 0 and M_suffix >= +2 -> #22c55e
+       - CONTESTED: J_suffix > 0 and 0 <= M_suffix < 2 -> #eab308
+       - CRITICAL: J_suffix > 0 and M_suffix < 0 -> #ef4444
+       - UNSUPPORTED: J_full > 6 (unless slow solver explicitly allowed) -> #a855f7
+    4. Orthogonal Metrics:
+       - Suffix M: -L*(suffix_jobs; theta_0)
+       - Minimum active deadline headroom delta_min(k) = min_{j in A_k} (D_j - k)
+       - Instantaneous LOS Concurrency K(k) = sum_j LOS[k, j]
+    """
+    t_start = time.perf_counter()
+
+    doc_dict = doc.to_dict()
+    is_valid, errors = validate_cad_document(doc_dict)
+    if not is_valid:
+        return {
+            "is_valid": False,
+            "error_reason": f"Document schema validation failed: {'; '.join(errors)}",
+            "runtime_ms": round((time.perf_counter() - t_start) * 1000.0, 2)
+        }
+
+    if not doc.routes:
+        return {
+            "is_valid": False,
+            "error_reason": "No routes authored in CAD document.",
+            "runtime_ms": round((time.perf_counter() - t_start) * 1000.0, 2)
+        }
+
+    route_idx = 0
+    if route_id is not None:
+        found = False
+        for idx, r in enumerate(doc.routes):
+            if r.id == route_id:
+                route_idx = idx
+                found = True
+                break
+        if not found:
+            return {
+                "is_valid": False,
+                "error_reason": f"Route ID '{route_id}' not found in document '{doc.document_id}'.",
+                "runtime_ms": round((time.perf_counter() - t_start) * 1000.0, 2)
+            }
+
+    selected_route = doc.routes[route_idx]
+    if params is None:
+        effective_v_move = float(selected_route.v_move_mps) if (selected_route.v_move_mps and selected_route.v_move_mps > 0) else float(doc.player_model.v_move_mps)
+        params = TicCombatParameters(
+            v_move_mps=effective_v_move,
+            aim_velocity_deg_s=float(doc.player_model.omega_slew_deg_per_s),
+            acquisition_latency_s=float(doc.player_model.acquisition_latency_s),
+            inspect_duration_s=float(doc.player_model.service_duration_s)
+        )
+
+    geo_module = doc.to_geometric_module()
+    geo_route = geo_module.routes[route_idx]
+    dt_s = params.tic_duration_s
+    total_length_m = geo_route.total_length_m
+    total_tics = max(1, int(math.ceil(total_length_m / params.move_m_per_tic)))
+
+    referee = DeterministicSimulationReferee(params)
+    full_jobs = referee.extract_tic_jobs(geo_module, route_index=route_idx)
+    num_full_jobs = len(full_jobs)
+    full_job_map = {j.id: j for j in full_jobs}
+
+    obs_segs = extract_polygon_segments(geo_module.obstacles)
+
+    # 1. Precompute Route Line-of-Sight Matrix LOS[k, j]
+    num_threats = len(geo_module.threats)
+    los_matrix = np.zeros((total_tics + 1, num_threats), dtype=int)
+    sample_positions = []
+    sample_headings = []
+    sample_distances = []
+
+    for k in range(total_tics + 1):
+        s_k = min(k * params.move_m_per_tic, total_length_m)
+        pos_k = geo_route.position_at_distance(s_k)
+        heading_k = geo_route.forward_heading_at_distance(s_k)
+        sample_distances.append(s_k)
+        sample_positions.append(pos_k)
+        sample_headings.append(heading_k)
+
+        for j_idx, threat in enumerate(geo_module.threats):
+            qx, qy = threat.threat_anchor
+            blocked = False
+            for s1, s2 in obs_segs:
+                if segments_intersect(pos_k, (qx, qy), s1, s2):
+                    blocked = True
+                    break
+            if not blocked:
+                los_matrix[k, j_idx] = 1
+
+    # 2. Solver Envelope Policy
+    is_envelope_unsupported = (num_full_jobs > 6 and not allow_slow_solver and num_full_jobs > max_exact_jobs)
+
+    scheduler = DiscreteTicScheduler(params)
+    samples: List[Dict[str, Any]] = []
+
+    for k in range(total_tics + 1):
+        s_k = sample_distances[k]
+        pos_k = sample_positions[k]
+        heading_k = sample_headings[k]
+
+        # Active visible threats at current position
+        active_threat_indices = [j_idx for j_idx in range(num_threats) if los_matrix[k, j_idx] == 1]
+        active_threat_ids = [geo_module.threats[j_idx].id for j_idx in active_threat_indices]
+        los_k = len(active_threat_ids)
+
+        # Minimum active deadline headroom delta_min(k)
+        headrooms = []
+        for t_id in active_threat_ids:
+            if t_id in full_job_map:
+                fj = full_job_map[t_id]
+                headrooms.append(fj.deadline_tic - k)
+        min_headroom_tics = min(headrooms) if headrooms else None
+
+        # Build suffix encounter starting at tic k
+        suffix_jobs: List[TicThreatJob] = []
+        for j_idx, threat in enumerate(geo_module.threats):
+            # Scan forward from k to find first visible tic on suffix
+            vis_indices = np.where(los_matrix[k:, j_idx] == 1)[0]
+            if len(vis_indices) > 0:
+                rel_reveal = int(vis_indices[0])  # relative to k
+                abs_reveal = k + rel_reveal
+                s_rev = min(abs_reveal * params.move_m_per_tic, total_length_m)
+                pos_rev = geo_route.position_at_distance(s_rev)
+                fwd_rev = geo_route.forward_heading_at_distance(s_rev)
+
+                qx, qy = threat.threat_anchor
+                target_heading = heading_to_deg(pos_rev, (qx, qy))
+                vis_angle_deg = normalize_angle_deg(target_heading - fwd_rev)
+
+                due_window_tics = int(math.ceil(threat.authored_due_window_s * params.ticrate_hz))
+                serv_dur_tics = int(math.ceil(threat.service_duration_s * params.ticrate_hz))
+                deadline_tic = rel_reveal + due_window_tics
+
+                suffix_jobs.append(TicThreatJob(
+                    id=threat.id,
+                    reveal_tic=rel_reveal,
+                    due_window_tics=due_window_tics,
+                    deadline_tic=deadline_tic,
+                    angle_deg=round(vis_angle_deg, 2),
+                    threat_anchor=(float(qx), float(qy)),
+                    service_duration_tics=serv_dur_tics
+                ))
+
+        suffix_jobs.sort(key=lambda j: j.reveal_tic)
+        num_suffix_jobs = len(suffix_jobs)
+
+        if is_envelope_unsupported:
+            status_band = "UNSUPPORTED"
+            suffix_margin_tics = None
+            color = "#a855f7"
+        elif num_suffix_jobs == 0:
+            status_band = "QUIESCENT"
+            suffix_margin_tics = None
+            color = "#64748b"
+        else:
+            try:
+                sched_res = scheduler.solve(
+                    suffix_jobs,
+                    initial_reticle_deg=doc.player_model.initial_reticle_deg,
+                    allow_slow_solver=True
+                )
+                suffix_margin_tics = sched_res.tactical_margin_tics
+                if suffix_margin_tics < 0:
+                    status_band = "CRITICAL"
+                    color = "#ef4444"
+                elif suffix_margin_tics < 2:
+                    status_band = "CONTESTED"
+                    color = "#eab308"
+                else:
+                    status_band = "SAFE"
+                    color = "#22c55e"
+            except Exception:
+                status_band = "UNSUPPORTED"
+                suffix_margin_tics = None
+                color = "#a855f7"
+
+        samples.append({
+            "tic": k,
+            "time_s": round(k * dt_s, 4),
+            "distance_m": round(float(s_k), 4),
+            "position": [round(float(pos_k[0]), 4), round(float(pos_k[1]), 4)],
+            "forward_heading_deg": round(float(heading_k), 1),
+            "los_concurrency": los_k,
+            "visible_threat_ids": active_threat_ids,
+            "suffix_job_count": num_suffix_jobs,
+            "suffix_margin_tics": suffix_margin_tics,
+            "min_deadline_headroom_tics": min_headroom_tics,
+            "status_band": status_band,
+            "color": color
+        })
+
+    runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+    doc_hash = doc.compute_hash()
+
+    return {
+        "is_valid": True,
+        "document_id": doc.document_id,
+        "source_doc_hash": doc_hash,
+        "route_id": selected_route.id,
+        "sampling_mode": "tic",
+        "tic_duration_s": dt_s,
+        "total_tics": total_tics,
+        "total_length_m": round(float(total_length_m), 4),
+        "v_move_mps": params.v_move_mps,
+        "full_compiled_job_count": num_full_jobs,
+        "envelope_supported": not is_envelope_unsupported,
+        "samples": samples,
+        "runtime_ms": runtime_ms
+    }
+
+
+def compute_arena_floor_los_exposure(
+    doc: CADDocument,
+    grid_step_m: float = 0.25
+) -> Dict[str, Any]:
+    """Compute 2D arena floor Line-of-Sight Exposure Density field K(x, y) (M2F-B).
+    
+    Epistemic Boundary:
+    - Measures instantaneous geometric LOS exposure count: K(x, y) = |{j: LOS((x, y), q_j) == 1}|.
+    - Strictly does NOT represent tactical margin or feasibility.
+    - Masks points outside the boundary polygon or inside obstacle interior polygons.
+    """
+    t_start = time.perf_counter()
+
+    doc_dict = doc.to_dict()
+    is_valid, errors = validate_cad_document(doc_dict)
+    if not is_valid:
+        return {
+            "is_valid": False,
+            "error_reason": f"Document schema validation failed: {'; '.join(errors)}",
+            "runtime_ms": round((time.perf_counter() - t_start) * 1000.0, 2)
+        }
+
+    geo_module = doc.to_geometric_module()
+    boundary_poly = geo_module.boundary
+    minx, miny, maxx, maxy = boundary_poly.bounds
+    obs_polys = geo_module.obstacles
+    obs_segs = extract_polygon_segments(obs_polys)
+
+    xs = np.arange(minx, maxx + 1e-4, grid_step_m)
+    ys = np.arange(miny, maxy + 1e-4, grid_step_m)
+
+    grid_cells: List[Dict[str, Any]] = []
+    max_exposure = 0
+
+    for y in ys:
+        for x in xs:
+            pt = Point(float(x), float(y))
+            # Boundary containment and obstacle interior check
+            if not boundary_poly.contains(pt) or any(obs.contains(pt) for obs in obs_polys):
+                grid_cells.append({
+                    "x": round(float(x), 3),
+                    "y": round(float(y), 3),
+                    "masked": True,
+                    "exposure_count": 0,
+                    "visible_threat_ids": []
+                })
+            else:
+                vis_threats = []
+                for threat in geo_module.threats:
+                    qx, qy = threat.threat_anchor
+                    blocked = False
+                    for s1, s2 in obs_segs:
+                        if segments_intersect((float(x), float(y)), (qx, qy), s1, s2):
+                            blocked = True
+                            break
+                    if not blocked:
+                        vis_threats.append(threat.id)
+
+                exp_cnt = len(vis_threats)
+                if exp_cnt > max_exposure:
+                    max_exposure = exp_cnt
+
+                grid_cells.append({
+                    "x": round(float(x), 3),
+                    "y": round(float(y), 3),
+                    "masked": False,
+                    "exposure_count": exp_cnt,
+                    "visible_threat_ids": vis_threats
+                })
+
+    runtime_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+    doc_hash = doc.compute_hash()
+
+    return {
+        "is_valid": True,
+        "document_id": doc.document_id,
+        "source_doc_hash": doc_hash,
+        "grid_step_m": grid_step_m,
+        "bounds": [round(minx, 3), round(miny, 3), round(maxx, 3), round(maxy, 3)],
+        "nx": len(xs),
+        "ny": len(ys),
+        "total_cells": len(grid_cells),
+        "max_exposure": max_exposure,
+        "cells": grid_cells,
+        "runtime_ms": runtime_ms
+    }

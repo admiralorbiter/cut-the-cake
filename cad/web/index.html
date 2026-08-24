@@ -87,6 +87,11 @@
           <span class="tool-label">Auto-Fix</span>
           <span class="tool-key">A</span>
         </button>
+        <button class="tool-btn heatmap-btn" id="btnToggleHeatmap" title="Toggle Suffix Margin Heatmap (H)">
+          <span class="tool-icon">🌈</span>
+          <span class="tool-label">Heatmap</span>
+          <span class="tool-key">H</span>
+        </button>
       </div>
 
       <canvas id="mapCanvas"></canvas>
@@ -96,6 +101,23 @@
         <div class="overlay-tag" id="tagReticle">RETICLE: 0.0°</div>
         <div class="overlay-tag" id="tagSelectedObs">SELECTED: wall_0 (Central Baffle)</div>
       </div>
+
+      <!-- Heatmap Legend Overlay (M2F) -->
+      <div class="heatmap-legend" id="heatmapLegend" style="display: none;">
+        <div class="legend-title">SUFFIX TACTICAL MARGIN <span class="legend-badge">M2F</span></div>
+        <div class="legend-items">
+          <div class="legend-item"><span class="legend-chip chip-safe"></span> Safe (M ≥ +2)</div>
+          <div class="legend-item"><span class="legend-chip chip-contested"></span> Contested (0 ≤ M &lt; 2)</div>
+          <div class="legend-item"><span class="legend-chip chip-critical"></span> Critical (M &lt; 0)</div>
+          <div class="legend-item"><span class="legend-chip chip-quiescent"></span> Quiescent (J = 0)</div>
+        </div>
+        <div class="floor-exposure-toggle-row">
+          <label><input type="checkbox" id="chkFloorExposure"> Show Floor LOS Exposure Grid</label>
+        </div>
+      </div>
+
+      <!-- Heatmap Hover Tooltip -->
+      <div class="heatmap-tooltip" id="heatmapTooltip" style="display: none;"></div>
 
       <!-- Auto-Fix Proposal Banner (M2E) -->
       <div class="repair-proposal-banner" id="repairProposalBanner" style="display: none;">

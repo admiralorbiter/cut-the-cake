@@ -47,7 +47,9 @@ from .cad_adapter import (
     update_threat_service_duration,
     delete_threat_in_document,
     update_player_model,
-    auto_fix_cad_document
+    auto_fix_cad_document,
+    compute_cad_route_spatial_heatmap,
+    compute_arena_floor_los_exposure
 )
 from .cad_export import export_scene_manifest
 
@@ -1094,6 +1096,40 @@ def create_cad_app() -> Flask:
         res["can_undo"] = len(active_state["undo_stack"]) > 0
         res["can_redo"] = len(active_state["redo_stack"]) > 0
         return jsonify(res), 200
+
+    @app.route("/api/document/heatmap", methods=["GET", "POST"])
+    def get_document_heatmap():
+        """Compute live spatial heatmap and suffix Tactical Margin for active document (M2F).
+        
+        Optional request / query parameters:
+        - route_id: Optional[str]
+        - include_floor_grid: bool = False
+        - grid_step_m: float = 0.25
+        """
+        req_data = (request.get_json(force=True, silent=True) if request.is_json or request.method == "POST" else None) or {}
+        route_id = req_data.get("route_id") or request.args.get("route_id")
+        include_floor_grid = bool(req_data.get("include_floor_grid", False) or request.args.get("include_floor_grid", "false").lower() == "true")
+        grid_step_m = float(req_data.get("grid_step_m", 0.25) or request.args.get("grid_step_m", 0.25))
+
+        doc = active_state["working_document"]
+        route_heatmap = compute_cad_route_spatial_heatmap(
+            doc=doc,
+            route_id=route_id
+        )
+
+        if not route_heatmap.get("is_valid", False):
+            return jsonify(route_heatmap), 422
+
+        if include_floor_grid:
+            floor_data = compute_arena_floor_los_exposure(
+                doc=doc,
+                grid_step_m=grid_step_m
+            )
+            route_heatmap["floor_grid"] = floor_data
+        else:
+            route_heatmap["floor_grid"] = None
+
+        return jsonify(route_heatmap), 200
 
     # =========================================================================
     # BACKWARD COMPATIBILITY ENDPOINTS (M2A / M1)
