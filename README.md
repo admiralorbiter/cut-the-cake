@@ -32,7 +32,7 @@
 ## 💡 Three Core Discoveries
 
 ### 1. Seeing fewer threats does not mean a space is easier
-Two rooms can expose different numbers of hostile angles and produce the opposite of what intuition expects. In our frozen counterexample benchmark, **Room A** exposes **3 simultaneous enemies** with generous 3.0s reaction budgets and is **100% solvable** ($\mathcal{M} = +65\text{ tics}$), while **Room B** exposes only **2 enemies** with tight 0.30s deadlines and creates an unavoidable **deadline overload** ($\mathcal{M} = -29\text{ tics}$).
+Two rooms can expose different numbers of hostile angles and produce the opposite of what intuition expects. In our frozen counterexample benchmark, **Room A** exposes **3 threats (peak $K_{\text{LOS}} = 3$)** with generous 3.0s reaction budgets and is **100% solvable** ($\mathcal{M} = +65\text{ tics}$), while **Room B** exposes only **2 enemies** with tight 0.30s deadlines and creates an unavoidable **deadline overload** ($\mathcal{M} = -29\text{ tics}$).
 
 <p align="center">
   <img src="docs/media/adv01_three_vs_two.gif" alt="Three Threats Are Easier Than Two (M08 vs M11)" width="750" />

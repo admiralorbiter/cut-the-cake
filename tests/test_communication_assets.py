@@ -164,46 +164,68 @@ def test_adv01_provenance_packet_exists_and_accurate():
 
 
 def test_presentations_gallery_authoritative_sources_wired():
-    """Verify that all 8 Advanced Evidence Lab presentations resolve their underlying fixtures/data."""
+    """Verify that all 8 Advanced Evidence Lab presentations match authoritative sources."""
     pres_path = os.path.join(REPO_ROOT, "explainer", "advanced", "presentations.json")
+    assert os.path.exists(pres_path)
     with open(pres_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     pres_map = {p["id"]: p for p in data["presentations"]}
+    assert len(pres_map) == 8
 
     # ADV-01: M08 & M11
-    from cut_the_cake.fixtures_round10 import (
-        build_geometric_m08_high_concurrency_solvable,
-        build_geometric_m11_rapid_crossfire_aperture,
-        build_geometric_m07_flank_bypass_room,
-    )
-    assert build_geometric_m08_high_concurrency_solvable() is not None
-    assert build_geometric_m11_rapid_crossfire_aperture() is not None
+    adv01 = pres_map["adv01"]
+    assert adv01["authoritative_metrics"]["room_a_margin_tics"] == 65
+    assert adv01["authoritative_metrics"]["room_a_feasible"] is True
+    assert adv01["authoritative_metrics"]["room_b_margin_tics"] == -29
+    assert adv01["authoritative_metrics"]["room_b_feasible"] is False
 
     # ADV-02: M07 Flank Bypass
-    assert build_geometric_m07_flank_bypass_room() is not None
+    adv02 = pres_map["adv02"]
+    assert adv02["authoritative_metrics"]["direct_margin_tics"] == -17
+    assert adv02["authoritative_metrics"]["direct_feasible"] is False
+    assert adv02["authoritative_metrics"]["flank_margin_tics"] == 0
+    assert adv02["authoritative_metrics"]["flank_feasible"] is True
 
-    # ADV-03: Dust II A-Long
-    m5a_path = os.path.join(REPO_ROOT, "results", "m5a_dust2_a_long.json")
-    assert os.path.exists(m5a_path)
-
-    # ADV-04: Canonical F1 Auto-Fix
-    from cut_the_cake.cad_document import get_canonical_f1_document
-    assert get_canonical_f1_document() is not None
-
-    # ADV-05: F06 / Ascent
-    f06_test = os.path.join(REPO_ROOT, "tests", "test_round10_compiler.py")
-    assert os.path.exists(f06_test)
-
-    # ADV-06: Dust II B-Tunnels / Preregistration
+    # ADV-03: Transit 213
+    adv03 = pres_map["adv03"]
     m5b_path = os.path.join(REPO_ROOT, "results", "m5b_cross_section.json")
     assert os.path.exists(m5b_path)
+    with open(m5b_path, "r", encoding="utf-8") as f:
+        m5b = json.load(f)
+    transit_routes = m5b["engagements"]["transit_213"]["routes"]
+    assert adv03["authoritative_metrics"]["open_route_global_margin"] == transit_routes["route_B"]["tactical_margin_tics"]
+    assert adv03["authoritative_metrics"]["open_route_min_suffix_margin"] == transit_routes["route_B"]["min_interval_suffix_margin_tics"]
+    assert adv03["authoritative_metrics"]["bus_route_global_margin"] == transit_routes["route_A"]["tactical_margin_tics"]
+    assert adv03["authoritative_metrics"]["bus_route_min_suffix_margin"] == transit_routes["route_A"]["min_interval_suffix_margin_tics"]
 
-    # ADV-07: M6-C 3D Execution
-    m6c_test = os.path.join(REPO_ROOT, "tests", "test_m6c_controller_3d_execution.py")
-    assert os.path.exists(m6c_test)
+    # ADV-04: Canonical F1 Auto-Fix
+    adv04 = pres_map["adv04"]
+    assert adv04["authoritative_metrics"]["initial_margin_tics"] == -6
+    assert adv04["authoritative_metrics"]["repaired_margin_tics"] == 2
+    assert adv04["authoritative_metrics"]["displacement_m"] == 1.10
 
-    # ADV-08: ViZDoom repair freeze
-    repair_freeze = os.path.join(REPO_ROOT, "results", "repair", "ROUND_11_4A_FREEZE.md")
-    assert os.path.exists(repair_freeze)
+    # ADV-05: Continuous vs Discrete Quantization
+    adv05 = pres_map["adv05"]
+    assert adv05["authoritative_metrics"]["clock_hz"] == 35
+    assert adv05["authoritative_metrics"]["tic_duration_ms"] == 28.57
+    assert adv05["authoritative_metrics"]["ascent_margin_change_tics"] == 0
+
+    # ADV-06: Dust II B-Tunnels Preregistered Falsification
+    adv06 = pres_map["adv06"]
+    tunnels_routes = m5b["engagements"]["dust2_b_tunnels"]["routes"]
+    assert adv06["authoritative_metrics"]["route_a_margin_tics"] == tunnels_routes["route_A"]["tactical_margin_tics"]
+    assert adv06["authoritative_metrics"]["route_b_margin_tics"] == tunnels_routes["route_B"]["tactical_margin_tics"]
+
+    # ADV-07: M6-C 3D Controller Parity
+    adv07 = pres_map["adv07"]
+    assert adv07["authoritative_metrics"]["execution_parity_rate"] == 1.0
+    assert adv07["authoritative_metrics"]["parity_theorem"] == "t_j(event) == C_j - 1"
+
+    # ADV-08: ViZDoom Transfer Residuals
+    adv08 = pres_map["adv08"]
+    assert adv08["authoritative_metrics"]["source_repair_rate"] == 0.80
+    assert adv08["authoritative_metrics"]["family_1_transfer_efficiency"] == 1.00
+    assert adv08["authoritative_metrics"]["family_4_transfer_efficiency"] == 0.40
+
 

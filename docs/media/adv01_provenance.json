@@ -1,5 +1,5 @@
 {
-  "": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ADV-01 Flagship Counterexample Calculation Provenance",
   "asset_id": "adv01_three_vs_two",
   "description": "Authoritative comparison of M08 (3 threats, generous deadlines) vs M11 (2 threats, tight deadlines)",
@@ -14,11 +14,15 @@
     "clock_hz": 35
   },
   "round10_compiler_status": {
+    "m08_tactical_margin_tics": 53,
+    "m08_l_star_tics": -53,
     "m08_status": "CompilationStatus.VALID_FEASIBLE",
     "m08_feasible": true,
+    "m11_tactical_margin_tics": -5,
+    "m11_l_star_tics": 5,
     "m11_status": "CompilationStatus.VALID_INFEASIBLE",
     "m11_feasible": false,
-    "notes": "Pure compile-time baseline with continuous arc slew"
+    "notes": "Pure compile-time baseline with continuous arc slew (yielding +53 and -5 tics in planning analysis)"
   },
   "horizon6_cad_simulation_referee": {
     "m08": {

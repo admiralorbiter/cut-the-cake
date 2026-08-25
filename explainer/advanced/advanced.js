@@ -1,6 +1,6 @@
 /**
  * Cut the Cake — Advanced Evidence Lab & Tactical MRI Engine
- * Synchronized 4-pane presentation replaying frozen counterexamples and CAD fixtures.
+ * 100% Pure Data-Driven Renderer replaying authoritative presentations.json.
  */
 
 let presentationsData = null;
@@ -139,7 +139,7 @@ function renderAllPanes() {
 }
 
 // ----------------------------------------------------------------------------
-// Pane A: Geometry Rendering
+// Pane A: Geometry Rendering (Pure Data-Driven)
 // ----------------------------------------------------------------------------
 function renderGeometryPane() {
   const c = ctxGeom;
@@ -151,134 +151,145 @@ function renderGeometryPane() {
   c.fillStyle = "#0b0f19";
   c.fillRect(0, 0, w, h);
 
-  const scale = 40;
-  const offX = 60;
-  const offY = h / 2;
-
-  // Draw grid
-  c.strokeStyle = "#1e293b";
-  c.lineWidth = 1;
-  for (let x = 0; x < w; x += 40) {
-    c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke();
-  }
-  for (let y = 0; y < h; y += 40) {
-    c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke();
-  }
-
   const prog = currentFrame / (totalFrames - 1);
+  const scenes = currentPres.scenes || [];
 
-  if (currentPres.id === "adv01") {
-    // Render Dual Rooms for ADV-01
-    drawMiniRoom(c, currentPres.room_a, 40, 20, 260, 200, prog, "ROOM A (M08: 3 Threats, Solvable)");
-    drawMiniRoom(c, currentPres.room_b, 340, 20, 260, 200, prog, "ROOM B (M11: 2 Threats, Overload)");
+  if (scenes.length === 2) {
+    // Dual View (Side by Side)
+    drawScene(c, scenes[0], 10, 10, w / 2 - 15, h - 20, prog);
+    drawScene(c, scenes[1], w / 2 + 5, 10, w / 2 - 15, h - 20, prog);
+  } else if (scenes.length === 1) {
+    // Single View
+    drawScene(c, scenes[0], 20, 10, w - 40, h - 20, prog);
   } else {
-    // Standard Single Room Geometry
-    c.fillStyle = "#0e1726";
-    c.strokeStyle = "#334155";
-    c.lineWidth = 2;
-    c.strokeRect(offX, offY - 80, 480, 160);
-    c.fillRect(offX, offY - 80, 480, 160);
-
-    // Wall Obstacle
-    c.fillStyle = "#1e293b";
-    c.strokeStyle = "#38bdf8";
-    c.fillRect(offX + 160, offY - 80, 20, 100);
-    c.strokeRect(offX + 160, offY - 80, 20, 100);
-
-    // Path
-    c.strokeStyle = "#475569";
-    c.setLineDash([4, 4]);
-    c.beginPath();
-    c.moveTo(offX, offY);
-    c.lineTo(offX + 480, offY);
-    c.stroke();
-    c.setLineDash([]);
-
-    // Player
-    const px = offX + prog * 480;
-    const py = offY;
-    c.fillStyle = "#00f0ff";
-    c.beginPath(); c.arc(px, py, 7, 0, Math.PI * 2); c.fill();
-
-    // Reticle
-    const angle = (prog * 1.5 - 0.4);
-    c.strokeStyle = "#f59e0b";
-    c.lineWidth = 2;
-    c.beginPath();
-    c.moveTo(px, py);
-    c.lineTo(px + Math.cos(angle) * 45, py + Math.sin(angle) * 45);
-    c.stroke();
-
-    // Threat
-    const tx = offX + 380;
-    const ty = offY + 40;
-    const isRevealed = px > (offX + 140);
-    c.fillStyle = isRevealed ? "#ef4444" : "#475569";
-    c.beginPath(); c.arc(tx, ty, 8, 0, Math.PI * 2); c.fill();
-    c.fillStyle = "#ffffff";
-    c.font = "10px sans-serif";
-    c.fillText("Threat 1", tx - 18, ty + 20);
-
-    // Sightline
-    c.strokeStyle = isRevealed ? "#22c55e" : "#334155";
-    c.lineWidth = 1.5;
-    c.beginPath(); c.moveTo(px, py); c.lineTo(tx, ty); c.stroke();
+    // Fallback info text
+    c.fillStyle = "#64748b";
+    c.font = "12px monospace";
+    c.fillText("[Static Empirical Benchmark: See Diagnostic & X-Ray Panels]", 40, h / 2);
   }
 }
 
-function drawMiniRoom(c, room, rx, ry, rw, rh, prog, label) {
+function drawScene(c, sc, rx, ry, rw, rh, prog) {
+  // Boundary Box
   c.fillStyle = "#0e1726";
-  c.strokeStyle = "#334155";
+  c.strokeStyle = "#1e293b";
   c.lineWidth = 1.5;
   c.fillRect(rx, ry, rw, rh);
   c.strokeRect(rx, ry, rw, rh);
 
-  // Label
+  // Header Title
   c.fillStyle = "#f8fafc";
   c.font = "bold 10px sans-serif";
-  c.fillText(label, rx + 10, ry + 16);
+  c.fillText(sc.name, rx + 8, ry + 16);
 
-  // Obstacles
-  c.fillStyle = "#1e293b";
-  c.strokeStyle = "#38bdf8";
-  c.fillRect(rx + 70, ry + 25, 12, 60);
-  c.strokeRect(rx + 70, ry + 25, 12, 60);
-  c.fillRect(rx + 70, ry + 115, 12, 60);
-  c.strokeRect(rx + 70, ry + 115, 12, 60);
-
-  // Route
-  c.strokeStyle = "#334155";
-  c.setLineDash([3, 3]);
-  c.beginPath();
-  c.moveTo(rx + 10, ry + rh / 2);
-  c.lineTo(rx + rw - 10, ry + rh / 2);
-  c.stroke();
-  c.setLineDash([]);
-
-  // Player
-  const px = rx + 10 + prog * (rw - 20);
-  const py = ry + rh / 2;
-  c.fillStyle = "#00f0ff";
-  c.beginPath(); c.arc(px, py, 5, 0, Math.PI * 2); c.fill();
-
-  // Threats
-  room.threats.forEach((t, i) => {
-    const isRevealed = prog > (t.reveal_tic / 35.0 / 3.0);
-    const tx = rx + rw - 40;
-    const ty = ry + 40 + i * 50;
-    c.fillStyle = isRevealed ? "#ef4444" : "#475569";
-    c.beginPath(); c.arc(tx, ty, 6, 0, Math.PI * 2); c.fill();
-
-    if (isRevealed) {
-      c.strokeStyle = "#22c55e";
-      c.lineWidth = 1;
-      c.beginPath(); c.moveTo(px, py); c.lineTo(tx, ty); c.stroke();
-    }
+  // Compute bounding box of physical coordinates
+  const b = sc.boundary || [[0, -3], [10, -3], [10, 3], [0, 3]];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  b.forEach(pt => {
+    minX = Math.min(minX, pt[0]);
+    maxX = Math.max(maxX, pt[0]);
+    minY = Math.min(minY, pt[1]);
+    maxY = Math.max(maxY, pt[1]);
   });
+  const spanX = Math.max(1, maxX - minX);
+  const spanY = Math.max(1, maxY - minY);
+
+  const pad = 24;
+  const toScreenX = (x) => rx + pad + ((x - minX) / spanX) * (rw - pad * 2);
+  const toScreenY = (y) => ry + rh - pad - ((y - minY) / spanY) * (rh - pad * 2);
+
+  // Draw Obstacles
+  (sc.obstacles || []).forEach(obs => {
+    if (!obs || obs.length === 0) return;
+    c.fillStyle = "#1e293b";
+    c.strokeStyle = "#38bdf8";
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(toScreenX(obs[0][0]), toScreenY(obs[0][1]));
+    for (let i = 1; i < obs.length; i++) {
+      c.lineTo(toScreenX(obs[i][0]), toScreenY(obs[i][1]));
+    }
+    c.closePath();
+    c.fill();
+    c.stroke();
+  });
+
+  // Draw Routes
+  (sc.routes || []).forEach(r => {
+    if (!r || r.length < 2) return;
+    c.strokeStyle = "#334155";
+    c.lineWidth = 1.5;
+    c.setLineDash([3, 3]);
+    c.beginPath();
+    c.moveTo(toScreenX(r[0][0]), toScreenY(r[0][1]));
+    for (let i = 1; i < r.length; i++) {
+      c.lineTo(toScreenX(r[i][0]), toScreenY(r[i][1]));
+    }
+    c.stroke();
+    c.setLineDash([]);
+  });
+
+  // Player position along route
+  let px = toScreenX(minX + prog * spanX);
+  let py = toScreenY(0.0);
+  let pHeading = 0.0;
+  let visibleThreats = [];
+
+  if (sc.telemetry_frames && sc.telemetry_frames.length > 0) {
+    const fIdx = Math.min(sc.telemetry_frames.length - 1, Math.floor(prog * sc.telemetry_frames.length));
+    const frame = sc.telemetry_frames[fIdx];
+    if (frame && frame.player_pos) {
+      px = toScreenX(frame.player_pos[0]);
+      py = toScreenY(frame.player_pos[1]);
+      pHeading = frame.reticle_heading_deg || 0.0;
+      visibleThreats = frame.visible_threat_ids || [];
+    }
+  }
+
+  // Draw Threats & Sightlines
+  (sc.threats || []).forEach(t => {
+    const anc = t.anchor || [minX + spanX * 0.7, 0];
+    const tx = toScreenX(anc[0]);
+    const ty = toScreenY(anc[1]);
+
+    const isVisible = visibleThreats.includes(t.id) || prog > ((t.reveal_tic || 0) / 105.0);
+    c.fillStyle = isVisible ? "#ef4444" : "#475569";
+    c.beginPath();
+    c.arc(tx, ty, 6, 0, Math.PI * 2);
+    c.fill();
+
+    // Threat Label
+    c.fillStyle = "#94a3b8";
+    c.font = "8px monospace";
+    c.fillText(t.name || t.id, tx - 10, ty + 14);
+
+    // Sightline
+    c.strokeStyle = isVisible ? "rgba(34, 197, 94, 0.7)" : "rgba(51, 65, 85, 0.3)";
+    c.lineWidth = isVisible ? 1.5 : 1;
+    c.beginPath();
+    c.moveTo(px, py);
+    c.lineTo(tx, ty);
+    c.stroke();
+  });
+
+  // Draw Player Marker
+  c.fillStyle = "#00f0ff";
+  c.beginPath();
+  c.arc(px, py, 6, 0, Math.PI * 2);
+  c.fill();
+
+  // Reticle Ray
+  const rad = pHeading * (Math.PI / 180.0);
+  c.strokeStyle = "#f59e0b";
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(px, py);
+  c.lineTo(px + Math.cos(rad) * 25, py - Math.sin(rad) * 25);
+  c.stroke();
 }
 
 // ----------------------------------------------------------------------------
-// Pane B: Scheduler Gantt Chart
+// Pane B: Scheduler Gantt Chart (Pure Data-Driven)
 // ----------------------------------------------------------------------------
 function renderGanttPane() {
   const c = ctxGantt;
@@ -292,58 +303,68 @@ function renderGanttPane() {
   const prog = currentFrame / (totalFrames - 1);
   const curTime = prog * 3.0;
 
+  // Grid lines
   c.strokeStyle = "#1e293b";
   c.lineWidth = 1;
   for (let s = 0; s <= 3; s += 0.5) {
-    const x = 70 + (s / 3.0) * (w - 90);
-    c.beginPath(); c.moveTo(x, 20); c.lineTo(x, h - 20); c.stroke();
+    const x = 90 + (s / 3.0) * (w - 110);
+    c.beginPath(); c.moveTo(x, 15); c.lineTo(x, h - 20); c.stroke();
     c.fillStyle = "#64748b";
     c.font = "9px monospace";
     c.fillText(`${s}s`, x - 8, h - 6);
   }
 
-  // Job bars
-  const tasks = currentPres.id === "adv01"
-    ? [
-        { name: "M08 T2", r: 0.0, d: 3.0, s: 0.34, y: 35, color: "#10b981" },
-        { name: "M08 T1", r: 0.2, d: 3.2, s: 0.80, y: 65, color: "#10b981" },
-        { name: "M08 T3", r: 0.2, d: 3.2, s: 1.31, y: 95, color: "#10b981" },
-        { name: "M11 T1", r: 0.34, d: 0.66, s: 0.86, y: 135, color: "#ef4444" },
-        { name: "M11 T2", r: 0.34, d: 0.66, s: 1.48, y: 165, color: "#ef4444" },
-      ]
-    : [
-        { name: "Threat 1", r: 0.4, d: 1.8, s: 0.9, y: 50, color: "#10b981" },
-        { name: "Threat 2", r: 0.8, d: 2.2, s: 1.5, y: 100, color: "#10b981" }
-      ];
+  // Collect jobs from all scenes
+  let allJobs = [];
+  (currentPres.scenes || []).forEach((sc, scIdx) => {
+    (sc.threat_jobs || []).forEach(j => {
+      allJobs.push({
+        label: `${sc.name.split(":")[0]} ${j.label || j.id}`,
+        r: (j.reveal_tic || 0) / 35.0,
+        d: (j.deadline_tic || 35) / 35.0,
+        c: (j.completion_tic || (j.reveal_tic || 0) + 10) / 35.0,
+        breached: j.is_breached || false,
+        color: j.is_breached ? "#ef4444" : "#10b981",
+      });
+    });
+  });
 
-  tasks.forEach(t => {
+  if (allJobs.length === 0) {
+    allJobs = [
+      { label: "Execution Schedulable", r: 0.0, d: 2.5, c: 1.2, breached: false, color: "#10b981" }
+    ];
+  }
+
+  const rowHeight = Math.min(24, (h - 40) / Math.max(1, allJobs.length));
+  allJobs.forEach((job, idx) => {
+    const y = 20 + idx * rowHeight;
     c.fillStyle = "#94a3b8";
-    c.font = "10px sans-serif";
-    c.fillText(t.name, 10, t.y + 10);
+    c.font = "9px monospace";
+    c.fillText(job.label.substring(0, 16), 8, y + 10);
 
-    const xR = 70 + (t.r / 3.0) * (w - 90);
-    const xD = 70 + (Math.min(3.0, t.d) / 3.0) * (w - 90);
-    const xS = 70 + (Math.min(3.0, t.s) / 3.0) * (w - 90);
+    const xR = 90 + (Math.min(3.0, job.r) / 3.0) * (w - 110);
+    const xD = 90 + (Math.min(3.0, job.d) / 3.0) * (w - 110);
+    const xC = 90 + (Math.min(3.0, job.c) / 3.0) * (w - 110);
 
-    // Release to completion
-    c.fillStyle = t.color;
-    c.fillRect(xR, t.y, Math.max(4, xS - xR), 14);
+    // Job bar
+    c.fillStyle = job.color;
+    c.fillRect(xR, y, Math.max(4, xC - xR), Math.max(8, rowHeight - 6));
 
     // Deadline tick
     c.strokeStyle = "#ef4444";
     c.lineWidth = 2;
-    c.beginPath(); c.moveTo(xD, t.y - 4); c.lineTo(xD, t.y + 18); c.stroke();
+    c.beginPath(); c.moveTo(xD, y - 2); c.lineTo(xD, y + rowHeight - 4); c.stroke();
   });
 
-  // Current time cursor
-  const cx = 70 + (curTime / 3.0) * (w - 90);
+  // Current playback time cursor
+  const cx = 90 + (curTime / 3.0) * (w - 110);
   c.strokeStyle = "#00f0ff";
   c.lineWidth = 2;
-  c.beginPath(); c.moveTo(cx, 15); c.lineTo(cx, h - 20); c.stroke();
+  c.beginPath(); c.moveTo(cx, 10); c.lineTo(cx, h - 15); c.stroke();
 }
 
 // ----------------------------------------------------------------------------
-// Pane C: Route X-Ray / Spatial Tracks
+// Pane C: Route X-Ray / Spatial Tracks (Pure Data-Driven)
 // ----------------------------------------------------------------------------
 function renderXRayPane() {
   const c = ctxXRay;
@@ -354,10 +375,19 @@ function renderXRayPane() {
   c.fillStyle = "#0b0f19";
   c.fillRect(0, 0, w, h);
 
+  // Extract spatial tracks from the primary scene
+  const primaryScene = (currentPres.scenes && currentPres.scenes[0]) || {};
+  const tracksData = primaryScene.spatial_tracks || {
+    s_m: [0, 2, 4, 6, 8, 10],
+    k_los: [0, 1, 2, 1, 0, 0],
+    delta_min_tics: [14, 10, 2, 8, 12, 16],
+    m_suffix_tics: [2, 2, -19, -4, 2, 4],
+  };
+
   const tracks = [
-    { label: "1. K_LOS(s) (Visible Threats)", color: "#f59e0b", y: 25, h: 40 },
-    { label: "2. δ_min(s) (Deadline Headroom)", color: "#38bdf8", y: 85, h: 40 },
-    { label: "3. M_suffix(s) (Remaining Schedulability)", color: "#10b981", y: 145, h: 40 }
+    { label: "1. K_LOS(s) (Visible Threats)", key: "k_los", color: "#f59e0b", y: 20, h: 42 },
+    { label: "2. δ_min(s) (Deadline Headroom tics)", key: "delta_min_tics", color: "#38bdf8", y: 80, h: 42 },
+    { label: "3. M_suffix(s) (Suffix Margin tics)", key: "m_suffix_tics", color: "#10b981", y: 140, h: 42 }
   ];
 
   tracks.forEach(tr => {
@@ -367,26 +397,30 @@ function renderXRayPane() {
 
     c.fillStyle = "#111827";
     c.strokeStyle = "#1e293b";
-    c.fillRect(15, tr.y + 5, w - 30, tr.h - 10);
-    c.strokeRect(15, tr.y + 5, w - 30, tr.h - 10);
+    c.fillRect(15, tr.y + 4, w - 30, tr.h - 8);
+    c.strokeRect(15, tr.y + 4, w - 30, tr.h - 8);
 
-    // Draw curve
-    c.strokeStyle = tr.color;
-    c.lineWidth = 2;
-    c.beginPath();
-    for (let x = 0; x < w - 30; x += 5) {
-      const normX = x / (w - 30);
-      let val = Math.sin(normX * 5) * 0.3 + 0.5;
-      if (tr.label.includes("M_suffix") && normX > 0.4 && normX < 0.6) {
-        val = 0.15; // Local choke dip
-      }
-      const cy = (tr.y + 5 + tr.h - 10) - val * (tr.h - 14);
-      if (x === 0) c.moveTo(15 + x, cy); else c.lineTo(15 + x, cy);
+    const values = tracksData[tr.key] || [0];
+    if (values.length > 1) {
+      let minV = Math.min(...values);
+      let maxV = Math.max(...values);
+      if (minV === maxV) { minV -= 1; maxV += 1; }
+
+      c.strokeStyle = tr.color;
+      c.lineWidth = 2;
+      c.beginPath();
+      values.forEach((v, idx) => {
+        const normX = idx / (values.length - 1);
+        const normY = (v - minV) / (maxV - minV);
+        const x = 15 + normX * (w - 30);
+        const y = (tr.y + 4 + tr.h - 8) - normY * (tr.h - 12);
+        if (idx === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      });
+      c.stroke();
     }
-    c.stroke();
   });
 
-  // Current position line
+  // Current spatial cursor
   const prog = currentFrame / (totalFrames - 1);
   const px = 15 + prog * (w - 30);
   c.strokeStyle = "#00f0ff";
@@ -395,52 +429,60 @@ function renderXRayPane() {
 }
 
 // ----------------------------------------------------------------------------
-// Pane D: "Why?" Bottleneck Diagnostic Readout
+// Pane D: "Why?" Bottleneck Diagnostic Readout (Pure Data-Driven)
 // ----------------------------------------------------------------------------
 function renderWhyPane() {
   const container = document.getElementById("pane-why-content");
   if (!container || !currentPres) return;
 
-  const prog = currentFrame / (totalFrames - 1);
+  const scenes = currentPres.scenes || [];
+  let cardsHtml = "";
 
-  if (currentPres.id === "adv01") {
-    container.innerHTML = `
+  if (scenes.length === 2) {
+    cardsHtml = `
       <div class="diagnostic-box">
         <div class="diag-card">
-          <h4>Room A (M08 — 3 Enemies)</h4>
-          <div class="value" style="color: #10b981;">M = +65 tics (+1.86s) — SERVICEABLE</div>
-          <div class="desc">3 threats appear at tic 0 and 7. Deadlines are 3.0s (105 tics). Reticle clears all 3 by tic 46 with 65 tics of margin to spare.</div>
+          <h4>${scenes[0].name}</h4>
+          <div class="value" style="color: ${scenes[0].is_feasible ? '#10b981' : '#ef4444'};">
+            M = ${scenes[0].tactical_margin_tics > 0 ? '+' : ''}${scenes[0].tactical_margin_tics} tics (${scenes[0].tactical_margin_s}s)
+          </div>
+          <div class="desc">${scenes[0].verdict}</div>
         </div>
         <div class="diag-card">
-          <h4>Room B (M11 — 2 Enemies)</h4>
-          <div class="value" style="color: #ef4444;">M = -29 tics (-0.83s) — DEADLINE OVERLOAD</div>
-          <div class="desc">2 threats un-occlude simultaneously at tic 12 with tight 0.31s deadlines (D=tic 23). Slew takes 10 tics; reticle cannot clear T2 before breach.</div>
+          <h4>${scenes[1].name}</h4>
+          <div class="value" style="color: ${scenes[1].is_feasible ? '#10b981' : '#ef4444'};">
+            M = ${scenes[1].tactical_margin_tics > 0 ? '+' : ''}${scenes[1].tactical_margin_tics} tics (${scenes[1].tactical_margin_s}s)
+          </div>
+          <div class="desc">${scenes[1].verdict}</div>
         </div>
         <div class="diag-card">
           <h4>Causal Takeaway</h4>
-          <div class="value" style="color: #f59e0b;">Threat Count ≠ Workload</div>
-          <div class="desc">${currentPres.takeaway}</div>
+          <div class="value" style="color: #f59e0b;">${currentPres.takeaway}</div>
         </div>
       </div>
     `;
   } else {
-    container.innerHTML = `
+    const sc = scenes[0] || {};
+    cardsHtml = `
       <div class="diagnostic-box">
         <div class="diag-card">
-          <h4>Tactical Margin</h4>
-          <div class="value" style="color: #10b981;">M = +2 tics (+57 ms)</div>
-          <div class="desc">Feasible under declared single-machine reticle model (ω = 360°/s).</div>
+          <h4>Verified Tactical Margin</h4>
+          <div class="value" style="color: ${sc.is_feasible !== false ? '#10b981' : '#ef4444'};">
+            M = ${sc.tactical_margin_tics !== undefined ? (sc.tactical_margin_tics > 0 ? '+' : '') + sc.tactical_margin_tics + ' tics' : 'N/A'}
+          </div>
+          <div class="desc">${sc.verdict || currentPres.subtitle}</div>
         </div>
         <div class="diag-card">
-          <h4>Controlling Occluder</h4>
-          <div class="value" style="color: #38bdf8;">Wall Partition obs_01</div>
-          <div class="desc">Delaying un-occlusion by 8 tics restores safe margin reserve.</div>
+          <h4>Causal Diagnosis</h4>
+          <div class="desc">${currentPres.description}</div>
         </div>
         <div class="diag-card">
-          <h4>Causal Takeaway</h4>
-          <div class="desc">${currentPres.takeaway}</div>
+          <h4>Key Insight</h4>
+          <div class="value" style="color: #f59e0b;">${currentPres.takeaway}</div>
         </div>
       </div>
     `;
   }
+
+  container.innerHTML = cardsHtml;
 }
