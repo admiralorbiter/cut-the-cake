@@ -19,7 +19,15 @@ from cut_the_cake.fixtures_round10 import (
     build_geometric_m11_rapid_crossfire_aperture,
     build_geometric_m07_flank_bypass_room,
 )
-from cut_the_cake.cad_document import CADDocument, get_canonical_f1_document
+from cut_the_cake.cad_document import (
+    CADDocument,
+    CADObstacle,
+    CADRoute,
+    CADThreat,
+    CADPlayerModel,
+    ElevationMode,
+    get_canonical_f1_document,
+)
 from cut_the_cake.cad_adapter import (
     analyze_cad_document,
     auto_fix_cad_document,
@@ -43,6 +51,7 @@ def extract_scene_from_doc_and_analysis(doc: CADDocument, res: Dict[str, Any], l
             "polygon": t.polygon,
             "due_window_s": t.due_window_s,
             "service_duration_s": t.service_duration_s,
+            "z_m": getattr(t, "z_m", 1.65),
         }
         for t in doc.threats
     ]
@@ -151,7 +160,6 @@ def build_adv02_presentation() -> Dict[str, Any]:
 
 def build_adv03_presentation() -> Dict[str, Any]:
     """ADV-03: Global vs Local Tactical MRI (Transit 213)."""
-    # Load authoritative Transit 213 data from m5b_cross_section.json
     m5b_path = os.path.join(REPO_ROOT, "results", "m5b_cross_section.json")
     with open(m5b_path, "r", encoding="utf-8") as f:
         m5b_data = json.load(f)
@@ -160,7 +168,6 @@ def build_adv03_presentation() -> Dict[str, Any]:
     route_a_data = transit["routes"]["route_A"]
     route_b_data = transit["routes"]["route_B"]
 
-    # Construct representative CAD geometry for Transit 213 bus lattice
     boundary = [[0.0, -10.0], [30.0, -10.0], [30.0, 10.0], [0.0, 10.0]]
     obs_bus1 = [[8.0, 2.0], [14.0, 2.0], [14.0, 5.0], [8.0, 5.0]]
     obs_bus2 = [[16.0, -5.0], [22.0, -5.0], [22.0, -2.0], [16.0, -2.0]]
@@ -221,7 +228,7 @@ def build_adv03_presentation() -> Dict[str, Any]:
         "title": "ADV-03: Global vs Local Tactical MRI",
         "subtitle": "Whole-Route Optimum vs Local Approach Choke (Transit 213)",
         "source_fixture": "results/m5b_cross_section.json (Transit 213)",
-        "provenance": "EVIDENCE_REPLAY",
+        "provenance": "EVIDENCE_VISUALIZATION",
         "description": "On Transit 213, an open parking lot sprint looks deceptively superior on whole-route score (M = +3 tics, feasible) due to fast unobstructed travel. But during the central 6-18m transit interval, it suffers a severe multi-angle crossfire with M_suffix = -19 tics! Weaving through the bus lattice is globally tighter (M = -4 tics) but provides consistent vehicular cover (M_suffix = -4 tics).",
         "takeaway": "A route can look safe overall while hiding an unserviceable local choke.",
         "mode": "dual",
@@ -299,7 +306,7 @@ def build_adv05_presentation() -> Dict[str, Any]:
         "title": "ADV-05: The Quantization Staircase",
         "subtitle": "Continuous Geometry vs Discrete Clock Thresholds",
         "source_fixture": "F06 Wall Perturbation Sweep (test_round10_compiler.py) & Ascent Elevation Null",
-        "provenance": "EVIDENCE_REPLAY",
+        "provenance": "EVIDENCE_VISUALIZATION",
         "description": "Continuous obstacle shifts move reveal timestamps continuously in milliseconds, but Tactical Margin changes in discrete integer steps on the 35-Hz game clock (28.57 ms / tic). Pitch changes of +5.35° on Ascent produce zero discrete margin difference because they fall inside the same 10.29°/tic aim-slew bucket.",
         "takeaway": "Continuous geometric changes only alter clearability when crossing discrete simulation clock boundaries.",
         "mode": "single",
@@ -381,9 +388,9 @@ def build_adv06_presentation() -> Dict[str, Any]:
         "title": "ADV-06: The Model Says No",
         "subtitle": "Falsifiability on Unsolvable Dry Chokes (Dust II B-Tunnels)",
         "source_fixture": "results/m5b_cross_section.json (Dust II B-Tunnels)",
-        "provenance": "EVIDENCE_REPLAY",
+        "provenance": "EVIDENCE_VISUALIZATION",
         "description": "When exiting Upper B-Tunnels into B-Site, simultaneous sightlines cannot be serialized dry by left-hugging or right-hugging paths (both yield M = -7 tics). Neither of the two preregistered dry exit routes produced positive approach schedulability; the model correctly refused to fabricate serialization.",
-        "takeaway": "A trustworthy diagnostic tool must be capable of declaring when dry gunplay is physically impossible.",
+        "takeaway": "A trustworthy model must be able to reject all tested routes rather than invent a favorable serialization.",
         "mode": "dual",
         "authoritative_metrics": {
             "route_a_margin_tics": route_a["tactical_margin_tics"],
@@ -396,41 +403,58 @@ def build_adv06_presentation() -> Dict[str, Any]:
 
 def build_adv07_presentation() -> Dict[str, Any]:
     """ADV-07: Prediction Meets Execution (M6-C Feasible 3-Threat Fixture)."""
-    boundary = [[0.0, -4.0], [12.0, -4.0], [12.0, 4.0], [0.0, 4.0]]
-    threats = [
-        {"id": "T1", "name": "Target 1", "anchor": [4.0, 2.0], "polygon": [[3.8, 1.8], [4.2, 1.8], [4.2, 2.2], [3.8, 2.2]], "due_window_s": 0.50},
-        {"id": "T2", "name": "Target 2", "anchor": [7.0, -2.0], "polygon": [[6.8, -2.2], [7.2, -2.2], [7.2, -1.8], [6.8, -1.8]], "due_window_s": 0.80},
-        {"id": "T3", "name": "Target 3", "anchor": [10.0, 1.5], "polygon": [[9.8, 1.3], [10.2, 1.3], [10.2, 1.7], [9.8, 1.7]], "due_window_s": 1.20},
-    ]
+    doc = CADDocument(
+        document_id="cad_3d_feasible_multithreat",
+        name="3D Feasible Multi-Threat Arena",
+        boundary=[[0.0, -10.0], [30.0, -10.0], [30.0, 10.0], [0.0, 10.0]],
+        obstacles=[],
+        threats=[
+            CADThreat(
+                id="threat_elevated_left",
+                name="Elevated Left Threat",
+                anchor=[10.0, 5.0],
+                polygon=[[9.5, 4.5], [10.5, 4.5], [10.5, 5.5], [9.5, 5.5]],
+                due_window_s=4.0,
+                service_duration_s=0.15,
+                z_m=4.0
+            ),
+            CADThreat(
+                id="threat_elevated_right",
+                name="Elevated Right Threat",
+                anchor=[12.0, -4.0],
+                polygon=[[11.5, -4.5], [12.5, -4.5], [12.5, -3.5], [11.5, -3.5]],
+                due_window_s=5.0,
+                service_duration_s=0.15,
+                z_m=3.0
+            ),
+            CADThreat(
+                id="threat_ground_center",
+                name="Ground Center Threat",
+                anchor=[14.0, 0.0],
+                polygon=[[13.5, -0.5], [14.5, -0.5], [14.5, 0.5], [13.5, 0.5]],
+                due_window_s=6.0,
+                service_duration_s=0.15,
+                z_m=1.65
+            )
+        ],
+        routes=[
+            CADRoute(
+                id="route_3d_advance",
+                name="3D Advance Route",
+                waypoints=[[0.0, 0.0, 0.0], [15.0, 0.0, 0.0]],
+                v_move_mps=3.0
+            )
+        ],
+        player_model=CADPlayerModel(
+            elevation_mode=ElevationMode.GEOMETRIC,
+            eye_height_m=1.65,
+            initial_reticle_deg=0.0,
+            initial_reticle_elevation_deg=0.0
+        )
+    )
 
-    scene_3d = {
-        "name": "M6-C 3D Controller Execution (35 Hz Slerp on S^2)",
-        "tactical_margin_tics": 4,
-        "tactical_margin_s": 0.11,
-        "verdict": "Exact Schedule Parity: t_j(event) ≡ C_j - 1",
-        "is_feasible": True,
-        "boundary": boundary,
-        "obstacles": [],
-        "routes": [[[0.0, 0.0], [12.0, 0.0]]],
-        "threats": threats,
-        "telemetry_frames": [],
-        "threat_jobs": [
-            {"id": "T1", "label": "Target 1 (C_1=16)", "reveal_tic": 0, "deadline_tic": 18, "service_duration_tics": 8, "completion_tic": 16, "lateness_tics": -2, "is_breached": False},
-            {"id": "T2", "label": "Target 2 (C_2=26)", "reveal_tic": 4, "deadline_tic": 28, "service_duration_tics": 8, "completion_tic": 26, "lateness_tics": -2, "is_breached": False},
-            {"id": "T3", "label": "Target 3 (C_3=38)", "reveal_tic": 8, "deadline_tic": 42, "service_duration_tics": 8, "completion_tic": 38, "lateness_tics": -4, "is_breached": False},
-        ],
-        "events": [
-            {"tic": 15, "type": "SERVICE_COMPLETE", "threat_id": "T1", "description": "Target 1 neutralized at tic 15 (predicted C_1 - 1 = 15)"},
-            {"tic": 25, "type": "SERVICE_COMPLETE", "threat_id": "T2", "description": "Target 2 neutralized at tic 25 (predicted C_2 - 1 = 25)"},
-            {"tic": 37, "type": "SERVICE_COMPLETE", "threat_id": "T3", "description": "Target 3 neutralized at tic 37 (predicted C_3 - 1 = 37)"},
-        ],
-        "spatial_tracks": {
-            "s_m": [0.0, 3.0, 6.0, 9.0, 12.0],
-            "k_los": [3, 2, 1, 0, 0],
-            "delta_min_tics": [2, 4, 8, 12, 16],
-            "m_suffix_tics": [2, 4, 6, 8, 10],
-        },
-    }
+    res = analyze_cad_document(doc, route_id="route_3d_advance", include_telemetry=True)
+    scene_3d = extract_scene_from_doc_and_analysis(doc, res, "M6-C 3D Controller Execution (35 Hz Slerp on S^2)")
 
     return {
         "id": "adv07",
@@ -442,8 +466,9 @@ def build_adv07_presentation() -> Dict[str, Any]:
         "takeaway": "Tactical Margin is an executable contract: realized execution matches discrete schedule prediction.",
         "mode": "single",
         "authoritative_metrics": {
+            "tactical_margin_tics": res["tactical_margin_tics"],
             "execution_parity_rate": 1.0,
-            "acceptance_tests_passed": 138,
+            "threat_count": len(res["threat_jobs"]),
             "parity_theorem": "t_j(event) == C_j - 1",
         },
         "scenes": [scene_3d],
@@ -464,7 +489,7 @@ def build_adv08_presentation() -> Dict[str, Any]:
         "name": "Family 1 (100% Transfer Efficiency)",
         "tactical_margin_tics": 2,
         "tactical_margin_s": 0.06,
-        "verdict": "Full Transfer to ViZDoom C++ Engine",
+        "verdict": "Full Transfer to ViZDoom C++ Engine (10/10 rescued)",
         "is_feasible": True,
         "boundary": boundary,
         "obstacles": [obs_fam1],
@@ -485,10 +510,10 @@ def build_adv08_presentation() -> Dict[str, Any]:
     }
 
     scene_f4 = {
-        "name": "Family 4 (40% Transfer Efficiency)",
+        "name": "Family 4 (30% Transfer Efficiency)",
         "tactical_margin_tics": -3,
         "tactical_margin_s": -0.09,
-        "verdict": "Transfer Gap: Collision Bounds & Coordinate Rasterization",
+        "verdict": "Transfer Gap: Collision Bounds & Coordinate Rasterization (3/10 rescued)",
         "is_feasible": False,
         "boundary": boundary,
         "obstacles": [[[3.5, -2.0], [5.0, -2.0], [5.0, -0.5], [3.5, -0.5]]],
@@ -512,21 +537,22 @@ def build_adv08_presentation() -> Dict[str, Any]:
         "id": "adv08",
         "title": "ADV-08: Source Success, Engine Failure",
         "subtitle": "Visualizing External Engine Transfer Residuals (Family 1 vs Family 4)",
-        "source_fixture": "50-Arena ViZDoom Benchmark (ROUND_11_4A_FREEZE.md)",
-        "provenance": "EVIDENCE_REPLAY",
-        "description": "In our 50-arena benchmark, 80% of unserviceable layouts were repaired in the source model, and 75% survived in native C++ ViZDoom. Family 1 achieved 100% transfer efficiency, while Family 4 suffered transfer gaps caused by engine line-of-sight rasterization, collision bounding boxes, and coordinate quantization.",
+        "source_fixture": "50-Arena ViZDoom Benchmark (ROUND_11_4A_FREEZE.md) & 12-Arena Residual Test (Gate 11.3)",
+        "provenance": "EVIDENCE_VISUALIZATION",
+        "description": "In our 50-arena benchmark, 80% (40/50) of unserviceable layouts were repaired in the source model, and 75% (30/40) survived in native C++ ViZDoom. Family 1 achieved 100% (10/10) transfer efficiency, while Family 4 achieved 30% (3/10) transfer efficiency due to collision bounding boxes and linedef coordinate quantization. In the separate 12-arena residual benchmark, mean absolute residual was 0.83 tics (23.7 ms).",
         "takeaway": "Mathematical correctness requires an empirical deployment guard band when exported to third-party game engines.",
         "mode": "dual",
         "authoritative_metrics": {
             "source_repair_rate": 0.80,
             "engine_transfer_efficiency": 0.75,
             "family_1_transfer_efficiency": 1.00,
-            "family_4_transfer_efficiency": 0.40,
-            "mean_absolute_residual_tics": 0.83,
-            "mean_absolute_residual_ms": 23.7,
+            "family_4_transfer_efficiency": 0.30,
+            "residual_experiment_mean_abs_tics": 0.83,
+            "residual_experiment_mean_abs_ms": 23.7,
         },
         "scenes": [scene_f1, scene_f4],
     }
+
 
 
 

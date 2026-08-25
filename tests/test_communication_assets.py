@@ -7,6 +7,7 @@ media manifests, and advanced explainer assets without requiring scientific re-c
 import os
 import re
 import json
+import math
 import pytest
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -173,22 +174,42 @@ def test_presentations_gallery_authoritative_sources_wired():
     pres_map = {p["id"]: p for p in data["presentations"]}
     assert len(pres_map) == 8
 
-    # ADV-01: M08 & M11
+    # ADV-01: M08 & M11 (Recomputed via CAD adapter)
+    from cut_the_cake.fixtures_round10 import (
+        build_geometric_m08_high_concurrency_solvable,
+        build_geometric_m11_rapid_crossfire_aperture,
+        build_geometric_m07_flank_bypass_room,
+    )
+    from cut_the_cake.cad_document import CADDocument, get_canonical_f1_document
+    from cut_the_cake.cad_adapter import analyze_cad_document, auto_fix_cad_document
+
+    doc_m08 = CADDocument.from_geometric_module(build_geometric_m08_high_concurrency_solvable())
+    doc_m11 = CADDocument.from_geometric_module(build_geometric_m11_rapid_crossfire_aperture())
+    res_m08 = analyze_cad_document(doc_m08)
+    res_m11 = analyze_cad_document(doc_m11)
+
     adv01 = pres_map["adv01"]
-    assert adv01["authoritative_metrics"]["room_a_margin_tics"] == 65
-    assert adv01["authoritative_metrics"]["room_a_feasible"] is True
-    assert adv01["authoritative_metrics"]["room_b_margin_tics"] == -29
-    assert adv01["authoritative_metrics"]["room_b_feasible"] is False
+    assert adv01["provenance"] == "EVIDENCE_REPLAY"
+    assert adv01["authoritative_metrics"]["room_a_margin_tics"] == res_m08["tactical_margin_tics"]
+    assert adv01["authoritative_metrics"]["room_a_feasible"] == res_m08["source_schedule_feasible"]
+    assert adv01["authoritative_metrics"]["room_b_margin_tics"] == res_m11["tactical_margin_tics"]
+    assert adv01["authoritative_metrics"]["room_b_feasible"] == res_m11["source_schedule_feasible"]
 
-    # ADV-02: M07 Flank Bypass
+    # ADV-02: M07 Flank Bypass (Recomputed via CAD adapter)
+    doc_m07 = CADDocument.from_geometric_module(build_geometric_m07_flank_bypass_room())
+    res_dir = analyze_cad_document(doc_m07, route_id="direct")
+    res_flank = analyze_cad_document(doc_m07, route_id="bypass")
+
     adv02 = pres_map["adv02"]
-    assert adv02["authoritative_metrics"]["direct_margin_tics"] == -17
-    assert adv02["authoritative_metrics"]["direct_feasible"] is False
-    assert adv02["authoritative_metrics"]["flank_margin_tics"] == 0
-    assert adv02["authoritative_metrics"]["flank_feasible"] is True
+    assert adv02["provenance"] == "EVIDENCE_REPLAY"
+    assert adv02["authoritative_metrics"]["direct_margin_tics"] == res_dir["tactical_margin_tics"]
+    assert adv02["authoritative_metrics"]["direct_feasible"] == res_dir["source_schedule_feasible"]
+    assert adv02["authoritative_metrics"]["flank_margin_tics"] == res_flank["tactical_margin_tics"]
+    assert adv02["authoritative_metrics"]["flank_feasible"] == res_flank["source_schedule_feasible"]
 
-    # ADV-03: Transit 213
+    # ADV-03: Transit 213 (Parsed from results/m5b_cross_section.json)
     adv03 = pres_map["adv03"]
+    assert adv03["provenance"] == "EVIDENCE_VISUALIZATION"
     m5b_path = os.path.join(REPO_ROOT, "results", "m5b_cross_section.json")
     assert os.path.exists(m5b_path)
     with open(m5b_path, "r", encoding="utf-8") as f:
@@ -199,33 +220,51 @@ def test_presentations_gallery_authoritative_sources_wired():
     assert adv03["authoritative_metrics"]["bus_route_global_margin"] == transit_routes["route_A"]["tactical_margin_tics"]
     assert adv03["authoritative_metrics"]["bus_route_min_suffix_margin"] == transit_routes["route_A"]["min_interval_suffix_margin_tics"]
 
-    # ADV-04: Canonical F1 Auto-Fix
+    # ADV-04: Canonical F1 Auto-Fix (Recomputed via CAD adapter)
+    doc_f1 = get_canonical_f1_document()
+    res_f1 = analyze_cad_document(doc_f1)
+    repair_f1 = auto_fix_cad_document(doc_f1)
+    res_repaired = analyze_cad_document(CADDocument.from_dict(repair_f1["repaired_document"]))
+
     adv04 = pres_map["adv04"]
-    assert adv04["authoritative_metrics"]["initial_margin_tics"] == -6
-    assert adv04["authoritative_metrics"]["repaired_margin_tics"] == 2
-    assert adv04["authoritative_metrics"]["displacement_m"] == 1.10
+    assert adv04["provenance"] == "EVIDENCE_REPLAY"
+    assert adv04["authoritative_metrics"]["initial_margin_tics"] == res_f1["tactical_margin_tics"]
+    assert adv04["authoritative_metrics"]["repaired_margin_tics"] == res_repaired["tactical_margin_tics"]
+    assert math.isclose(adv04["authoritative_metrics"]["displacement_m"], repair_f1["edit_distance_m"], abs_tol=1e-3)
 
     # ADV-05: Continuous vs Discrete Quantization
     adv05 = pres_map["adv05"]
+    assert adv05["provenance"] == "EVIDENCE_VISUALIZATION"
     assert adv05["authoritative_metrics"]["clock_hz"] == 35
     assert adv05["authoritative_metrics"]["tic_duration_ms"] == 28.57
     assert adv05["authoritative_metrics"]["ascent_margin_change_tics"] == 0
 
-    # ADV-06: Dust II B-Tunnels Preregistered Falsification
+    # ADV-06: Dust II B-Tunnels Preregistered Falsification (Parsed from m5b_cross_section.json)
     adv06 = pres_map["adv06"]
+    assert adv06["provenance"] == "EVIDENCE_VISUALIZATION"
     tunnels_routes = m5b["engagements"]["dust2_b_tunnels"]["routes"]
     assert adv06["authoritative_metrics"]["route_a_margin_tics"] == tunnels_routes["route_A"]["tactical_margin_tics"]
     assert adv06["authoritative_metrics"]["route_b_margin_tics"] == tunnels_routes["route_B"]["tactical_margin_tics"]
 
-    # ADV-07: M6-C 3D Controller Parity
+    # ADV-07: M6-C 3D Controller Parity (Authoritative Replay)
     adv07 = pres_map["adv07"]
+    assert adv07["provenance"] == "EVIDENCE_REPLAY"
     assert adv07["authoritative_metrics"]["execution_parity_rate"] == 1.0
+    assert adv07["authoritative_metrics"]["threat_count"] == 3
     assert adv07["authoritative_metrics"]["parity_theorem"] == "t_j(event) == C_j - 1"
 
-    # ADV-08: ViZDoom Transfer Residuals
+    # ADV-08: ViZDoom Transfer Residuals (Parsed from results/repair/results.json)
     adv08 = pres_map["adv08"]
-    assert adv08["authoritative_metrics"]["source_repair_rate"] == 0.80
-    assert adv08["authoritative_metrics"]["family_1_transfer_efficiency"] == 1.00
-    assert adv08["authoritative_metrics"]["family_4_transfer_efficiency"] == 0.40
+    assert adv08["provenance"] == "EVIDENCE_VISUALIZATION"
+    repair_json_path = os.path.join(REPO_ROOT, "results", "repair", "results.json")
+    assert os.path.exists(repair_json_path)
+    with open(repair_json_path, "r", encoding="utf-8") as f:
+        rep_results = json.load(f)
+
+    assert adv08["authoritative_metrics"]["source_repair_rate"] == rep_results["source_repair_success_rate"]
+    assert adv08["authoritative_metrics"]["engine_transfer_efficiency"] == rep_results["engine_transfer_efficiency"]
+    assert adv08["authoritative_metrics"]["family_1_transfer_efficiency"] == rep_results["family_breakdowns"]["Family_1_Stagger_Deficit"]["transfer_efficiency"]
+    assert adv08["authoritative_metrics"]["family_4_transfer_efficiency"] == rep_results["family_breakdowns"]["Family_4_Triad_Congestion"]["transfer_efficiency"]
+
 
 
