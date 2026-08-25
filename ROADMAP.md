@@ -2,8 +2,21 @@
 
 **Document type:** Living strategic roadmap  
 **North star:** A Tactical CAD platform for competitive first-person shooters  
-**Current research checkpoint:** Round 11.4A — Inverse Tactical Repair Audit & External-Transfer Hardening (Frozen)  
+**Current scientific checkpoint:** Horizon 6 Frozen (2.5D Elevation, Spherical Slew, Closed Prism Raycasting, 3D Controller Parity — 138 Acceptance Tests)  
 **Last strategic review:** August 2026  
+
+---
+
+> [!NOTE]
+> ### 📌 Current Project State (Horizon 6 Complete)
+> The repository has successfully completed and scientifically frozen **Horizon 0 through Horizon 6**:
+> - **Horizon 0:** Verified mathematical scheduling core ($1 \mid r_j, s_{ij} \mid L_{\max}$), 9,000 simulation episodes, 50-arena ViZDoom engine transfer (`round11.4a-freeze`).
+> - **Horizon 1:** Tactical debugger vertical slice and 35-Hz authoritative playback (`cad_export.py` / `cad/web/`).
+> - **Horizon 2:** Tactical CAD editor foundation (M2A–M2F.2): live wall transforms, scenario authoring, closed-loop Auto-Fix optimizer, and Suffix Tactical Margin ribbons ($\mathcal{M}_{\text{suffix}}(s)$).
+> - **Horizon 5:** Pre-registered real-map graybox case studies (*Dust II* A-Long/B-Tunnels, *Valorant* Ascent Wine, *MW4* Transit 213).
+> - **Horizon 6:** 2.5D elevation, vertical prism footprints, spherical great-circle geodesic aiming ($\mathrm{SO}(3)$), dynamic pitch derivation, and deterministic 3D Slerp controller execution ($t_j^{\text{event}} \equiv C_j - 1$).
+>
+> All 138 CAD acceptance tests (and 207 tests in the full suite) are passing with 100% determinism.
 
 ---
 
@@ -21,12 +34,10 @@ The defining 60-second workflow:
 4. Click **Play** and watch agents traverse the map while LOS, reticle state, deadlines, and Tactical Margin animate.
 5. Pause at a red transition and click **Why?**
 6. Inspect the exact reveal / angle / deadline bottleneck.
-7. Click **Repair**.
+7. Click **Repair** (or press `[A]` for Auto-Fix).
 8. Watch the geometry shift.
 9. Replay the identical scenario before / after.
 10. Export a technical report showing what changed, why it changed, and the confidence tier of the result.
-
-A major future case-study target is a **manually reconstructed or legally sourced gray-box of a contemporary competitive FPS map** (e.g. Modern Warfare beta maps, Dust II, Ascent) without redistributing proprietary art or game assets.
 
 ---
 
@@ -45,20 +56,11 @@ DIAGNOSIS (T_crit, Controlling Occluder)
    ↓
 REPAIR (d* in T_obs)
    ↓
-REPLAY / VERIFY (Source + Engine Bridge)
+REPLAY / VERIFY (Source + Engine Bridge + 3D Execution)
 ```
 
 The core product thesis:
 > **A level is not only geometrically valid. It has tactical contracts that can be compiled, inspected, tested, and repaired before expensive human playtesting.**
-
-Cut the Cake combines:
-- Tactical static analyzer;
-- Map debugger;
-- Tactical simulator;
-- Inverse-design assistant;
-- PCG constraint engine;
-- External-engine verification system;
-- Mixed-initiative competitive level-design workbench.
 
 ---
 
@@ -67,21 +69,21 @@ Cut the Cake combines:
 ## What It Is:
 - A geometry-to-tactical-workload compiler;
 - A single-machine real-time scheduling and information-availability model;
-- A Tactical Margin evaluator ($\mathcal{M} = -L^*$);
+- A Tactical Margin evaluator ($\mathcal{M} = -L^*$ and $\mathcal{M}_{\text{suffix}}$);
 - A compositional PCG contract system;
 - A diagnostic engine attributing scheduling bottlenecks to specific occluders;
 - An inverse tactical repair engine over declared operator sets;
 - An external-engine validation framework;
-- A tactical map editor and execution simulator.
+- A tactical map editor and 3D execution simulator.
 
 ## What It Is Not:
 - Not a claim that the current model fully predicts human psychology;
 - Not a commercial FPS bot AI;
 - Not a replacement commercial game engine;
 - Not a reason to rewrite the validated Python scientific core in JavaScript;
-- Not a full arbitrary-3D simulator today.
+- Not an arbitrary full 6-DOF game simulator.
 
-**Architecture Rule:** Python owns scientific truth. Visualization clients (Phaser / Web Canvas) render telemetry, animate, scrub, compare, and request analysis, but never independently compute LOS, scheduling, Tactical Margin, or repair semantics.
+**Architecture Rule:** Python owns scientific truth. Visualization clients (Web Canvas / Three.js) render telemetry, animate, scrub, compare, and request analysis, but never independently compute LOS, scheduling, Tactical Margin, or repair semantics.
 
 ---
 
@@ -90,36 +92,24 @@ Cut the Cake combines:
 ## 4.1 Capability Status
 
 | Capability | Readiness | Current State |
-| --- | --- | --- |
-| Geometry → reveal/deadline compilation | **Strong** | 2D polygonal geometry + authored traversal |
-| Single-reticle scheduling model | **Strong** | Exact model-scoped scheduling abstraction |
-| Tactical Margin ($\mathcal{M} = -L^*$) | **Strong** | Core serviceability metric |
-| Static-metric counterexamples | **Strong** | $K_{\text{static}}$ / threat count shown insufficient |
-| Transfer contracts / composition | **Strong** | Finite angular-state compositional abstraction |
-| PCG certification (Condition E) | **Strong** | Large automated candidate / generation work |
-| Population simulation (Round 11S) | **Strong** | 9,000 episodes, LOGFO-AUC = 1.0000 |
-| Actionability / map knowledge ($\ell^*$) | **Strong** | Model-level information threshold |
-| Inverse tactical repair | **Strong** | Grid-minimal over declared operator set $\mathcal{T}_{\text{obs}}$ |
-| External engine transfer | **Validated** | 75% transfer efficiency among source repairs |
-| Visual explanation | **Active** | Interactive concept pages |
-| Top-down tactical playback | **Completed (H1)** | Authoritative 35 Hz telemetry player |
-| Tactical CAD editor (M2A) | **Active (H2/M2A)** | Drag One Wall interactive source re-analysis |
-| Multi-agent team execution | **Horizon 4** | Existing controller concepts, team simulator |
-| Real commercial-map import | **Horizon 5** | Gray-box ingestion workflow |
-| 2.5D / multi-level tactical geometry | **Horizon 6** | Planar/extruded now; layered next |
-| Human population calibration | **Prospective** | Pre-registered protocol (H1–H4) |
-
-## 4.2 Frozen Scientific Core Checkpoint (Round 11.4A)
-
-Audited benchmark evidence (`round11.4a-freeze`):
-- **50/50** layouts genuinely unserviceable at baseline ($\mathcal{M} < 0$) and fatal in native ViZDoom;
-- **40/50 (80.0%)** source-model grid-minimal repair success within declared operator set $\mathcal{T}_{\text{obs}}$;
-- **30/50 (60.0%)** native ViZDoom death → survival engine rescue;
-- **30/40 (75.0%)** engine transfer efficiency among source-successful repairs;
-- Median edit distance **0.85 m** (Mean: 0.89 m);
-- Mean export residual $\Delta_{\text{export}} L = \mathbf{+1.64\,\text{tics}}$;
-- Mean execution residual $\Delta_{\text{execution}} L = \mathbf{-0.08\,\text{tics}}$;
-- Large family dependence (Family 4 dense triad congestion dominated by export residuals).
+| :--- | :--- | :--- |
+| Geometry → reveal/deadline compilation | **Completed & Frozen** | 2D/2.5D polygonal & extruded prism geometry |
+| Single-reticle scheduling model | **Completed & Frozen** | Exact $1 \mid r_j, s_{ij} \mid L_{\max}$ scheduling |
+| Tactical Margin ($\mathcal{M} = -L^*, \mathcal{M}_{\text{suffix}}$) | **Completed & Frozen** | Point-wise and counterfactual suffix margin |
+| Static-metric counterexamples | **Completed & Frozen** | $K_{\text{static}}$ shown insufficient; proven in PCG & sim |
+| Transfer contracts / composition | **Completed & Frozen** | $(\min, +)$ dioid algebra ($C \equiv D$ theorem) |
+| PCG certification (Condition E) | **Completed & Frozen** | 25,000 dungeon module candidate sweeps |
+| Population simulation (Round 11S) | **Completed & Frozen** | 9,000 episodes, LOGFO-AUC = 1.0000 |
+| Actionability / map knowledge ($\ell^*$) | **Completed & Frozen** | Pre-aim vs blind un-occlusion model |
+| Inverse tactical repair | **Completed & Frozen** | Grid-minimal over declared operator set $\mathcal{T}_{\text{obs}}$ |
+| External engine transfer | **Validated** | 75.0% transfer efficiency in native ViZDoom |
+| Top-down tactical playback (H1) | **Completed & Frozen** | Authoritative 35 Hz telemetry player |
+| Tactical CAD editor (H2/M2A–M2F) | **Completed & Frozen** | Real-time transforms, Auto-Fix, Suffix heatmaps |
+| Real commercial-map grayboxes (H5) | **Completed & Frozen** | Dust II, Ascent, Transit 213 pre-registered case studies |
+| 2.5D / 3D Controller Execution (H6) | **Completed & Frozen** | Spherical Slerp execution, $t_j^{\text{event}} \equiv C_j - 1$ |
+| Multi-agent team execution (H4) | **Future (H4)** | Multi-lane team schedules across objectives |
+| Studio & engine workflow (H7) | **Future (H7)** | Unreal / Unity / Source 2 editor plugins |
+| Human population calibration | **Prospective** | Pre-registered protocol (`human/PILOT_PROTOCOL.md`) |
 
 ---
 
@@ -129,13 +119,14 @@ Audited benchmark evidence (`round11.4a-freeze`):
                            CUT THE CAKE
                   ┌─────────────────────────────┐
                   │  Python Scientific Core     │
-                  │  (FROZEN @ round11.4a)      │
+                  │  (FROZEN @ Horizon 6)       │
                   │                             │
-                  │ - Geometry / LOS Compiler   │
+                  │ - 2.5D Geometry & Compiler  │
+                  │ - Spherical Geodesic Slew   │
                   │ - Discrete Tic Scheduler    │
-                  │ - Tactical Margin / DiDioid │
-                  │ - Diagnostics & Bottlenecks │
+                  │ - Suffix Tactical Margin    │
                   │ - MinimalRepairOptimizer    │
+                  │ - 3D Simulation Controller  │
                   │ - ViZDoom Engine Bridge     │
                   └──────────────┬──────────────┘
                                  │
@@ -147,11 +138,10 @@ Audited benchmark evidence (`round11.4a-freeze`):
    ┌─────────▼──────────────┐             ┌──────────▼─────────┐
    │ Tactical CAD Client    │             │ Engine Validation  │
    │ (cad/web/)             │             │                    │
-   │ - Canvas 2D telemetry  │             │ - ViZDoom (now)    │
+   │ - Canvas 2D telemetry  │             │ - ViZDoom (Doom)   │
    │ - Top-down map view    │             │ - Unreal adapter   │
-   │ - Interactive timeline │             │   (future)         │
-   │ - Drag One Wall (M2A)  │             └────────────────────┘
-   │ - Diagnostic inspector │
+   │ - Suffix heatmap ribbon│             │   (future)         │
+   │ - Auto-Fix workbench   │             └────────────────────┘
    │ - Broken/Repaired diff │
    └────────────────────────┘
 ```
@@ -160,62 +150,46 @@ Audited benchmark evidence (`round11.4a-freeze`):
 
 # 6. Strategic Product Horizons
 
-## Horizon 0: Scientific Core Freeze (Rounds 1–11.4A) — ✅ COMPLETED
+## 6.1 Completed & Frozen Horizons
+
+### Horizon 0: Scientific Core Freeze (Rounds 1–11.4A) — ✅ COMPLETED
 - Formalized single-reticle scheduling ($1 \mid r_j, s_{ij} \mid L_{\max}$).
 - Verified on 9,000 discrete simulation episodes and audited 50-arena ViZDoom benchmark.
 - Certified under annotated tag `round11.4a-freeze`.
 
----
-
-## Horizon 1: Tactical Debugger Vertical Slice (M1) — ✅ COMPLETED
+### Horizon 1: Tactical Debugger Vertical Slice (M1) — ✅ COMPLETED
 - **Milestone 1A (M1A):** Frozen Scene Contract + Single-Arena Playback (`cad_export.py` → `scene_manifest_v1.json` → `cad/web/`).
 - **Milestone 1B (M1B / M1B.1):** Hardened provenance boundaries, fail-closed external evidence, What Changed causal card, exact timing audit parity, and 88 passing verification tests.
 - **Fixture:** Canonical Family 1 Stagger Deficit (`RepairPop_F1_StaggerDeficit_00`).
-- **Features:** 2D top-down canvas, play/pause/step/scrub timeline, authoritative LOS rays, Tactical Margin badge, What Changed causal table, Frozen Broken / Frozen Repair toggles.
+
+### Horizon 2: Tactical CAD Editor Foundation (M2) — ✅ COMPLETED & FROZEN
+- **Milestone 2A (M2A):** Drag One Wall / Interactive Source Re-analysis with $0.05\,\text{m}$ grid snapping.
+- **Milestone 2B (M2B):** Multi-obstacle translation, rotation, and corridor clearance validation.
+- **Milestone 2C (M2C / M2C.1):** Transform hardening, monotonic session IDs, and undo/redo stack.
+- **Milestone 2D / 2D.1 (M2D):** Scenario authoring, dynamic speed ($v_{\text{move}}$), combat parameters, and Safe Exact-Solver Envelope ($J \le 6$).
+- **Milestone 2E (M2E):** Mixed-initiative closed-loop "Auto-Fix" repair integration (`POST /api/document/auto_fix`).
+- **Milestone 2F / 2F.2 (M2F):** Live spatial heatmaps and Suffix Tactical Margin ribbons ($\mathcal{M}_{\text{suffix}}(s)$).
+
+### Horizon 5: Real-Map Case Study Pipeline (M5) — ✅ COMPLETED & CERTIFIED
+- **Milestone 5-A & 5-A.1:** Calibrated Real-Map Transfer Case Study (*Counter-Strike Dust II* A-Long to Pit).
+  - Metric gray-box reconstruction ($\mathrm{RMSE} = 0.0064\,\text{m}$).
+  - Multi-route differentiation (`route_pieing` vs `route_wide_swing`).
+  - Discovery of Suffix Margin superiority over global whole-route averaging.
+  - 81-run joint parameter uncertainty sweep.
+- **Milestone 5-B:** Pre-Registered Multi-Engagement Falsification Cross-Section.
+  - Pre-registered hypotheses sealed in `preregistration/m5b_preregistration.json`.
+  - Evaluated *Valorant* Ascent (Wine off-angle), *Dust II* (B-Tunnels expected negative choke), and *MW4* Transit 213 (bus lattice).
+
+### Horizon 6: 2.5D Elevation & Layered Geometry (M6) — ✅ COMPLETED & FROZEN
+- **Milestone 6-A / 6-A.1:** 2.5D Elevation & Spherical Aim State Preflight ($\mathrm{SO}(3)$ geodesic metric with planar fallback).
+- **Milestone 6-B / 6-B.2:** Height-Aware Geometric Compilation (extruded prism footprints $P_i \times [z_{\min}, z_{\max}]$, closed volumetric raycasting, dynamic pitch derivation).
+- **Milestone 6-C / 6-C.1:** 3D Unit-Sphere Controller Execution & Parity (spherical Slerp controller, realized service completion parity $t_j^{\text{event}} \equiv C_j - 1$, 138 CAD acceptance tests passed).
 
 ---
 
-## Horizon 2: Tactical CAD Editor Foundation (M2) — 🚀 ACTIVE
-- **Milestone 2A (M2A — Completed):** Drag One Wall / Interactive Source Re-analysis:
-  - Constrained X-axis horizontal dragging of Obstacle #0 with $0.05\,\text{m}$ grid snapping.
-  - Real-time local Python Flask service (`POST /api/analyze`) serving authoritative geometry validation, raycasts, discrete scheduling, and Tactical Margin calculations.
-  - Fail-closed external engine evidence (`transfer_status: "not_run"`).
-  - 3 status bands (`UNSERVICEABLE`, `FEASIBLE — BELOW TARGET RESERVE`, `TARGET RESERVE MET`).
-- **Milestone 2B (M2B — Completed):** Multi-obstacle translation, rotation, and custom corridor clearance validation.
-- **Milestone 2C (M2C / M2C.1 — Completed & Accepted):** Transform Hardening & Monotonic Session History:
-  - Local-basis oriented rectangle resize (preserving authored orientation).
-  - Monotonic document/session wall sequence ID allocation (non-reusing deleted IDs across undo/redo).
-  - Absolute target-angle vs relative delta rotation composition.
-  - State-preserving undo/redo history stack across multi-element mutations.
-- **Milestone 2D / 2D.1 (M2D — Completed & Scientifically Frozen):** Scenario Authoring, Interactive Playback & Safe Solver Envelope:
-  - Interactive scenario authoring: route creation, waypoint editing, route speed tuning ($v_{\text{move}}$), combat parameters ($\omega_{\text{slew}}, T_{\text{acq}}, T_{\text{serv}}$), and initial reticle azimuth.
-  - Interactive time-indexed playback scrubbing with synchronized player cone and authoritative LOS visibility rays.
-  - Fast path vs full simulation dual-mode analysis dispatch.
-  - Safe Exact-Solver Envelope ($J \le 6$ `EXACT_INTERACTIVE`, $J=7$ `EXACT_SLOW`, $J \ge 8$ `EXACT_LIMIT_EXCEEDED` fail-closed dispatch).
-- **Milestone 2E (M2E — Completed & Scientifically Frozen):** Mixed-Initiative "Auto-Fix" Integration & Closed-Loop Repair:
-  - Envelope-aware CAD Auto-Fix search derived from and differentially certified against the validated `MinimalRepairOptimizer` operator/search contract.
-  - Strict tri-state candidate classification: `EXACT_EVALUATED` ($J \le 6$), `UNSUPPORTED_ENVELOPE` ($J \ge 7$), `INVALID_GEOMETRY` (clearance/boundary violation).
-  - Selected route ($v_{\text{move}}$) and authored initial reticle heading ($\theta_0$) parity throughout diagnosis and candidate evaluation.
-  - Independent post-search authoritative re-certification on $G^*$ via frozen `analyze_cad_document()`.
-  - Stale-proposal concurrency defense via SHA-256 source document hash checking (HTTP 409 `STALE_REPAIR_PROPOSAL`).
-  - REST endpoint `POST /api/document/auto_fix` supporting both preview (`commit: false`) and atomic commit (`commit: true`) with snapshot history.
-  - Web CAD workbench integration: interactive "Auto-Fix" button, keyboard shortcut [A], proposal banner with target margin badges, ghost obstacle rendering, and full undo/redo stack.
-  - Full closed-loop verification: Canonical F1 baffle stagger repaired ($\mathcal{M}_0 = -6 \to \mathcal{M}_1 = +2\text{ tics}$ with minimal shift $1.10\,\text{m}$), 100% pass across deterministic unit tests, differential equivalence tests, metamorphic invariants, and Playwright browser E2E workflows.
-- **Milestone 2F (M2F / M2F.2 — Completed, Verified, & Scientifically Frozen):** Live Spatial Heatmaps & Suffix Tactical Margin
-  - **Counterfactual Suffix Formulation:** Defined discrete 35 Hz tic-aligned Suffix Tactical Margin $\mathcal{M}_{\text{suffix}}(s_k) = -L^*(\{\tilde{r}_j(s_k), \tilde{D}_j(s_k), \theta_j(s_k), p_j\}; \theta_0)$ evaluating encounters from movement sample $s_k$ to the route terminus.
-  - **Route-Tic Stepping Alignment:** Suffix evaluation uses the compiler's discrete stepping rule ($s_k = k \cdot v\Delta t$, stopping when $s_k > L$), guaranteeing exact domain identity and eliminating fractional endpoint edge cases.
-  - **Entrance Equivalence Identity by Construction:** Full floating-point angle preservation ($\theta_j(s_k) = \text{float}(\text{vis\_angle})$ without pre-solver rounding) guaranteeing exact structural and margin identity $\mathcal{M}_{\text{suffix}}(0) \equiv \mathcal{M}_{\text{authoritative}}$ at the route entrance across all fixtures.
-  - **Exact Envelope Boundary ($J \le 6 \to \text{exact}$, $J \ge 7 \to \text{UNSUPPORTED}$):** Live spatial repeated scheduling fails closed on $J \ge 7$ encounters (`#a855f7`, `suffix_margin_tics = None`) to prevent multi-second factorial hangs across route traverses, while preserving geometric LOS concurrency $\mathcal{K}(s)$.
-  - **5-Band Status Classification:** `QUIESCENT` ($J_{\text{suffix}} = 0$, `#64748b`), `SAFE` ($\mathcal{M}_{\text{suffix}} \ge +2$, `#22c55e`), `CONTESTED` ($0 \le \mathcal{M}_{\text{suffix}} < 2$, `#eab308`), `CRITICAL` ($\mathcal{M}_{\text{suffix}} < 0$, `#ef4444`), and `UNSUPPORTED` ($J_{\text{full}} \ge 7$, `#a855f7`).
-  - **Original-Clock Deadline Headroom ($\delta_{\text{min}}(k)$):** Orthogonal temporal metric $\min_{j \in \mathcal{A}_k}(D_j - k)$ tracking remaining slack on the original route-entry clock alongside counterfactual suffix margin.
-  - **Arena Floor LOS Exposure Density Grid:** Separately calculated 2D scalar field $\mathcal{K}(x,y) = |\{j : \text{LOS}((x,y), q_j) = 1\}|$ on navigable floor cells with strict obstacle and boundary masking.
-  - **REST Spatial Analysis Endpoint:** Dedicated `POST /api/document/heatmap` and `GET /api/document/heatmap` serving route samples, $\delta_{\text{min}}(k)$, and optional 2D floor grid with SHA-256 provenance tagging, end-to-end browser SHA concurrency defense (`expected_doc_hash` $\to$ HTTP 409 `STALE_DOCUMENT_HASH`), client revision ordering, and resolution validation ($0.05 \le \Delta g \le 5.0$).
-  - **Web CAD Interactive Layer:** Color-coded glowing segmented route ribbon, toggle button `[H]`, HUD legend overlay, floor grid checkbox, and hover tooltip displaying Suffix Margin, Original-Clock Deadline Headroom, and LOS Concurrency.
-  - **Verification:** 100% pass across 11 deterministic unit/API tests (including fractional route endpoint parity, angular-boundary discretization parity, approach interval margin improvement, and parameterized 2D rotation/translation invariance) and Playwright browser E2E workflows (`e2e_spatial_heatmap.png`).
+## 6.2 Future Strategic Horizons
 
----
-
-## Horizon 3: Multi-Operator Repair Workbench (M3)
+### Horizon 3: Multi-Operator Repair Workbench (M3) — 🔮 FUTURE
 - Expand repair operators with explicit invariant checking:
   1. Obstacle translation (current $\mathcal{T}_{\text{obs}}$);
   2. Obstacle extension / contraction;
@@ -223,88 +197,22 @@ Audited benchmark evidence (`round11.4a-freeze`):
   4. Baffle insertion / split;
   5. Route-entry / port adjustment;
   6. Threat anchor adjustment (authored gameplay operator).
+- Heterogeneous cost model: $\mathcal{C}(\mathcal{G}, \mathcal{G}') = w_{\text{move}} d_{\text{wall}} + w_{\text{resize}} \Delta A + w_{\text{insert}} N_{\text{new}} + w_{\text{route}} \Delta L$.
 - Robust deployment reserve objectives ($\mathcal{M}_{\text{source}} \ge \epsilon + \text{reserve}(\text{family})$).
 
----
-
-## Horizon 4: Transparent Team Simulation (M4)
+### Horizon 4: Transparent Team Simulation (M4) — 🔮 FUTURE
 - **1vN Scheduling Animator:** Single player moving against multiple dynamic threats.
 - **3v3 Lane Skirmish:** Coordinated crossfire resolution and cross-lane peel timing on fixed routes.
 - **6v6 Whole-Map Playback:** Multi-lane team schedules across objective contest points.
 - Explicit, transparent agent policies (FIFO, nearest-angle, earliest-deadline, optimal bound).
 
----
-
-## Horizon 5: Real-Map Case Study Pipeline (M5)
-
-- **Milestone 5-A & 5-A.1 (Completed & Scientifically Frozen at `e35e3a8`):** Calibrated Real-Map Transfer Case Study (Dust II: A-Long to A-Site / Pit)
-  - **Metric Graybox Reconstruction & Overview Affine Calibration:** Reconstructed metric `CADDocument` fixture of Counter-Strike Dust II A-Long engagement zone ($1.0\,\text{unit} = 1.0\,\text{meter}$, corridor width $\approx 6.0\,\text{m}$, length $\approx 28.0\,\text{m}$). Affine transform fitted against 5 Valve Source overview landmarks (`pos_x=-2476, pos_y=3239, scale=4.4`, declared hull conversion $0.01905\,\text{m/unit}$) achieves internal coordinate consistency residual $\mathrm{RMSE} = 0.0064\,\text{m} < 0.020\,\text{m}$.
-  - **Strict 2D Navigability & Positive Clearance:** Enforced $\ge 0.50\,\text{m}$ positive clearance (actual min: $0.636\,\text{m}$) and zero geometric intersections with obstacle polygons across all 3 routes.
-  - **Multi-Route Tactical Differentiation & Reveal Ordering:**
-    - `route_pieing` (outer-wall angle slice): isolates Corner defender at $k=0$ and delays Pit until $k=47$ ($\Delta r = 47\text{ tics} = 1.34\,\text{s}$).
-    - `route_wide_swing` (aggressive open choke entry): reveals Corner and Pit with tight collapse ($\Delta r = 26\text{ tics} = 0.74\,\text{s}$), producing acute simultaneous line-of-sight ($K_{\text{LOS}} = 2$).
-  - **Scientific Protocol Finding (Global $\mathcal{M}$ vs Approach $\mathcal{M}_{\text{suffix}}(s)$):**
-    - Pre-registered hypothesis of global scalar dominance $\mathcal{M}_{\text{pie}} \ge \mathcal{M}_{\text{wide}}$ was falsified at the baseline fixture ($\mathcal{M}_{\text{pie}} = +1, \mathcal{M}_{\text{wide}} = +2$) due to whole-route schedule slew geometry.
-    - Preserved the narrower supported physical invariants: universal reveal stagger $\Delta r_{\text{pie}} > \Delta r_{\text{wide}}$ across all speeds ($v \in [3.0, 6.0]\,\text{m/s}$), and approach-interval suffix-margin superiority $\min_{s \in [2, 4]} \mathcal{M}_{\text{suffix}}^{\text{pie}}(s) > \min_{s \in [2, 4]} \mathcal{M}_{\text{suffix}}^{\text{wide}}(s)$ across all velocities.
-  - **Paired Pocket Sightline Isolation:** High push reveals Plat defender past corner ($k=195$), while Pit branch strictly occludes Plat defender behind corner geometry.
-  - **Full Joint Parameter Uncertainty Sweep:** Evaluated an 81-run factorial grid ($v \in [3.5, 4.5, 5.5]$, $\omega \in [270, 360, 450]$, $\Delta \mathbf{q} \in [-0.3, 0.0, +0.3]$, $\Delta D \in [-0.05, 0.0, +0.05]$) asserting effective route velocity mutation and verifying stagger inequality (81/81) and approach suffix superiority (81/81).
-  - **Deterministic Result Packet:** Persisted exact snapshot to `results/m5a_dust2_a_long.json` (locked by SHA-256 hash `d425ce5a4df7ec35`).
-  - **Verification:** 100% pass across 9 unit/API test gates and 5 Playwright browser E2E workflows (102 tests in CAD acceptance suite).
-
-- **Milestone 5-B (Completed & Certified):** Pre-Registered Multi-Engagement Falsification Cross-Section
-  - **Two-Stage Pre-Registration Protocol:** Sealed hypotheses, source citations, control points, and blinded route IDs (`route_A`, `route_B`) in `preregistration/m5b_preregistration.json` and committed at `9c59a38` *prior* to model execution.
-  - **Cross-Section Mechanisms Evaluated:**
-    1. **Valorant Ascent (A-Main / Wine)**: Off-angle serialization confirmed. Wine slice ($\mathcal{M}_{\min} = -20$) strictly outperforms direct center rush ($\mathcal{M}_{\min} = -24$). Stepping into Wine mouth achieves isolated $K=1, \mathcal{M}_{\text{suffix}} = +3$ while direct rush suffers $K=3, \mathcal{M}_{\text{suffix}} = -26$. A-Site Heaven/Rafters verticality acknowledged as explicit 2D model boundary limitation.
-    2. **Counter-Strike Dust II (Upper B-Tunnels Exit)**: Multi-angle choke crossfire collapse confirmed as an expected negative. Both dry routes suffer immediate $K \ge 2$ crossfire at exit ($s \le 0.4\,\text{m}$) and severe exit deficit ($\mathcal{M}_{\min} = -7$), proving the model refuses to fabricate false serialization on compressed dry chokes.
-    3. **Modern Warfare 4 (Transit 213 Center Lot)**: Occluder lattice confirmed. Bus lattice weave ($\mathcal{M}_{\min} = -4$) preserves superior cover over open lot push ($\mathcal{M}_{\min} = -19$).
-  - **Deterministic Result Matrix:** Persisted aggregate unblinded matrix in `results/m5b_cross_section.json`.
-  - **Verification:** 100% pass across 7 deterministic cross-section test gates and Playwright browser screenshot workflows (109 tests in CAD acceptance suite).
-
----
-
-## Horizon 3: Multi-Operator Repair Workbench (M3)
-- Expand repair operators informed by observed real-world failure demand:
-  1. Aperture resize / choke narrowing;
-  2. Small cover lip / occluder insertion;
-  3. Obstacle translation (current $\mathcal{T}_{\text{obs}}$);
-  4. Obstacle extension / contraction;
-  5. Route waypoint / entry angle adjustment.
-- Heterogeneous cost model: $\mathcal{C}(\mathcal{G}, \mathcal{G}') = w_{\text{move}} d_{\text{wall}} + w_{\text{resize}} \Delta A + w_{\text{insert}} N_{\text{new}} + w_{\text{route}} \Delta L$.
-
----
-
-## Horizon 6: 2.5D Elevation & Layered Geometry (M6)
-- **Milestone 6-A / 6-A.1 (Completed, Verified & Frozen):** 2.5D Elevation & Azimuth/Elevation Aim State Preflight & Contract Hardening
-  - **Spherical Geodesic Slew Metric:** Generalized $1 \mid r_j, s_{ij} \mid L_{\max}$ transition cost oracle to spherical geodesic distance on the unit sphere: $\Delta \alpha_{ij} = \arccos(\operatorname{clamp}(\sin \phi_i \sin \phi_j + \cos \phi_i \cos \phi_j \cos(\theta_i - \theta_j), -1.0, 1.0))$.
-  - **Structural Planar Identity & Differential Parity:** When $\phi_i = \phi_j = 0.0^\circ$, executes exact frozen 2D `angle_diff_deg()`. Differential baseline comparison across all 6 fixtures, 11 routes, and document hashes proves bit-for-bit identity of the frozen CAD analysis contract against pre-M6 `4e81dd7` outputs.
-  - **Authority Semantics & Schema Bounds:** `CADThreat.elevation_deg` is authoritative in M6-A with strict schema and validator enforcement $\phi \in [-90.0^\circ, 90.0^\circ]$. `z_m` and `eye_height_m` are reserved metadata for geometric derivation in M6-B.
-  - **Fail-Closed Elevated Telemetry:** Requesting simulation telemetry on elevated documents returns `telemetry_status = "ELEVATED_EXECUTION_UNSUPPORTED_M6A"` with unmixed fail-closed diagnostics.
-  - **Ascent Mechanism Counterexample:** Demonstrates synthetically on an Ascent Heaven/Rafters-inspired fixture that elevation ($\phi = 35^\circ$) introduces real pitch slew latency ($s_{12} = 4\text{ tics}$), converting a falsely feasible 2D schedule ($M=+1$) into a critical deficit ($M=-3$), proving that the newly added elevation state is sufficient to produce the class of scheduling error identified by the Ascent M5-B boundary.
-  - **Eight Verification Gates:** Passed 100% across differential planar identity, pure pitch slew, mixed $(\theta, \phi)$ non-equivalence vs naive decoupled metrics, boundary discretization, $\mathrm{SO}(3)$ 3D rotation invariance, Ascent mechanism counterexample, exact solver envelope preservation ($J \le 6$ interactive, $J=7$ slow, $J \ge 8$ fail-closed by default), and schema bounds / fail-closed telemetry (121 tests in CAD acceptance suite).
-
-- **Milestone 6-B / 6-B.2 (Completed, Verified & Frozen):** Height-Aware Geometric Compilation & Scientific Evidence Hardening
-  - **2.5D Extruded Prism Model & Closed Volume Raycasting:** Generalized obstacles to vertical prism footprints $P_i \times [z_{i,\min}, z_{i,\max}]$, routes to 3D waypoints $(x, y, z_{\text{feet}})$, and threats to 3D target coordinates $\mathbf{q}_j = (x_j, y_j, z_j)$. Closed volumetric raycasting robustly handles interior segments, penetrating rays, roof/cap crossings, and collinear boundary grazing.
-  - **Derived Dynamic Aim State & Authority Migration:** Authored target elevation replaced with authoritative dynamic geometry formula $\phi_j(s) = \operatorname{atan2}(z_j - z_{\text{eye}}(s), d_{xy}(s))$ along player trajectory, feeding the frozen M6-A single-machine discrete scheduler seamlessly. `ElevationMode.GEOMETRIC` and `ElevationMode.AUTHORED` formally declared in JSON schema and validated by `validate_cad_document()`.
-  - **Canonical CAD Pipeline Integration:** Full 3D waypoint serialization roundtripping (`CADRoute.to_dict()` / `from_dict()`), lossless GeometricModule conversion, explicit heatmap plumbing, and comprehensive fail-closed telemetry on all 2.5D geometry.
-  - **Eleven Verification Gates:** Passed 100% across differential planar bit-for-bit identity and document hash preservation, analytic vertical occlusion ($z_{\text{low}}$ blocked vs $z_{\text{high}}$ clear), obstacle-height monotonicity, derived pitch correctness ($+45^\circ, -45^\circ, 0^\circ$), CAD ramp route dynamic slew, CAD height-induced reveal differentiation ($R_j^B < R_j^A$), rigid vertical translation invariance ($z \to z + c$), Ascent Heaven compilation and aim-tic quantization invariance, schema/elevation mode authority, closed solid collinear prism raycasting, and 2.5D telemetry fail-closed validation (132 tests in CAD acceptance suite).
-
-- **Milestone 6-C / 6-C.1 (Completed, Verified & Frozen):** 3D Unit-Sphere Controller Execution & Telemetry Parity
-  - **Spherical Great-Circle Slerp Execution:** Simulation controller upgraded to execute continuous geodesic orientation transitions $\mathbf{u}(f) = \frac{\sin((1-f)\alpha)}{\sin\alpha}\mathbf{u}_1 + \frac{\sin(f\alpha)}{\sin\alpha}\mathbf{u}_2$ on the unit sphere during discrete 35-Hz tics, featuring a deterministic orthogonal great-circle tie-break for antipodal configurations ($\alpha \approx 180^\circ$) and an exact planar fast path preserving 100% bit-for-bit identity on flat geometry.
-  - **Event-Derived Schedule vs. Execution Parity:** Realized service completion tics are constructed directly from emitted `SERVICE_COMPLETE` execution events, matching discrete scheduled completion tics identically: $t_j^{\text{event}} = t_j^{\text{realized}} = C_j - 1$.
-  - **Full 3D Telemetry Pipeline:** Authoritative playback generates 3D player positions $(x, y, z)$, dynamic eye positions, 3D target coordinates, spherical sightline rays, and pitch/azimuth reticle states sampled at the start of each tic, with complete post-death freeze invariants upon lethal deadline breach ($k \ge \min(D_j)$, $\text{death\_tic} = \min(D_j)$).
-  - **Six Verification Gates:** Passed 100% across planar controller/event/survival/completion parity with zero elevation and referee consistency, pure pitch slew execution and event derivation ($30^\circ \implies \lceil 30 / 10.2857 \rceil = 3\text{ slew tics}$), mixed $(\theta, \phi)$ spherical geodesic arcs ($\Delta\alpha = 41.41^\circ \implies 5\text{ slew tics}$) with non-singular antipodal traversal, 3D ramp route-position telemetry $(x, y, z)$ and static reveal aim execution, non-vacuous multi-threat 3D completion parity ($M \ge 0$, $N=3$, $t_j^{\text{event}} \equiv C_j - 1$), and 3D lethal deadline breach post-death timeout invariants at $k = \min(D_j)$ (138 tests in CAD acceptance suite).
-
----
-
-## Horizon 7: Studio & Game Engine Workflow Integration (M7)
+### Horizon 7: Studio & Game Engine Workflow Integration (M7) — 🔮 FUTURE
 - Unreal Engine / Unity / Source 2 editor plugins.
 - CI/CD automated tactical linting for nightly gray-box level commits.
 - Before/after tactical diff reports on level geometry pull requests.
 - Studio web dashboard for level designers and combat balance teams.
 
----
-
-## Horizon 8: Inverse Tactical Synthesis (M8 — Moonshot)
+### Horizon 8: Inverse Tactical Synthesis (M8 — Moonshot) — 🔮 FUTURE
 - Mixed-initiative Tactical CAD: synthesize level geometry directly from high-level tactical specifications:
   - Declared primary lanes, flank timings, first-contact margin targets, reset pockets.
   - Generative co-design: designer specifies tactical intent, system generates compliant geometric options.

@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="stepGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <filter id="boxShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="450" fill="url(#bgGrad2)" />
+
+  <!-- Title -->
+  <text x="50" y="45" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" letter-spacing="2">TACTICAL CAD ARCHITECTURE</text>
+  <text x="50" y="78" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="22" font-weight="bold">The Geometry-to-Tactical-Workload Pipeline</text>
+  <text x="50" y="102" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">Continuous polygonal architecture compiled into discrete reticle scheduling, diagnosis, and inverse repair.</text>
+
+  <!-- Step 1: Geometry -->
+  <g transform="translate(50, 140)" filter="url(#boxShadow)">
+    <rect width="170" height="220" rx="8" fill="url(#stepGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <circle cx="25" cy="28" r="12" fill="#0284c7" />
+    <text x="25" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">1</text>
+    <text x="45" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">GEOMETRY</text>
+    <line x1="15" y1="48" x2="155" y2="48" stroke="#334155" stroke-width="1" />
+    <text x="18" y="75" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• 2D &amp; 2.5D Prisms</text>
+    <text x="18" y="95" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">Floorplan boundaries,</text>
+    <text x="18" y="110" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">obstacles, finite walls</text>
+    <text x="18" y="140" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Motion Paths</text>
+    <text x="18" y="160" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">3D waypoints &amp; speed</text>
+    <text x="18" y="195" fill="#64748b" font-family="monospace" font-size="9">&lt; 0.1 ms compile</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 228 250 L 252 250" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+  <polygon points="252,250 244,245 244,255" fill="#38bdf8" />
+
+  <!-- Step 2: Information Release -->
+  <g transform="translate(260, 140)" filter="url(#boxShadow)">
+    <rect width="170" height="220" rx="8" fill="url(#stepGrad)" stroke="#38bdf8" stroke-width="1.5" />
+    <circle cx="25" cy="28" r="12" fill="#0284c7" />
+    <text x="25" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">2</text>
+    <text x="45" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">UN-OCCLUSION</text>
+    <line x1="15" y1="48" x2="155" y2="48" stroke="#334155" stroke-width="1" />
+    <text x="18" y="75" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Release Tics (r_j)</text>
+    <text x="18" y="95" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">Ray-vertex critical</text>
+    <text x="18" y="110" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">line-of-sight bisection</text>
+    <text x="18" y="140" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Deadlines (D_j)</text>
+    <text x="18" y="160" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">D_j = r_j + due_window</text>
+    <text x="18" y="195" fill="#64748b" font-family="monospace" font-size="9">35 Hz discrete clock</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <polygon points="462,250 454,245 454,255" fill="#38bdf8" />
+  <line x1="438" y1="250" x2="462" y2="250" stroke="#38bdf8" stroke-width="2" />
+
+  <!-- Step 3: Reticle Workload -->
+  <g transform="translate(470, 140)" filter="url(#boxShadow)">
+    <rect width="170" height="220" rx="8" fill="url(#stepGrad)" stroke="#f59e0b" stroke-width="1.5" />
+    <circle cx="25" cy="28" r="12" fill="#d97706" />
+    <text x="25" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">3</text>
+    <text x="45" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">RETICLE SLEW</text>
+    <line x1="15" y1="48" x2="155" y2="48" stroke="#334155" stroke-width="1" />
+    <text x="18" y="75" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Slew Cost (s_ij)</text>
+    <text x="18" y="95" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">Spherical geodesic arc</text>
+    <text x="18" y="110" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">on SO(3) unit sphere</text>
+    <text x="18" y="140" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Target Service</text>
+    <text x="18" y="160" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">Acquisition + Dwell</text>
+    <text x="18" y="195" fill="#64748b" font-family="monospace" font-size="9">Single-machine model</text>
+  </g>
+
+  <!-- Arrow 3 -> 4 -->
+  <polygon points="672,250 664,245 664,255" fill="#f59e0b" />
+  <line x1="648" y1="250" x2="672" y2="250" stroke="#f59e0b" stroke-width="2" />
+
+  <!-- Step 4: Feasibility & Margin -->
+  <g transform="translate(680, 140)" filter="url(#boxShadow)">
+    <rect width="170" height="220" rx="8" fill="url(#stepGrad)" stroke="#10b981" stroke-width="1.5" />
+    <circle cx="25" cy="28" r="12" fill="#059669" />
+    <text x="25" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">4</text>
+    <text x="45" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">SCHEDULING</text>
+    <line x1="15" y1="48" x2="155" y2="48" stroke="#334155" stroke-width="1" />
+    <text x="18" y="75" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Tactical Margin</text>
+    <text x="18" y="95" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">M = -L* (exact reserve)</text>
+    <text x="18" y="110" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10">M &gt;= 0 → Clearable</text>
+    <text x="18" y="140" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Suffix Margin</text>
+    <text x="18" y="160" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">M_suffix(s) along route</text>
+    <text x="18" y="195" fill="#64748b" font-family="monospace" font-size="9">Exact discrete solve</text>
+  </g>
+
+  <!-- Arrow 4 -> 5 -->
+  <polygon points="882,250 874,245 874,255" fill="#10b981" />
+  <line x1="858" y1="250" x2="882" y2="250" stroke="#10b981" stroke-width="2" />
+
+  <!-- Step 5: Diagnosis & Repair -->
+  <g transform="translate(890, 140)" filter="url(#boxShadow)">
+    <rect width="170" height="220" rx="8" fill="url(#stepGrad)" stroke="#a855f7" stroke-width="1.5" />
+    <circle cx="25" cy="28" r="12" fill="#7e22ce" />
+    <text x="25" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">5</text>
+    <text x="45" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">CAD AUTO-FIX</text>
+    <line x1="15" y1="48" x2="155" y2="48" stroke="#334155" stroke-width="1" />
+    <text x="18" y="75" fill="#c084fc" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Diagnosis</text>
+    <text x="18" y="95" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">Controlling occluder</text>
+    <text x="18" y="110" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">causing deadline failure</text>
+    <text x="18" y="140" fill="#c084fc" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">• Minimal Shift</text>
+    <text x="18" y="160" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="10">d* restoring M &gt;= +2</text>
+    <text x="18" y="195" fill="#64748b" font-family="monospace" font-size="9">Verified 3D replay</text>
+  </g>
+
+  <!-- Feedback Loop Arrow from Step 5 to Step 1 -->
+  <path d="M 975 370 C 975 410, 135 410, 135 370" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5,5" />
+  <polygon points="135,365 130,373 140,373" fill="#a855f7" />
+  <text x="550" y="405" fill="#c084fc" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">Closed-Loop Inverse Geometric Repair (G → G*)</text>
+
+</svg>

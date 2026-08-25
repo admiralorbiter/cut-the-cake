@@ -281,21 +281,21 @@ def test_timing_truth_table_single_target_boundary():
 
     # L* = +1 (due = 9 tics = 0.257s) -> Must die at tic 9
     t_lethal = GeometricThreat("T_Lethal", Polygon([(1.8, -0.1), (2.2, -0.1), (2.2, 0.1), (1.8, 0.1)]), (2.0, 0.0), authored_due_window_s=9/35.0, service_duration_s=0.10)
-    mod_lethal = GeometricModule("M_Lethal", "M_Lethal", boundary, [], [port_in, port_out], [t_lethal], [route])
+    mod_lethal = GeometricModule("M_Lethal", "M_Lethal", boundary=boundary, obstacles=[], ports=[port_in, port_out], threats=[t_lethal], routes=[route])
     log_lethal = ref.run_episode(mod_lethal, policy=ControllerPolicy.ORACLE)
     assert not log_lethal.player_survived
     assert log_lethal.death_tic == 9
 
     # L* = 0 (due = 10 tics = 0.286s) -> Must survive (cleared at tic 9 within 10 tics)
     t_exact = GeometricThreat("T_Exact", Polygon([(1.8, -0.1), (2.2, -0.1), (2.2, 0.1), (1.8, 0.1)]), (2.0, 0.0), authored_due_window_s=10/35.0, service_duration_s=0.10)
-    mod_exact = GeometricModule("M_Exact", "M_Exact", boundary, [], [port_in, port_out], [t_exact], [route])
+    mod_exact = GeometricModule("M_Exact", "M_Exact", boundary=boundary, obstacles=[], ports=[port_in, port_out], threats=[t_exact], routes=[route])
     log_exact = ref.run_episode(mod_exact, policy=ControllerPolicy.ORACLE)
     assert log_exact.player_survived
     assert log_exact.threat_clear_tics["T_Exact"] == 9
 
     # L* = -1 (due = 11 tics = 0.315s) -> Must survive (cleared at tic 9 within 11 tics, margin = +1)
     t_safe = GeometricThreat("T_Safe", Polygon([(1.8, -0.1), (2.2, -0.1), (2.2, 0.1), (1.8, 0.1)]), (2.0, 0.0), authored_due_window_s=11/35.0, service_duration_s=0.10)
-    mod_safe = GeometricModule("M_Safe", "M_Safe", boundary, [], [port_in, port_out], [t_safe], [route])
+    mod_safe = GeometricModule("M_Safe", "M_Safe", boundary=boundary, obstacles=[], ports=[port_in, port_out], threats=[t_safe], routes=[route])
     log_safe = ref.run_episode(mod_safe, policy=ControllerPolicy.ORACLE)
     assert log_safe.player_survived
     assert log_safe.threat_clear_tics["T_Safe"] == 9

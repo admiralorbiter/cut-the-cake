@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "project": "Cut the Cake",
+  "generated_at": "2026-08-25",
+  "fps": 20,
+  "theme": "Dark Tactical",
+  "assets": [
+    {
+      "id": "hero_clearability",
+      "title": "A Room Creates a Schedule",
+      "question": "How does physical architecture turn into a time-sensitive schedule?",
+      "gif": "docs/media/hero_clearability.gif",
+      "webm": "docs/media/hero_clearability.webm",
+      "source_fixture": "RepairPop_F1_StaggerDeficit_00 (Repaired G*)",
+      "key_metric": "Tactical Margin M = +2 tics (+57 ms)",
+      "takeaway": "Geometry → Un-occlusion (r_j) → Reticle Slew → Tactical Margin"
+    },
+    {
+      "id": "same_count_timing",
+      "title": "Same Count, Different Timing",
+      "question": "Why isn't the number of visible enemies enough to judge difficulty?",
+      "gif": "docs/media/same_count_timing.gif",
+      "webm": "docs/media/same_count_timing.webm",
+      "source_fixture": "Simultaneous Crossfire vs Staggered Baffle",
+      "key_metric": "M = -4 (Lethal) vs M = +3 (Serviceable)",
+      "takeaway": "Same threat count. Completely different schedule."
+    },
+    {
+      "id": "move_one_wall",
+      "title": "Minimal Geometric Repair in Action",
+      "question": "Can a minor architectural edit fix an unserviceable encounter?",
+      "gif": "docs/media/move_one_wall.gif",
+      "webm": "docs/media/move_one_wall.webm",
+      "source_fixture": "Canonical F1 Auto-Fix Search",
+      "key_metric": "M: -6 tics → +2 tics via Δx = +1.10 m",
+      "takeaway": "Obstacle +1.10 m → Delayed Threat 2 Un-occlusion → Reserve +2 tics"
+    },
+    {
+      "id": "global_vs_local",
+      "title": "Global Route Score vs Local Suffix Margin",
+      "question": "Why isn't a single score for the whole path enough?",
+      "gif": "docs/media/global_vs_local.gif",
+      "webm": "docs/media/global_vs_local.webm",
+      "source_fixture": "Choke Transition Counterfactual Suffix",
+      "key_metric": "Global M = +2 vs Local Choke M_suffix = -7",
+      "takeaway": "A route can look safe overall while containing a fatal local choke."
+    },
+    {
+      "id": "height_reveal",
+      "title": "Height Changes Information",
+      "question": "Why does vertical elevation change tactical clearability?",
+      "gif": "docs/media/height_reveal.gif",
+      "webm": "docs/media/height_reveal.webm",
+      "source_fixture": "M6-B Height-Induced Reveal Fixture",
+      "key_metric": "Reveal: Tic 86 (Ground) vs Tic 0 (Elevated Catwalk)",
+      "takeaway": "Identical 2D floorplan. Completely different information release."
+    }
+  ],
+  "static_diagrams": [
+    {
+      "id": "evidence_ladder",
+      "title": "The Cut the Cake Evidence Ladder",
+      "svg": "docs/media/static/evidence_ladder.svg",
+      "description": "7-tier hierarchy from Formal Min-Plus Dioid Algebra to Prospective Human Calibration"
+    },
+    {
+      "id": "pipeline_diagram",
+      "title": "The Geometry-to-Tactical-Workload Pipeline",
+      "svg": "docs/media/static/pipeline.svg",
+      "description": "5-step compilation, scheduling, diagnosis, and closed-loop inverse repair loop"
+    }
+  ]
+}
