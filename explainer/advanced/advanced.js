@@ -21,13 +21,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   ctxGantt = document.getElementById("canvas-gantt").getContext("2d");
   ctxXRay = document.getElementById("canvas-xray").getContext("2d");
 
-  try {
-    const res = await fetch("presentations.json");
-    presentationsData = await res.json();
+  if (typeof window !== "undefined" && window.PRESENTATIONS_DATA) {
+    presentationsData = window.PRESENTATIONS_DATA;
     initGallery();
     loadPresentation(presentationsData.presentations[0].id);
-  } catch (err) {
-    console.error("Failed to load presentations.json:", err);
+  } else {
+    try {
+      const res = await fetch("presentations.json");
+      presentationsData = await res.json();
+      initGallery();
+      loadPresentation(presentationsData.presentations[0].id);
+    } catch (err) {
+      console.error("Failed to load presentations data:", err);
+    }
   }
 
   setupControls();

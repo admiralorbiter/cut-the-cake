@@ -115,6 +115,7 @@ def test_advanced_evidence_lab_files_and_schema():
     assert os.path.exists(os.path.join(adv_dir, "index.html"))
     assert os.path.exists(os.path.join(adv_dir, "advanced.js"))
     assert os.path.exists(os.path.join(adv_dir, "advanced.css"))
+    assert os.path.exists(os.path.join(adv_dir, "presentations_data.js"))
 
     pres_path = os.path.join(adv_dir, "presentations.json")
     assert os.path.exists(pres_path)
