@@ -1,34 +1,35 @@
-# Cut the Cake — Visual Media Assets Directory
+# Cut the Cake — Media Assets Directory
 
-This directory houses the visual assets, animation loops, diagrams, and video captures for *Cut the Cake*.
+This directory contains the canonical visual loops, animations, and vector infographics generated for the *Cut the Cake* research project.
 
 ---
 
-## 1. Directory Structure
+## 🎞️ Active Visual Assets (`docs/media/`)
 
-```text
-docs/media/
-├── README.md               # Asset manifest and capture standards (this file)
-├── capture_manifest.json   # Configuration manifest for automated frame capture
-├── hero_clearability.gif   # Asset 0: The 10-second hero clearability loop
-├── same_count_timing.gif   # Asset 1: Same count, different timing comparison
-├── move_one_wall.gif       # Asset 2: Canonical +1.10 m auto-repair loop
-├── global_vs_local.gif     # Asset 3: Whole-route vs local Suffix Margin
-├── model_says_no.gif       # Asset 4: Dust II B-Tunnels expected negative
-├── height_reveal.gif       # Asset 5: Height-induced reveal differentiation
-├── quantization_null.gif   # Asset 6: Ascent pitch angle quantization null
-├── execution_parity.gif    # Asset 7: 3D controller execution parity
-└── static/
-    ├── evidence_ladder.svg # Static vector graphic of the 7-tier evidence ladder
-    └── pipeline.svg        # Static vector diagram of geometry-to-contract compilation
+| Asset ID | Title | Provenance Class | Source Fixture | Deliverables |
+| :--- | :--- | :--- | :--- | :--- |
+| **`adv01_three_vs_two`** | ADV-01: Three Threats Are Easier Than Two | `EVIDENCE_REPLAY` | `M08_HighConcurrencySolvable` vs `M11_RapidCrossfireAperture` | [`.gif`](adv01_three_vs_two.gif) \| [`.webm`](adv01_three_vs_two.webm) |
+| **`hero_clearability`** | Hero: A Room Creates a Schedule | `EVIDENCE_REPLAY` | Canonical F1 Stagger Deficit (`RepairPop_F1_StaggerDeficit_00`) | [`.gif`](hero_clearability.gif) \| [`.webm`](hero_clearability.webm) |
+| **`same_count_timing`** | Same Count, Different Timing | `ILLUSTRATIVE_EXPLAINER` | Simultaneous Crossfire vs Staggered Baffle | [`.gif`](same_count_timing.gif) \| [`.webm`](same_count_timing.webm) |
+| **`move_one_wall`** | Minimal Geometric Repair in Action | `EVIDENCE_REPLAY` | Canonical F1 Auto-Fix Search (`ROUND_11_4A_FREEZE`) | [`.gif`](move_one_wall.gif) \| [`.webm`](move_one_wall.webm) |
+| **`global_vs_local`** | Global Route Score vs Local Suffix Margin | `ILLUSTRATIVE_EXPLAINER` | Choke Transition Counterfactual Suffix | [`.gif`](global_vs_local.gif) \| [`.webm`](global_vs_local.webm) |
+| **`height_reveal`** | Height Changes Information | `EVIDENCE_REPLAY` | M6-B Height-Induced Reveal Fixture | [`.gif`](height_reveal.gif) \| [`.webm`](height_reveal.webm) |
+
+---
+
+## 📊 Static Vector Infographics (`docs/media/static/`)
+
+- [**`evidence_ladder.svg`**](static/evidence_ladder.svg): 7-tier scientific hierarchy separating formal dioid algebra, simulation validation, engine transfer, and prospective human boundaries.
+- [**`pipeline.svg`**](static/pipeline.svg): Geometry-to-contract compilation, real-time scheduling, spatial diagnosis, and closed-loop inverse repair pipeline.
+
+---
+
+## ⚙️ Provenance & Generation
+
+All media files are generated deterministically via:
+
+```bash
+python tools/communication_capture.py
 ```
 
----
-
-## 2. Capture Standards
-
-- **GIF Resolution:** `1200 x 675` (16:9 widescreen) or `1000 x 750` (4:3 aspect).
-- **Framerate:** 20 fps.
-- **Color Optimization:** Lanczos scaling with 256-color global palette generation via `ffmpeg`.
-- **WebM Video:** High-efficiency VP9 / H.264 video format for browser and website embedding.
-- **Determinism:** All visual assets are captured directly from frozen Python test fixtures via `tools/communication_capture.py`.
+Metadata schema is maintained in [`capture_manifest.json`](capture_manifest.json).

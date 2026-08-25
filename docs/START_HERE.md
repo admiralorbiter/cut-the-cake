@@ -23,11 +23,11 @@ Welcome to **Cut the Cake**. This guide helps you find the right entry point bas
 ## The 30-Second Summary
 
 **Cut the Cake** asks a simple question:
-> *Does the physical geometry of a virtual room reveal threats at a pace that a single human decision-maker can actually process?*
+> *Does the physical geometry of a virtual room reveal threats at a pace that a modeled single-reticle player can actually process?*
 
 - **The Crosshair as a Bottleneck:** A player has only one aiming reticle and can only process one threat at a time. Rotating between angles takes time.
 - **Geometry Creates a Schedule:** Walls, corners, and elevation control *when* threats become visible (release times) and *when* they react (deadlines).
-- **Tactical Margin ($\mathcal{M}$):** The mathematical reserve time remaining before a hostile deadline is breached. Positive margin means the encounter is clearable; negative margin means an unavoidable deadline failure.
+- **Tactical Margin ($\mathcal{M}$):** The mathematical reserve time remaining before a hostile deadline is breached. Positive margin means the encounter is clearable; negative margin means an unavoidable deadline failure under declared model parameters.
 - **Automated Repair:** When an encounter fails, the system can calculate minimal physical shifts (e.g. moving a wall by $1.10\,\text{m}$) to delay reveals and restore positive margin.
 
 ---
@@ -39,6 +39,7 @@ Welcome to **Cut the Cake**. This guide helps you find the right entry point bas
 - [**EVIDENCE_AND_LIMITS.md**](EVIDENCE_AND_LIMITS.md): Structured 7-tier evidence ladder and clear statement of what is and is not proven.
 - [**MODEL_DERIVED_PLAYER_INTUITIONS.md**](MODEL_DERIVED_PLAYER_INTUITIONS.md): Player-facing tactical takeaways with clear model-scope qualifiers.
 - [**PRACTICAL_APPLICATION_GUIDE.md**](PRACTICAL_APPLICATION_GUIDE.md): Developer and level designer guide for compile-time linting, automated repair, and CAD integration.
-- [**VISUAL_STORYBOARD.md**](VISUAL_STORYBOARD.md): Storyboards for the 8 canonical visual animations and media assets.
+- [**VISUAL_STORYBOARD.md**](VISUAL_STORYBOARD.md): Storyboards for the canonical visual animations and media assets.
+- [**Advanced Evidence Lab**](../explainer/advanced/index.html): Interactive 4-pane Tactical MRI replaying frozen counterexamples.
 - [**ROADMAP.md**](../ROADMAP.md): Multi-horizon strategic roadmap spanning Horizon 0 through Horizon 8.
-- [**paper/manuscript.md**](../paper/manuscript.md): Full academic research paper.
+- [**paper/README.md**](../paper/README.md) & [**paper/manuscript.md**](../paper/manuscript.md): Full academic research paper and scope definition.

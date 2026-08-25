@@ -37,8 +37,8 @@
     <text x="35" y="32" fill="#000" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">7</text>
     <text x="65" y="25" fill="#fef3c7" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">Human Population Calibration</text>
     <text x="65" y="43" fill="#fde68a" font-family="system-ui, sans-serif" font-size="11">Pre-registered pilot protocol (human/PILOT_PROTOCOL.md); empirical human validation is prospective.</text>
-    <rect x="750" y="14" width="130" height="26" rx="4" fill="#78350f" stroke="#f59e0b" stroke-width="1" />
-    <text x="815" y="31" fill="#fef3c7" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PROSPECTIVE</text>
+    <rect x="730" y="14" width="150" height="26" rx="4" fill="#78350f" stroke="#f59e0b" stroke-width="1" />
+    <text x="805" y="31" fill="#fef3c7" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PROSPECTIVE</text>
   </g>
 
   <!-- Tier 6: 2.5D & 3D Execution (Horizon 6) -->
@@ -47,9 +47,9 @@
     <circle cx="35" cy="27" r="14" fill="#10b981" />
     <text x="35" y="32" fill="#000" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">6</text>
     <text x="65" y="25" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">2.5D Elevation &amp; 3D Controller Execution (Horizon 6)</text>
-    <text x="65" y="43" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11">Spherical geodesic slew (SO(3) Slerp), extruded prism raycasting, 138 CAD acceptance tests passed.</text>
-    <rect x="750" y="14" width="130" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
-    <text x="815" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">VERIFIED</text>
+    <text x="65" y="43" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11">Spherical geodesic slew (S² Slerp), extruded prism raycasting, 138 CAD acceptance tests passed.</text>
+    <rect x="730" y="14" width="150" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
+    <text x="805" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">MODEL VERIFIED</text>
   </g>
 
   <!-- Tier 5: Real-Map-Shaped Grayboxes -->
@@ -59,8 +59,8 @@
     <text x="35" y="32" fill="#000" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">5</text>
     <text x="65" y="25" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">Real-Map Graybox Case Studies (Dust II, Ascent, Transit 213)</text>
     <text x="65" y="43" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11">Pre-registered mechanisms; confirmed Suffix Margin superiority and model refusal on dry chokes.</text>
-    <rect x="750" y="14" width="130" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
-    <text x="815" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">VERIFIED</text>
+    <rect x="730" y="14" width="150" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
+    <text x="805" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">MECHANISM EVIDENCE</text>
   </g>
 
   <!-- Tier 4: Native Game Engine Transfer (ViZDoom) -->
@@ -70,8 +70,8 @@
     <text x="35" y="32" fill="#000" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">4</text>
     <text x="65" y="25" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">External Engine Transfer (Native C++ Doom / ViZDoom)</text>
     <text x="65" y="43" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11">50-arena population benchmark: 80% source repair, 75% engine transfer efficiency.</text>
-    <rect x="750" y="14" width="130" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
-    <text x="815" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">VALIDATED</text>
+    <rect x="730" y="14" width="150" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
+    <text x="805" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">TRANSFER EVIDENCE</text>
   </g>
 
   <!-- Tier 3: Discrete Simulation Sweeps -->
@@ -81,8 +81,8 @@
     <text x="35" y="32" fill="#000" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">3</text>
     <text x="65" y="25" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">9,000 Discrete 35-Hz Simulation Episodes</text>
     <text x="65" y="43" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11">Tested across 60 arenas; Tactical Margin achieved ROC-AUC = 1.0000 (+19% over static counts).</text>
-    <rect x="750" y="14" width="130" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
-    <text x="815" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PROVEN</text>
+    <rect x="730" y="14" width="150" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
+    <text x="805" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">SIM VALIDATED</text>
   </g>
 
   <!-- Tier 2: Procedural PCG Sweeps -->
@@ -92,8 +92,8 @@
     <text x="35" y="32" fill="#000" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">2</text>
     <text x="65" y="25" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">Synthetic Procedural Assembly (25,000 PCG Candidates)</text>
     <text x="65" y="43" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11">Evaluated modular dungeon assemblies with 0 false certifications at compile time (&lt; 0.1 ms).</text>
-    <rect x="750" y="14" width="130" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
-    <text x="815" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PROVEN</text>
+    <rect x="730" y="14" width="150" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
+    <text x="805" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">MODEL VERIFIED</text>
   </g>
 
   <!-- Tier 1: Formal Mathematics -->
@@ -103,8 +103,8 @@
     <text x="35" y="32" fill="#000" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">1</text>
     <text x="65" y="25" fill="#ffffff" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">Formal Scheduling &amp; Min-Plus Dioid Algebra</text>
     <text x="65" y="43" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11">Exact non-preemptive single-machine formulation (1 | r_j, s_ij | L_max) &amp; C ≡ D theorem.</text>
-    <rect x="750" y="14" width="130" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
-    <text x="815" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PROVEN</text>
+    <rect x="730" y="14" width="150" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1" />
+    <text x="805" y="31" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PROVEN</text>
   </g>
 
   <!-- Footer note -->

@@ -1,58 +1,107 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "project": "Cut the Cake",
+  "version": "Pass 3 (Horizon 6 Frozen)",
   "generated_at": "2026-08-25",
   "fps": 20,
   "theme": "Dark Tactical",
   "assets": [
     {
+      "id": "adv01_three_vs_two",
+      "title": "ADV-01: Three Threats Are Easier Than Two",
+      "render_class": "EVIDENCE_REPLAY",
+      "source_fixture": "M08_HighConcurrencySolvable vs M11_RapidCrossfireAperture",
+      "question": "Does threat count determine tactical difficulty?",
+      "gif": "docs/media/adv01_three_vs_two.gif",
+      "webm": "docs/media/adv01_three_vs_two.webm",
+      "authoritative_metrics": {
+        "room_a_threats": 3,
+        "room_a_margin_tics": 65,
+        "room_a_margin_s": 1.86,
+        "room_a_status": "SERVICEABLE",
+        "room_b_threats": 2,
+        "room_b_margin_tics": -29,
+        "room_b_margin_s": -0.83,
+        "room_b_status": "DEADLINE OVERLOAD"
+      },
+      "manual_overlays": [],
+      "takeaway": "Threat count is not workload. Timing is."
+    },
+    {
       "id": "hero_clearability",
-      "title": "A Room Creates a Schedule",
+      "title": "Hero: A Room Creates a Schedule",
+      "render_class": "EVIDENCE_REPLAY",
+      "source_fixture": "RepairPop_F1_StaggerDeficit_00 (Repaired G*)",
       "question": "How does physical architecture turn into a time-sensitive schedule?",
       "gif": "docs/media/hero_clearability.gif",
       "webm": "docs/media/hero_clearability.webm",
-      "source_fixture": "RepairPop_F1_StaggerDeficit_00 (Repaired G*)",
-      "key_metric": "Tactical Margin M = +2 tics (+57 ms)",
+      "authoritative_metrics": {
+        "tactical_margin_tics": 2,
+        "tactical_margin_ms": 57,
+        "is_feasible": true
+      },
+      "manual_overlays": [],
       "takeaway": "Geometry → Un-occlusion (r_j) → Reticle Slew → Tactical Margin"
     },
     {
       "id": "same_count_timing",
       "title": "Same Count, Different Timing",
+      "render_class": "ILLUSTRATIVE_EXPLAINER",
+      "source_fixture": "Simultaneous Crossfire vs Staggered Baffle (Two Rooms Fixture)",
       "question": "Why isn't the number of visible enemies enough to judge difficulty?",
       "gif": "docs/media/same_count_timing.gif",
       "webm": "docs/media/same_count_timing.webm",
-      "source_fixture": "Simultaneous Crossfire vs Staggered Baffle",
-      "key_metric": "M = -4 (Lethal) vs M = +3 (Serviceable)",
+      "authoritative_metrics": {
+        "left_margin_tics": -4,
+        "right_margin_tics": 3
+      },
+      "manual_overlays": ["Annotated comparison labels"],
       "takeaway": "Same threat count. Completely different schedule."
     },
     {
       "id": "move_one_wall",
       "title": "Minimal Geometric Repair in Action",
+      "render_class": "EVIDENCE_REPLAY",
+      "source_fixture": "Canonical F1 Auto-Fix Search (ROUND_11_4A_FREEZE)",
       "question": "Can a minor architectural edit fix an unserviceable encounter?",
       "gif": "docs/media/move_one_wall.gif",
       "webm": "docs/media/move_one_wall.webm",
-      "source_fixture": "Canonical F1 Auto-Fix Search",
-      "key_metric": "M: -6 tics → +2 tics via Δx = +1.10 m",
+      "authoritative_metrics": {
+        "initial_margin_tics": -6,
+        "repaired_margin_tics": 2,
+        "displacement_m": 1.10
+      },
+      "manual_overlays": ["Ghost obstacle translation annotation"],
       "takeaway": "Obstacle +1.10 m → Delayed Threat 2 Un-occlusion → Reserve +2 tics"
     },
     {
       "id": "global_vs_local",
       "title": "Global Route Score vs Local Suffix Margin",
+      "render_class": "ILLUSTRATIVE_EXPLAINER",
+      "source_fixture": "Choke Transition Counterfactual Suffix",
       "question": "Why isn't a single score for the whole path enough?",
       "gif": "docs/media/global_vs_local.gif",
       "webm": "docs/media/global_vs_local.webm",
-      "source_fixture": "Choke Transition Counterfactual Suffix",
-      "key_metric": "Global M = +2 vs Local Choke M_suffix = -7",
-      "takeaway": "A route can look safe overall while containing a fatal local choke."
+      "authoritative_metrics": {
+        "global_margin_tics": 2,
+        "local_choke_margin_tics": -7
+      },
+      "manual_overlays": ["Route ribbon danger gradient"],
+      "takeaway": "A whole-route optimum answers a different question from an approach-interval suffix calculation."
     },
     {
       "id": "height_reveal",
       "title": "Height Changes Information",
+      "render_class": "EVIDENCE_REPLAY",
+      "source_fixture": "M6-B Height-Induced Reveal Fixture (test_m6b_height_aware_compilation.py)",
       "question": "Why does vertical elevation change tactical clearability?",
       "gif": "docs/media/height_reveal.gif",
       "webm": "docs/media/height_reveal.webm",
-      "source_fixture": "M6-B Height-Induced Reveal Fixture",
-      "key_metric": "Reveal: Tic 86 (Ground) vs Tic 0 (Elevated Catwalk)",
+      "authoritative_metrics": {
+        "ground_reveal_tic": 86,
+        "catwalk_reveal_tic": 0
+      },
+      "manual_overlays": ["Catwalk elevation cross-section schematic"],
       "takeaway": "Identical 2D floorplan. Completely different information release."
     }
   ],
@@ -61,7 +110,7 @@
       "id": "evidence_ladder",
       "title": "The Cut the Cake Evidence Ladder",
       "svg": "docs/media/static/evidence_ladder.svg",
-      "description": "7-tier hierarchy from Formal Min-Plus Dioid Algebra to Prospective Human Calibration"
+      "description": "7-tier hierarchy separating formal mathematics, engine validation, and prospective human boundaries"
     },
     {
       "id": "pipeline_diagram",

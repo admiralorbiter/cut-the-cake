@@ -14,7 +14,7 @@
 > - **Horizon 1:** Tactical debugger vertical slice and 35-Hz authoritative playback (`cad_export.py` / `cad/web/`).
 > - **Horizon 2:** Tactical CAD editor foundation (M2A–M2F.2): live wall transforms, scenario authoring, closed-loop Auto-Fix optimizer, and Suffix Tactical Margin ribbons ($\mathcal{M}_{\text{suffix}}(s)$).
 > - **Horizon 5:** Pre-registered real-map graybox case studies (*Dust II* A-Long/B-Tunnels, *Valorant* Ascent Wine, *MW4* Transit 213).
-> - **Horizon 6:** 2.5D elevation, vertical prism footprints, spherical great-circle geodesic aiming ($\mathrm{SO}(3)$), dynamic pitch derivation, and deterministic 3D Slerp controller execution ($t_j^{\text{event}} \equiv C_j - 1$).
+> - **Horizon 6:** 2.5D elevation, vertical prism footprints, spherical great-circle geodesic aiming on the unit sphere ($S^2$), dynamic pitch derivation, and deterministic 3D Slerp controller execution ($t_j^{\text{event}} \equiv C_j - 1$).
 >
 > All 138 CAD acceptance tests (and 207 tests in the full suite) are passing with 100% determinism.
 
@@ -181,7 +181,7 @@ The core product thesis:
   - Evaluated *Valorant* Ascent (Wine off-angle), *Dust II* (B-Tunnels expected negative choke), and *MW4* Transit 213 (bus lattice).
 
 ### Horizon 6: 2.5D Elevation & Layered Geometry (M6) — ✅ COMPLETED & FROZEN
-- **Milestone 6-A / 6-A.1:** 2.5D Elevation & Spherical Aim State Preflight ($\mathrm{SO}(3)$ geodesic metric with planar fallback).
+- **Milestone 6-A / 6-A.1:** 2.5D Elevation & Spherical Aim State Preflight (unit-sphere $S^2$ geodesic metric with planar fallback, verified under $\mathrm{SO}(3)$ rigid-body rotation invariance).
 - **Milestone 6-B / 6-B.2:** Height-Aware Geometric Compilation (extruded prism footprints $P_i \times [z_{\min}, z_{\max}]$, closed volumetric raycasting, dynamic pitch derivation).
 - **Milestone 6-C / 6-C.1:** 3D Unit-Sphere Controller Execution & Parity (spherical Slerp controller, realized service completion parity $t_j^{\text{event}} \equiv C_j - 1$, 138 CAD acceptance tests passed).
 
@@ -200,11 +200,11 @@ The core product thesis:
 - Heterogeneous cost model: $\mathcal{C}(\mathcal{G}, \mathcal{G}') = w_{\text{move}} d_{\text{wall}} + w_{\text{resize}} \Delta A + w_{\text{insert}} N_{\text{new}} + w_{\text{route}} \Delta L$.
 - Robust deployment reserve objectives ($\mathcal{M}_{\text{source}} \ge \epsilon + \text{reserve}(\text{family})$).
 
-### Horizon 4: Transparent Team Simulation (M4) — 🔮 FUTURE
-- **1vN Scheduling Animator:** Single player moving against multiple dynamic threats.
-- **3v3 Lane Skirmish:** Coordinated crossfire resolution and cross-lane peel timing on fixed routes.
-- **6v6 Whole-Map Playback:** Multi-lane team schedules across objective contest points.
-- Explicit, transparent agent policies (FIFO, nearest-angle, earliest-deadline, optimal bound).
+### Horizon 4: Multi-Agent & Team-Resource Schedulers (M4) — 🔮 FUTURE
+- **Team Resource Scheduling:** Multi-processor scheduling ($m \mid r_j, s_{ij} \mid L_{\max}$) where $m$ aiming reticles coordinate crossfires.
+- **Cross-Lane Peeling & Trading:** Formal modeling of buddy trades, split-second cross-cover, and lane support.
+- **3v3 & 5v5 Whole-Site Contests:** Multi-lane team schedules across bomb-site contest points.
+- **Explicit Team Policies:** Coordinated angle assignment, cross-fire isolation, and designated primary peeker.
 
 ### Horizon 7: Studio & Game Engine Workflow Integration (M7) — 🔮 FUTURE
 - Unreal Engine / Unity / Source 2 editor plugins.

@@ -31,15 +31,15 @@
 
 ## 💡 Three Core Discoveries
 
-### 1. Seeing the same number of threats does not mean two spaces are equally difficult
-Two rooms can expose the exact same number of hostile angles and produce opposite outcomes. If two enemies un-occlude at the exact same millisecond, a single reticle cannot rotate to both before deadlines expire. If the geometry un-occludes them even a fraction of a second apart, both can be cleared cleanly.
+### 1. Seeing fewer threats does not mean a space is easier
+Two rooms can expose different numbers of hostile angles and produce the opposite of what intuition expects. In our frozen counterexample benchmark, **Room A** exposes **3 simultaneous enemies** with generous 3.0s reaction budgets and is **100% solvable** ($\mathcal{M} = +65\text{ tics}$), while **Room B** exposes only **2 enemies** with tight 0.30s deadlines and creates an unavoidable **deadline overload** ($\mathcal{M} = -29\text{ tics}$).
 
 <p align="center">
-  <img src="docs/media/same_count_timing.gif" alt="Same Count, Different Timing" width="750" />
+  <img src="docs/media/adv01_three_vs_two.gif" alt="Three Threats Are Easier Than Two (M08 vs M11)" width="750" />
 </p>
 
 ### 2. A route can look safe overall while hiding a fatal local choke
-Evaluating whole-route difficulty averages away acute transition risks. In real-map benchmarks (*Counter-Strike* Dust II and *Call of Duty* Transit 213), aggressive open routes often appeared globally superior while harboring lethal multi-angle crossfires at local doorways. This led to **Suffix Tactical Margin ($\mathcal{M}_{\text{suffix}}$)**, evaluating remaining schedulability from any spatial point to the goal.
+A whole-route optimum answers a different question from an approach-interval suffix calculation: an aggressive route may appear globally feasible over an entire traversal while harboring an unserviceable multi-angle crossfire at a local doorway. This led to **Suffix Tactical Margin ($\mathcal{M}_{\text{suffix}}$)**, evaluating remaining schedulability from any spatial point along the path to the goal.
 
 <p align="center">
   <img src="docs/media/global_vs_local.gif" alt="Global Score vs Local Suffix Margin" width="750" />
@@ -69,7 +69,7 @@ Cut the Cake models the player's single aiming reticle as a **stateful single-ma
   INFORMATION RELEASE (r_j: Un-occlusion timestamps along path)
      │
      ▼
-  ATTENTION / RETICLE WORKLOAD (s_ij: Great-circle slew cost + p_j: Service dwell)
+  ATTENTION / RETICLE WORKLOAD (s_ij: S^2 great-circle slew cost + p_j: Service dwell)
      │
      ▼
   DEADLINE FEASIBILITY (D_j: Enemy reaction budgets → Tactical Margin M = -L*)
@@ -81,7 +81,7 @@ Cut the Cake models the player's single aiming reticle as a **stateful single-ma
   INVERSE REPAIR (Synthesize minimal obstacle shift d* restoring M >= +2 tics)
      │
      ▼
-  3D CONTROLLER EXECUTION / REPLAY (Deterministic SO(3) Slerp verification)
+  3D CONTROLLER EXECUTION / REPLAY (Deterministic S^2 Slerp verification)
 ```
 
 ---
@@ -92,14 +92,14 @@ Cut the Cake models the player's single aiming reticle as a **stateful single-ma
   <img src="docs/media/static/evidence_ladder.svg" alt="Cut the Cake Evidence Ladder" width="850" />
 </p>
 
-| Evidence Tier | Benchmark Scope | Key Result |
+| Evidence Tier | Benchmark Scope | Status & Evidence Summary |
 | :--- | :--- | :--- |
-| **Formal Model** | Exact single-machine scheduling ($1 \mid r_j, s_{ij} \mid L_{\max}$) | Min-plus dioid algebra composition ($C \equiv D$ theorem) |
-| **PCG Sweeps** | 25,000 candidate procedural dungeon assemblies | **0 false certificates** at compile time ($< 0.1\,\text{ms}$ per room) |
-| **Simulation** | 9,000 discrete 35-Hz clearing episodes across 60 arenas | Tactical Margin achieves **$\text{ROC-AUC} = 1.0000$** (+19% over static counts) |
-| **Engine Transfer** | 50 unserviceable arenas in native C++ Doom (*ViZDoom*) | **80%** source repair success, **75%** engine transfer efficiency |
-| **Real-Map Grayboxes** | Dust II (A-Long & B-Tunnels), Ascent (Wine), Transit 213 | Pre-registered mechanism validation; confirmed model refusal on dry chokes |
-| **Horizon 6 2.5D** | Extruded prisms, spherical aiming, 3D controller execution | **138/138 acceptance tests passed**; realized event parity $t_j^{\text{event}} \equiv C_j - 1$ |
+| **Formal Model** | Exact single-machine scheduling ($1 \mid r_j, s_{ij} \mid L_{\max}$) | **Proven**: Min-plus dioid algebra composition ($C \equiv D$ theorem) |
+| **PCG Sweeps** | 25,000 candidate procedural dungeon assemblies | **Verified within Model**: **0 false certificates** at compile time ($< 0.1\,\text{ms}$ per room) |
+| **Simulation** | 9,000 discrete 35-Hz clearing episodes across 60 arenas | **Validated in Controlled Simulation**: Tactical Margin achieves **$\text{ROC-AUC} = 1.0000$** (+19% over static counts) |
+| **Engine Transfer** | 50 unserviceable arenas in native C++ Doom (*ViZDoom*) | **External-Engine Transfer Evidence**: **80%** source repair success, **75%** engine transfer efficiency |
+| **Real-Map Grayboxes** | Dust II (A-Long & B-Tunnels), Ascent (Wine), Transit 213 | **Mechanism Transfer Evidence**: Pre-registered mechanism validation; confirmed model refusal on dry chokes |
+| **Horizon 6 2.5D** | Extruded prisms, $S^2$ spherical aiming, 3D controller execution | **Verified within Model**: **138/138 acceptance tests passed**; realized event parity $t_j^{\text{event}} \equiv C_j - 1$ |
 
 ### ⚠️ What This Does Not Prove
 - **Not yet calibrated on human populations:** Real human players have varying motor skills, anticipation, and auditory awareness. Prospective calibration is detailed in [`human/PILOT_PROTOCOL.md`](human/PILOT_PROTOCOL.md).
@@ -137,8 +137,9 @@ python -m cut_the_cake.repair_benchmark
 ```
 See [**ROUND_11_4A_FREEZE.md**](results/repair/ROUND_11_4A_FREEZE.md) for frozen benchmark reproduction.
 
-### Interactive Browser Explainer
-Open `explainer/index.html` in any browser to explore the 8 interactive visual concepts (zero build step required).
+### Interactive Browser Explainer & Evidence Lab
+- **Foundational Concepts:** Open `explainer/index.html` to explore the 8 interactive visual concepts (zero build step required).
+- **Advanced Evidence Lab / Tactical MRI:** Open `explainer/advanced/index.html` to inspect the synchronized 4-pane Tactical MRI (Geometry, Scheduler Gantt, 3-Track Route X-Ray, and "Why?" Diagnostic Panel) replaying frozen counterexamples.
 
 ---
 

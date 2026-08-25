@@ -37,6 +37,10 @@ from cut_the_cake.cad_document import (
     CADPlayerModel,
     get_canonical_f1_document,
 )
+from cut_the_cake.fixtures_round10 import (
+    build_geometric_m08_high_concurrency_solvable,
+    build_geometric_m11_rapid_crossfire_aperture,
+)
 from cut_the_cake.cad_adapter import (
     analyze_cad_document,
     auto_fix_cad_document,
@@ -652,14 +656,244 @@ def generate_height_reveal_asset():
 
 
 # =============================================================================
+# 6. ASSET ADV-01: "Three Threats Are Easier Than Two" (M08 vs M11)
+# =============================================================================
+
+def generate_adv01_three_vs_two_asset():
+    """ADV-01 Flagship Evidence Replay: M08 (3 Threats) vs M11 (2 Threats)."""
+    print("\n=== Generating Asset ADV-01: Three Threats Easier Than Two (M08 vs M11) ===")
+    doc_a = CADDocument.from_geometric_module(build_geometric_m08_high_concurrency_solvable())
+    doc_b = CADDocument.from_geometric_module(build_geometric_m11_rapid_crossfire_aperture())
+
+    res_a = analyze_cad_document(doc_a, include_telemetry=True)
+    res_b = analyze_cad_document(doc_b, include_telemetry=True)
+
+    frames_a = res_a.get("telemetry_frames", [])
+    frames_b = res_b.get("telemetry_frames", [])
+    jobs_a = res_a.get("threat_jobs", [])
+    jobs_b = res_b.get("threat_jobs", [])
+    events_a = res_a.get("events", [])
+    events_b = res_b.get("events", [])
+
+    tmp_dir = tempfile.mkdtemp()
+    total_frames = 100
+
+    fig = plt.figure(figsize=(14, 8), dpi=100)
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.2, 0.8], hspace=0.32, wspace=0.15)
+
+    ax_ga = fig.add_subplot(gs[0, 0])
+    ax_gb = fig.add_subplot(gs[0, 1])
+    ax_ta = fig.add_subplot(gs[1, 0])
+    ax_tb = fig.add_subplot(gs[1, 1])
+
+    b_a = doc_a.to_geometric_module().boundary
+    b_b = doc_b.to_geometric_module().boundary
+    obs_a = [o.to_polygon() for o in doc_a.obstacles]
+    obs_b = [o.to_polygon() for o in doc_b.obstacles]
+    threats_a = doc_a.threats
+    threats_b = doc_b.threats
+    r_pts_a = np.array(doc_a.routes[0].waypoints)
+    r_pts_b = np.array(doc_b.routes[0].waypoints)
+
+    for out_idx in range(total_frames):
+        for ax in [ax_ga, ax_gb, ax_ta, ax_tb]:
+            ax.clear()
+            ax.set_facecolor(SURFACE_COLOR)
+
+        fig.patch.set_facecolor(BG_COLOR)
+
+        # 4 Phase Logic
+        if out_idx <= 25:
+            phase = 1
+            phase_title = "PHASE 1: WHICH ROOM IS HARDER?"
+            show_los = False
+            show_schedule = False
+            show_verdict = False
+        elif out_idx <= 50:
+            phase = 2
+            phase_title = "PHASE 2: STATIC VISIBILITY (LOS CONCURRENCY)"
+            show_los = True
+            show_schedule = False
+            show_verdict = False
+        elif out_idx <= 75:
+            phase = 3
+            phase_title = "PHASE 3: REAL-TIME SCHEDULING (DEADLINES & SLEW)"
+            show_los = True
+            show_schedule = True
+            show_verdict = False
+        else:
+            phase = 4
+            phase_title = "PHASE 4: THE PARADOX RESOLVED"
+            show_los = True
+            show_schedule = True
+            show_verdict = True
+
+        # Progress ratio
+        t_prog = out_idx / float(total_frames - 1)
+        f_idx_a = min(int(t_prog * len(frames_a)), len(frames_a) - 1) if frames_a else 0
+        f_idx_b = min(int(t_prog * len(frames_b)), len(frames_b) - 1) if frames_b else 0
+        frame_a = frames_a[f_idx_a] if frames_a else None
+        frame_b = frames_b[f_idx_b] if frames_b else None
+
+        # -------------------------------------------------------------
+        # 1. Geometry Pane A (M08)
+        # -------------------------------------------------------------
+        ax_ga.set_xlim(-0.5, 9.5)
+        ax_ga.set_ylim(-3.5, 3.5)
+        ax_ga.set_aspect("equal")
+        ax_ga.axis("off")
+
+        draw_polygon_patch(ax_ga, b_a, facecolor="#0e1726", edgecolor="#334155", lw=1.5, zorder=1)
+        for obs in obs_a:
+            draw_polygon_patch(ax_ga, obs, facecolor=OBSTACLE_FILL, edgecolor=OBSTACLE_EDGE, lw=2.0, zorder=3)
+        ax_ga.plot(r_pts_a[:, 0], r_pts_a[:, 1], color="#334155", lw=1.5, linestyle="--", zorder=2)
+
+        # Threats A
+        for t in threats_a:
+            anc = t.anchor
+            is_vis = frame_a and t.id in frame_a.get("visible_threat_ids", []) and show_los
+            t_col = THREAT_ACTIVE if is_vis else "#475569"
+            ax_ga.scatter([anc[0]], [anc[1]], s=130, color=t_col, edgecolor=TEXT_WHITE, lw=1.5, zorder=5)
+            ax_ga.text(anc[0], anc[1] + 0.45, t.name, color=TEXT_WHITE, fontsize=8, fontweight="bold", ha="center", zorder=6)
+
+        # Player A
+        if frame_a:
+            p_pos = frame_a["player_pos"]
+            p_head = frame_a.get("reticle_heading_deg", 0.0)
+            ax_ga.scatter([p_pos[0]], [p_pos[1]], s=90, color=PLAYER_COLOR, edgecolor="#ffffff", lw=1.5, zorder=6)
+            rad = math.radians(p_head)
+            ax_ga.plot([p_pos[0], p_pos[0] + 1.2 * math.cos(rad)], [p_pos[1], p_pos[1] + 1.2 * math.sin(rad)], color=RETICLE_RAY, lw=2.5, zorder=7)
+            if show_los:
+                for t in threats_a:
+                    anc = t.anchor
+                    is_vis = t.id in frame_a.get("visible_threat_ids", [])
+                    c = LOS_CLEAR if is_vis else LOS_OCCLUDED
+                    ax_ga.plot([p_pos[0], anc[0]], [p_pos[1], anc[1]], color=c, lw=1.2, alpha=0.85 if is_vis else 0.3, zorder=4)
+
+        ax_ga.text(0.04, 0.90, "ROOM A: 3 THREATS (M08)", transform=ax_ga.transAxes, color=TEXT_WHITE, fontsize=10.5, fontweight="bold")
+        if show_los:
+            ax_ga.text(0.04, 0.76, "K_LOS = 3 (Max Concurrency)", transform=ax_ga.transAxes, color=ACCENT_YELLOW, fontsize=9, fontweight="bold")
+
+        # -------------------------------------------------------------
+        # 2. Geometry Pane B (M11)
+        # -------------------------------------------------------------
+        ax_gb.set_xlim(-0.5, 9.5)
+        ax_gb.set_ylim(-3.5, 3.5)
+        ax_gb.set_aspect("equal")
+        ax_gb.axis("off")
+
+        draw_polygon_patch(ax_gb, b_b, facecolor="#0e1726", edgecolor="#334155", lw=1.5, zorder=1)
+        for obs in obs_b:
+            draw_polygon_patch(ax_gb, obs, facecolor=OBSTACLE_FILL, edgecolor=OBSTACLE_EDGE, lw=2.0, zorder=3)
+        ax_gb.plot(r_pts_b[:, 0], r_pts_b[:, 1], color="#334155", lw=1.5, linestyle="--", zorder=2)
+
+        # Threats B
+        for t in threats_b:
+            anc = t.anchor
+            is_vis = frame_b and t.id in frame_b.get("visible_threat_ids", []) and show_los
+            t_col = THREAT_ACTIVE if is_vis else "#475569"
+            ax_gb.scatter([anc[0]], [anc[1]], s=130, color=t_col, edgecolor=TEXT_WHITE, lw=1.5, zorder=5)
+            ax_gb.text(anc[0], anc[1] + 0.45, t.name, color=TEXT_WHITE, fontsize=8, fontweight="bold", ha="center", zorder=6)
+
+        # Player B
+        if frame_b:
+            p_pos = frame_b["player_pos"]
+            p_head = frame_b.get("reticle_heading_deg", 0.0)
+            ax_gb.scatter([p_pos[0]], [p_pos[1]], s=90, color=PLAYER_COLOR, edgecolor="#ffffff", lw=1.5, zorder=6)
+            rad = math.radians(p_head)
+            ax_gb.plot([p_pos[0], p_pos[0] + 1.2 * math.cos(rad)], [p_pos[1], p_pos[1] + 1.2 * math.sin(rad)], color=RETICLE_RAY, lw=2.5, zorder=7)
+            if show_los:
+                for t in threats_b:
+                    anc = t.anchor
+                    is_vis = t.id in frame_b.get("visible_threat_ids", [])
+                    c = LOS_CLEAR if is_vis else LOS_OCCLUDED
+                    ax_gb.plot([p_pos[0], anc[0]], [p_pos[1], anc[1]], color=c, lw=1.2, alpha=0.85 if is_vis else 0.3, zorder=4)
+
+        ax_gb.text(0.04, 0.90, "ROOM B: 2 THREATS (M11)", transform=ax_gb.transAxes, color=TEXT_WHITE, fontsize=10.5, fontweight="bold")
+        if show_los:
+            ax_gb.text(0.04, 0.76, "K_LOS = 2 (Lower Concurrency)", transform=ax_gb.transAxes, color="#38bdf8", fontsize=9, fontweight="bold")
+
+        # -------------------------------------------------------------
+        # 3. Timeline Pane A (M08 Gantt)
+        # -------------------------------------------------------------
+        ax_ta.set_xlim(0, 3.5)
+        ax_ta.set_ylim(-0.5, 2.5)
+        ax_ta.set_yticks([0, 1, 2])
+        ax_ta.set_yticklabels(["Threat 3", "Threat 1", "Threat 2"], color=TEXT_MUTED, fontsize=8)
+        ax_ta.set_xlabel("Time (seconds)", color=TEXT_MUTED, fontsize=8)
+        ax_ta.tick_params(colors="#64748b", labelsize=7.5)
+        ax_ta.grid(True, linestyle=":", color="#1e293b", alpha=0.6)
+
+        if show_schedule:
+            # Draw job bars for M08: T2 (y=2), T1 (y=1), T3 (y=0)
+            ax_ta.barh(2, 0.34, left=0.0, height=0.45, color=ACCENT_GREEN, alpha=0.85, edgecolor="#ffffff", lw=1)
+            ax_ta.barh(1, 0.20, left=0.6, height=0.45, color=ACCENT_GREEN, alpha=0.85, edgecolor="#ffffff", lw=1)
+            ax_ta.barh(0, 0.20, left=1.11, height=0.45, color=ACCENT_GREEN, alpha=0.85, edgecolor="#ffffff", lw=1)
+
+            # Deadlines at 3.0s and 3.2s
+            ax_ta.axvline(3.0, color=ACCENT_RED, linestyle="--", lw=1.5, alpha=0.8)
+            ax_ta.axvline(3.2, color=ACCENT_RED, linestyle="--", lw=1.5, alpha=0.8)
+            ax_ta.text(3.05, 1.8, "Deadlines (3.0s slack)", color=ACCENT_RED, fontsize=7.5, fontweight="bold")
+
+            # Current playback cursor
+            curr_s = frame_a.get("time_s", 0.0) if frame_a else 0.0
+            ax_ta.axvline(curr_s, color=PLAYER_COLOR, lw=2.0, zorder=8)
+
+        if show_verdict:
+            ax_ta.text(0.04, 0.82, "M = +65 TICS (+1.86 s RESERVE)", transform=ax_ta.transAxes, color=ACCENT_GREEN, fontsize=9.5, fontweight="bold")
+            ax_ta.text(0.04, 0.65, "STATUS: 100% SERVICEABLE", transform=ax_ta.transAxes, color="#a7f3d0", fontsize=8.5, fontweight="bold")
+        elif not show_schedule:
+            ax_ta.text(0.5, 0.5, "[Guessing Phase: Which room is harder?]", transform=ax_ta.transAxes, color="#64748b", fontsize=9, ha="center")
+
+        # -------------------------------------------------------------
+        # 4. Timeline Pane B (M11 Gantt)
+        # -------------------------------------------------------------
+        ax_tb.set_xlim(0, 2.0)
+        ax_tb.set_ylim(-0.5, 1.5)
+        ax_tb.set_yticks([0, 1])
+        ax_tb.set_yticklabels(["Threat 2", "Threat 1"], color=TEXT_MUTED, fontsize=8)
+        ax_tb.set_xlabel("Time (seconds)", color=TEXT_MUTED, fontsize=8)
+        ax_tb.tick_params(colors="#64748b", labelsize=7.5)
+        ax_tb.grid(True, linestyle=":", color="#1e293b", alpha=0.6)
+
+        if show_schedule:
+            # Draw job bars for M11: T1 (y=1), T2 (y=0)
+            ax_tb.barh(1, 0.20, left=0.63, height=0.45, color=ACCENT_YELLOW, alpha=0.85, edgecolor="#ffffff", lw=1)
+            # Deadline breach at 0.66s
+            ax_tb.axvline(0.66, color=ACCENT_RED, linestyle="--", lw=2.0)
+            ax_tb.text(0.70, 0.8, "Lethal Breach (0.66s)", color=ACCENT_RED, fontsize=7.5, fontweight="bold")
+
+            # Current playback cursor
+            curr_s = frame_b.get("time_s", 0.0) if frame_b else 0.0
+            ax_tb.axvline(curr_s, color=PLAYER_COLOR, lw=2.0, zorder=8)
+
+        if show_verdict:
+            ax_tb.text(0.04, 0.82, "M = -29 TICS (-0.83 s DEFICIT)", transform=ax_tb.transAxes, color=ACCENT_RED, fontsize=9.5, fontweight="bold")
+            ax_tb.text(0.04, 0.65, "STATUS: DEADLINE OVERLOAD", transform=ax_tb.transAxes, color="#fca5a5", fontsize=8.5, fontweight="bold")
+        elif not show_schedule:
+            ax_tb.text(0.5, 0.5, "[Guessing Phase: Which room is harder?]", transform=ax_tb.transAxes, color="#64748b", fontsize=9, ha="center")
+
+        # Global header & footer
+        fig.text(0.50, 0.96, f"ADV-01 — THREE THREATS ARE EASIER THAN TWO ({phase_title})", color=TEXT_WHITE, fontsize=12, fontweight="bold", ha="center")
+        fig.text(0.50, 0.02, "Threat count is not workload. Timing is. (M08 vs M11 Frozen Counterexample Replay)", color=ACCENT_GREEN if show_verdict else TEXT_MUTED, fontsize=9.5, fontweight="bold" if show_verdict else "normal", ha="center")
+
+        fig.savefig(os.path.join(tmp_dir, f"frame_{out_idx:04d}.png"), facecolor=fig.get_facecolor(), bbox_inches="tight", pad_inches=0.05)
+
+    plt.close(fig)
+    compile_gif_and_webm(tmp_dir, "adv01_three_vs_two", fps=20)
+    shutil.rmtree(tmp_dir)
+
+
+# =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
 
 def main():
     print("=" * 70)
-    print("CUT THE CAKE — CANONICAL VISUAL ASSET GENERATOR (PASS 2)")
+    print("CUT THE CAKE — CANONICAL VISUAL ASSET GENERATOR (PASS 3)")
     print("=" * 70)
     
+    generate_adv01_three_vs_two_asset()
     generate_hero_clearability_asset()
     generate_same_count_asset()
     generate_move_one_wall_asset()
@@ -667,9 +901,10 @@ def main():
     generate_height_reveal_asset()
 
     print("\n" + "=" * 70)
-    print("[OK] All 5 canonical visual loops successfully generated in docs/media/")
+    print("[OK] All canonical and advanced visual loops successfully generated in docs/media/")
     print("=" * 70)
 
 
 if __name__ == "__main__":
     main()
+

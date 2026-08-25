@@ -1,0 +1,141 @@
+{
+  "": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ADV-01 Flagship Counterexample Calculation Provenance",
+  "asset_id": "adv01_three_vs_two",
+  "description": "Authoritative comparison of M08 (3 threats, generous deadlines) vs M11 (2 threats, tight deadlines)",
+  "player_model_parameters": {
+    "omega_dps": 360.0,
+    "omega_deg_per_tic": 10.2857,
+    "reaction_time_s": 0.15,
+    "reaction_time_tics": 5,
+    "weapon_dwell_s": 0.1143,
+    "weapon_dwell_tics": 7,
+    "v_move_mps": 4.5,
+    "clock_hz": 35
+  },
+  "round10_compiler_status": {
+    "m08_status": "CompilationStatus.VALID_FEASIBLE",
+    "m08_feasible": true,
+    "m11_status": "CompilationStatus.VALID_INFEASIBLE",
+    "m11_feasible": false,
+    "notes": "Pure compile-time baseline with continuous arc slew"
+  },
+  "horizon6_cad_simulation_referee": {
+    "m08": {
+      "fixture": "M08_HighConcurrencySolvable_Geom",
+      "threat_count": 3,
+      "tactical_margin_tics": 65,
+      "tactical_margin_s": 1.86,
+      "l_star_tics": -65,
+      "verdict": "serviceable",
+      "is_feasible": true,
+      "threat_jobs": [
+        {
+          "id": "M08_T2",
+          "label": "Threat 2",
+          "reveal_tic": 0,
+          "reveal_s": 0.0,
+          "due_window_tics": 105,
+          "due_window_s": 3.0,
+          "deadline_tic": 105,
+          "deadline_s": 3.0,
+          "angle_deg": 0.0,
+          "elevation_deg": 0.0,
+          "service_duration_tics": 7,
+          "completion_tic": 13,
+          "scheduled_service_end_tic": 12,
+          "realized_service_complete_tic": 12,
+          "completion_s": 0.3714,
+          "lateness_tics": -92
+        },
+        {
+          "id": "M08_T1",
+          "label": "Threat 1",
+          "reveal_tic": 7,
+          "reveal_s": 0.2,
+          "due_window_tics": 105,
+          "due_window_s": 3.0,
+          "deadline_tic": 112,
+          "deadline_s": 3.2,
+          "angle_deg": -24.3,
+          "elevation_deg": 0.0,
+          "service_duration_tics": 7,
+          "completion_tic": 29,
+          "scheduled_service_end_tic": 28,
+          "realized_service_complete_tic": 28,
+          "completion_s": 0.8286,
+          "lateness_tics": -83
+        },
+        {
+          "id": "M08_T3",
+          "label": "Threat 3",
+          "reveal_tic": 7,
+          "reveal_s": 0.2,
+          "due_window_tics": 105,
+          "due_window_s": 3.0,
+          "deadline_tic": 112,
+          "deadline_s": 3.2,
+          "angle_deg": 24.3,
+          "elevation_deg": 0.0,
+          "service_duration_tics": 7,
+          "completion_tic": 47,
+          "scheduled_service_end_tic": 46,
+          "realized_service_complete_tic": 46,
+          "completion_s": 1.3429,
+          "lateness_tics": -65
+        }
+      ]
+    },
+    "m11": {
+      "fixture": "M11_RapidCrossfireAperture_Geom",
+      "threat_count": 2,
+      "tactical_margin_tics": -29,
+      "tactical_margin_s": -0.83,
+      "l_star_tics": 29,
+      "verdict": "unserviceable",
+      "is_feasible": false,
+      "threat_jobs": [
+        {
+          "id": "M11_T1",
+          "label": "Threat 1",
+          "reveal_tic": 12,
+          "reveal_s": 0.3429,
+          "due_window_tics": 11,
+          "due_window_s": 0.3143,
+          "deadline_tic": 23,
+          "deadline_s": 0.6571,
+          "angle_deg": -43.1,
+          "elevation_deg": 0.0,
+          "service_duration_tics": 7,
+          "completion_tic": 30,
+          "scheduled_service_end_tic": 29,
+          "realized_service_complete_tic": null,
+          "completion_s": 0.8571,
+          "lateness_tics": 7
+        },
+        {
+          "id": "M11_T2",
+          "label": "Threat 2",
+          "reveal_tic": 12,
+          "reveal_s": 0.3429,
+          "due_window_tics": 11,
+          "due_window_s": 0.3143,
+          "deadline_tic": 23,
+          "deadline_s": 0.6571,
+          "angle_deg": 43.1,
+          "elevation_deg": 0.0,
+          "service_duration_tics": 7,
+          "completion_tic": 52,
+          "scheduled_service_end_tic": 51,
+          "realized_service_complete_tic": null,
+          "completion_s": 1.4857,
+          "lateness_tics": 29
+        }
+      ]
+    }
+  },
+  "calculation_notes": {
+    "margin_explanation": "Compiler baseline evaluates continuous transfer maps with ideal pre-aim transitions. The 35-Hz discrete CAD simulation referee executes exact step-by-step target acquisition, slew limits, and weapon dwell intervals. In CAD simulation, M08 achieves M = +65 tics (+1.86s reserve), while M11 suffers deadline breach at tic 23 with M = -29 tics (-0.83s deficit)."
+  },
+  "takeaway": "Threat count is not workload. Timing is."
+}

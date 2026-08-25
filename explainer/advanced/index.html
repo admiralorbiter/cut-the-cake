@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cut the Cake — Advanced Evidence Lab & Tactical MRI</title>
+  <link rel="stylesheet" href="advanced.css" />
+</head>
+<body>
+  <header>
+    <div class="header-title">
+      <h1>Cut the Cake 🍰 <span class="badge-lab">Advanced Evidence Lab</span></h1>
+    </div>
+    <div class="header-nav">
+      <a href="../index.html" class="nav-btn">← Foundational Explainer</a>
+      <a href="../../README.md" class="nav-btn">GitHub README</a>
+      <a href="http://127.0.0.1:5000" target="_blank" class="nav-btn active">Open Tactical CAD</a>
+    </div>
+  </header>
+
+  <!-- Gallery Strip -->
+  <div class="gallery-strip" id="gallery-strip">
+    <!-- Generated dynamically by advanced.js -->
+  </div>
+
+  <main class="workspace">
+    <!-- Presentation Hero Box -->
+    <div class="presentation-hero">
+      <h2 id="hero-title">Loading Presentation...</h2>
+      <p id="hero-desc">Synchronized 4-pane tactical diagnostic view replaying frozen counterexample evidence.</p>
+      <div class="hero-meta">
+        <span class="meta-badge" id="hero-provenance">EVIDENCE_REPLAY</span>
+        <span id="hero-fixture">Fixture: Loading...</span>
+      </div>
+    </div>
+
+    <!-- 4-Pane Tactical MRI Grid -->
+    <div class="mri-grid">
+      <!-- Pane A: Geometry -->
+      <div class="mri-pane">
+        <div class="pane-header">
+          <h3>📐 Pane A: Geometry & Dynamic Sightlines</h3>
+          <span class="pane-badge">TOP-DOWN 2D / 2.5D</span>
+        </div>
+        <div class="pane-content">
+          <canvas id="canvas-geom" width="640" height="240"></canvas>
+        </div>
+      </div>
+
+      <!-- Pane B: The Scheduler Gantt -->
+      <div class="mri-pane">
+        <div class="pane-header">
+          <h3>⏱️ Pane B: The Scheduler (Gantt Timeline)</h3>
+          <span class="pane-badge">1 | r_j, s_ij | L_max</span>
+        </div>
+        <div class="pane-content">
+          <canvas id="canvas-gantt" width="640" height="240"></canvas>
+        </div>
+      </div>
+
+      <!-- Pane C: Route X-Ray -->
+      <div class="mri-pane">
+        <div class="pane-header">
+          <h3>🔬 Pane C: Route X-Ray (3 Unmixed Tracks)</h3>
+          <span class="pane-badge">K_LOS | δ_min | M_suffix</span>
+        </div>
+        <div class="pane-content">
+          <canvas id="canvas-xray" width="640" height="240"></canvas>
+        </div>
+      </div>
+
+      <!-- Pane D: "Why?" Bottleneck Diagnostic -->
+      <div class="mri-pane">
+        <div class="pane-header">
+          <h3>💡 Pane D: "Why?" Causal Diagnostic</h3>
+          <span class="pane-badge">BOTTLENECK ATTRIBUTION</span>
+        </div>
+        <div class="pane-content" id="pane-why-content">
+          <!-- Diagnostic cards rendered by advanced.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline & Playback Controls -->
+    <div class="controls-bar">
+      <button class="ctrl-btn" id="btn-play">Play</button>
+      <button class="ctrl-btn" id="btn-prev">◀ Step</button>
+      <button class="ctrl-btn" id="btn-next">Step ▶</button>
+      <div class="slider-container">
+        <input type="range" class="time-slider" id="time-slider" min="0" max="99" value="0" />
+        <span class="time-display" id="time-display">t = 0.00s</span>
+      </div>
+    </div>
+  </main>
+
+  <script src="advanced.js"></script>
+</body>
+</html>

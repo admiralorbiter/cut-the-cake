@@ -18,10 +18,11 @@ Across tens of thousands of procedurally generated rooms, **static visibility co
 - They rejected layouts where multiple threats were visible at once, but where the physical geometry naturally staggered the reaction deadlines so that both could be cleared safely (**false negatives**).
 
 <p align="center">
-  <img src="media/same_count_timing.gif" alt="Same Count, Different Timing" width="750" />
+  <img src="media/adv01_three_vs_two.gif" alt="Three Threats Are Easier Than Two (M08 vs M11)" width="750" />
 </p>
 
-> **Discovery 1:** Tactical difficulty is not a static property of how much you see. It is an emergent property of the **time sequence** in which visibility events occur.
+> **Discovery 1:** Tactical difficulty is not a static property of how much you see. It is an emergent property of the **time sequence** in which visibility events occur.  
+> **Threat count is not workload. Timing is.**
 
 ---
 
@@ -138,7 +139,7 @@ $$\Delta \alpha_{ij} = \arccos(\operatorname{clamp}(\sin \phi_i \sin \phi_j + \c
 
 Crucially, when all elevations are zero ($\phi_i = \phi_j = 0^\circ$), this formula simplifies with bit-for-bit mathematical identity back to our original 2D circular model.
 
-> **Discovery 8:** The single-machine scheduling abstraction is not limited to 2D planes. It generalizes seamlessly to $\mathrm{SO}(3)$ spherical aim dynamics while strictly preserving the 2D foundation as a special case.
+> **Discovery 8:** The single-machine scheduling abstraction is not limited to 2D planes. It generalizes seamlessly to unit-sphere $S^2$ aim dynamics while strictly preserving the 2D planar foundation as a special case (and provably satisfying $\mathrm{SO}(3)$ rigid-body rotation invariance).
 
 ---
 

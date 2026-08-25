@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "Horizon 6 Frozen",
+  "presentations": [
+    {
+      "id": "adv01",
+      "title": "ADV-01: Three Threats Are Easier Than Two",
+      "subtitle": "Peak Concurrency vs Release Scheduling",
+      "source_fixture": "M08_HighConcurrencySolvable vs M11_RapidCrossfireAperture",
+      "provenance": "EVIDENCE_REPLAY",
+      "description": "Room A has 3 enemies and peak K=3 concurrency, but generous 3.0s deadlines make it 100% solvable (M = +65 tics). Room B has only 2 enemies, but tight 0.30s deadlines create an unavoidable deadline breach (M = -29 tics).",
+      "takeaway": "Threat count is not workload. Timing is.",
+      "room_a": {
+        "name": "Room A (M08)",
+        "threat_count": 3,
+        "tactical_margin_tics": 65,
+        "tactical_margin_s": 1.86,
+        "status": "SERVICEABLE",
+        "boundary": [[0, -3], [9, -3], [9, 3], [0, 3]],
+        "obstacles": [
+          [[2, 0.6], [2.2, 0.6], [2.2, 3], [2, 3]],
+          [[2, -3], [2.2, -3], [2.2, -0.6], [2, -0.6]]
+        ],
+        "route": [[0, 0], [9, 0]],
+        "threats": [
+          {"id": "T1", "name": "Threat 1", "anchor": [6.0, -2.3], "reveal_tic": 7, "deadline_tic": 112, "completion_tic": 28},
+          {"id": "T2", "name": "Threat 2", "anchor": [6.0, 0.0], "reveal_tic": 0, "deadline_tic": 105, "completion_tic": 12},
+          {"id": "T3", "name": "Threat 3", "anchor": [6.0, 2.3], "reveal_tic": 7, "deadline_tic": 112, "completion_tic": 46}
+        ]
+      },
+      "room_b": {
+        "name": "Room B (M11)",
+        "threat_count": 2,
+        "tactical_margin_tics": -29,
+        "tactical_margin_s": -0.83,
+        "status": "DEADLINE OVERLOAD",
+        "boundary": [[0, -3], [8, -3], [8, 3], [0, 3]],
+        "obstacles": [
+          [[2, 0.3], [2.2, 0.3], [2.2, 3], [2, 3]],
+          [[2, -3], [2.2, -3], [2.2, -0.3], [2, -0.3]]
+        ],
+        "route": [[0, 0], [8, 0]],
+        "threats": [
+          {"id": "T1", "name": "Threat 1", "anchor": [5.0, -2.2], "reveal_tic": 12, "deadline_tic": 23, "completion_tic": 30},
+          {"id": "T2", "name": "Threat 2", "anchor": [5.0, 2.2], "reveal_tic": 12, "deadline_tic": 23, "completion_tic": 52}
+        ]
+      }
+    },
+    {
+      "id": "adv02",
+      "title": "ADV-02: Same Room, Different Route",
+      "subtitle": "Clearability Is Trajectory-Conditioned",
+      "source_fixture": "M07_FlankBypassRoom_Geom",
+      "provenance": "EVIDENCE_REPLAY",
+      "description": "The exact same room geometry produces opposite tactical outcomes depending on movement path. A direct rush exposes the player to simultaneous crossfires, while a methodical flank route staggers sightlines into sequential 1v1 duels.",
+      "takeaway": "A map is not tactically good or bad in isolation; clearability is a property of the path.",
+      "tactical_margin_direct": -14,
+      "tactical_margin_flank": 4
+    },
+    {
+      "id": "adv03",
+      "title": "ADV-03: Global vs Local Tactical MRI",
+      "subtitle": "Whole-Route Optimum vs Local Approach Choke",
+      "source_fixture": "Dust II A-Long (results/m5a_dust2_a_long.json)",
+      "provenance": "EVIDENCE_REPLAY",
+      "description": "On Dust II A-Long, an aggressive wide swing looks deceptively superior on whole-route score (M=+2) due to shorter total travel time, but harbors a fatal local crossfire at the corner. Suffix Tactical Margin isolates the acute danger zone.",
+      "takeaway": "A route can look safe overall while hiding an unserviceable local choke.",
+      "global_margin_wide": 2,
+      "local_suffix_margin_wide": -7,
+      "local_suffix_margin_pieing": 3
+    },
+    {
+      "id": "adv04",
+      "title": "ADV-04: Causal Repair Microscope",
+      "subtitle": "Sub-Meter Geometric Edit Restores Positive Margin",
+      "source_fixture": "Canonical F1 Auto-Fix Search (ROUND_11_4A_FREEZE)",
+      "provenance": "EVIDENCE_REPLAY",
+      "description": "Sliding a single partition by +1.10 m delays Threat 2's un-occlusion timestamp by 8 tics, transforming an unserviceable -6 tic failure into a +2 tic (+57 ms) safety reserve.",
+      "takeaway": "Obstacle +1.10 m → Delayed Reveal → Reserve +2 tics",
+      "initial_margin": -6,
+      "repaired_margin": 2,
+      "displacement_m": 1.10
+    },
+    {
+      "id": "adv05",
+      "title": "ADV-05: The Quantization Staircase",
+      "subtitle": "Continuous Geometry vs Discrete Clock Thresholds",
+      "source_fixture": "F06 Wall Perturbation & Ascent Pitch Sweep",
+      "provenance": "EVIDENCE_REPLAY",
+      "description": "Continuous obstacle shifts move reveal timestamps continuously, but Tactical Margin changes in discrete integer steps on the 35-Hz game clock. Angular pitch changes within a single aim-slew bucket produce zero discrete difference.",
+      "takeaway": "Continuous geometric changes only alter clearability when crossing discrete simulation clock boundaries."
+    },
+    {
+      "id": "adv06",
+      "title": "ADV-06: The Model Says No",
+      "subtitle": "Falsifiability on Unsolvable Dry Chokes",
+      "source_fixture": "Dust II Upper B-Tunnels Exit",
+      "provenance": "EVIDENCE_REPLAY",
+      "description": "When entering B-Site from Upper Tunnels, simultaneous sightlines cannot be serialized dry by left or right hugging paths (M = -7 tics). The model refuses to fabricate a solution, verifying the necessity of tactical smokes/flashes.",
+      "takeaway": "A trustworthy diagnostic tool must be capable of declaring when dry gunplay is physically impossible."
+    },
+    {
+      "id": "adv07",
+      "title": "ADV-07: Prediction Meets Execution",
+      "subtitle": "Discrete Schedulers Executed by 3D Controllers",
+      "source_fixture": "M6-C 3-Threat Ramp Fixture",
+      "provenance": "EVIDENCE_REPLAY",
+      "description": "A 35-Hz 3D controller rotates along unit-sphere S^2 geodesic arcs using Slerp. Physical execution events match the discrete scheduler's predicted completion tics with exact bit-for-bit parity.",
+      "takeaway": "Tactical Margin is an executable contract: t_j(event) ≡ C_j - 1."
+    },
+    {
+      "id": "adv08",
+      "title": "ADV-08: Source Success, Engine Failure",
+      "subtitle": "Visualizing External Engine Transfer Residuals",
+      "source_fixture": "Family 1 vs Family 4 ViZDoom Transfer Gaps",
+      "provenance": "EVIDENCE_REPLAY",
+      "description": "80% of unserviceable layouts were repaired in the source model, and 75% survived in native C++ ViZDoom. Transfer gaps are caused by engine line-of-sight rasterization, collision bounding boxes, and coordinate quantization.",
+      "takeaway": "Mathematical correctness requires an empirical deployment guard band when exported to third-party game engines."
+    }
+  ]
+}

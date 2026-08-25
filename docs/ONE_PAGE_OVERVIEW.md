@@ -47,17 +47,16 @@ Here, the "processor" is the player's single aiming reticle.
 
 The intuitive assumption is that a space is dangerous when too many threats are visible at once.
 
-**That turns out to be incomplete.**
-
-Two rooms can expose the exact same number of threats and have completely opposite outcomes:
-- If two threats become visible at the exact same instant from opposite sides, the player physically cannot rotate between them in time.
-- If the exact same two threats appear just a fraction of a second apart, the player can smoothly address the first and rotate to the second before its deadline.
+Two rooms can expose the exact same number of threats—or even fewer threats—and produce the opposite of what human intuition expects:
+- **Room A (3 Enemies):** Three threats are visible at once. But generous deadlines allow one player to clear all three comfortably ($\mathcal{M} = +65\text{ tics}$).
+- **Room B (2 Enemies):** Only two threats are present. But their simultaneous reveal with tight deadlines makes the room mathematically impossible to solve dry ($\mathcal{M} = -29\text{ tics}$).
 
 <p align="center">
-  <img src="media/same_count_timing.gif" alt="Same Threat Count, Different Schedule" width="750" />
+  <img src="media/adv01_three_vs_two.gif" alt="Three Threats Are Easier Than Two (M08 vs M11)" width="750" />
 </p>
 
 > **The decisive property is not simply how much you see. It is how the geometry releases information over time.**
+> **Threat count is not workload. Timing is.**
 
 The project formalizes the remaining safety cushion as **Tactical Margin ($\mathcal{M}$)**:
 - **$\mathcal{M} \ge 0$ (Positive Margin):** The modeled player has time left over.
